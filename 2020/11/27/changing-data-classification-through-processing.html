@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Changing Data Classification Through Processing &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>November 27, 2020</span></header>
+<article>
+<h1>Changing Data Classification Through Processing</h1>
+
+<p>This is an excerpt from a draft of chapter 10 of my book, <a href="https://www.manning.com/books/azure-data-engineering">Azure Data
+Engineering</a>,
+which deals with compliance. In this article we&#39;ll look at a few
+techniques to transform sensitive user data into less sensitive data. In
+the book, this includes code samples for implementation on Azure Data
+Explorer, which are omitted from this article. Let&#39;s start with a
+couple of definitions.</p>
+
+<h2>User Data</h2>
+
+<p>User data is data that can be directly tied to the user. This class of
+data is important since this is what GDPR covers. User data also comes
+in a couple of subcategories. One of them is <em>End User Identifiable
+Information</em> or <em>EUII</em>.</p>
+
+<blockquote>
+<p><strong>End user identifiable information</strong> is information that can directly
+identify the user. Examples of EUII are name, email address, IP
+address, or location information.</p>
+</blockquote>
+
+<p>As data moves through our systems, we generate various IDs. Any data
+that we have tied to such an ID, for example order history for account
+ID, is called <em>End User Pseudonymous Information</em> or <em>EUPI</em>.</p>
+
+<blockquote>
+<p><strong>End user pseudonymous information</strong> are IDs used by our systems
+which, in conjunction with additional information (for example a
+mapping table) can be used to identify the user.</p>
+</blockquote>
+
+<p>Note the important distinction: When we look at EUII, for example name
+and address, we can immediately identify the user. When we look at EUPI,
+for example account ID, we need an additional mapping to tell us which
+user the account ID belongs to.</p>
+
+<p>In general, we have one primary ID (or several) which directly
+identifies the user, which we consider EUII, and multiple other IDs
+which indirectly identify the user through their connection to the
+primary ID. These other IDs are EUPI.</p>
+
+<h2>Changing Classification Through Processing</h2>
+
+<p>In general, we restrict the number of people who can access sensitive
+data. In most cases, access is <em>on a need-to-know basis</em>, where data
+scientists and engineers allowed to process this data have done some
+compliance training and understand the risks and liabilities.</p>
+
+<p>In some scenarios we want to process data so that it becomes less
+sensitive. A good example is we want to open it up for more data
+scientists to look at. In this article we will look at a few techniques
+for achieving this.</p>
+
+<p>Let&#39;s start by defining two datasets, as shown in the following figure:</p>
+
+<p><img src="fig1.png" alt="image"></p>
+
+<p>The first dataset, <em>User profiles</em>, contains user accounts, including
+names, credit cards, and billing addresses. We omitted actual billing
+addresses to keep things short. This dataset also contains a <em>User ID</em>
+column which associates an identification number with each user. This is
+the primary ID in our system, since we can use it to link back to a
+user&#39;s profile information.</p>
+
+<p>The second dataset, <em>User telemetry</em>, contains telemetry data we collect
+from our users. It contains the user ID, timestamp and product feature
+the user engaged with.</p>
+
+<p>Let&#39;s see some techniques we can use on the <em>User telemetry</em> table to
+change its classification to something less sensitive.</p>
+
+<h3>Aggregation</h3>
+
+<p>The first technique is aggregation: we can take user identifiable
+information from multiple users, aggregate it, and get rid of the end
+user identifiable part. For example, if we collect telemetry from our
+users that captures which features of our product they are using, we can
+aggregate it, so we know how much each feature is being used, but not
+who used what.</p>
+
+<p>The following figure shows how aggregation transform user identifiable
+information into data that can&#39;t be tied back to individual users.</p>
+
+<p><img src="fig2.png" alt="image"></p>
+
+<p>Before processing, we could see exactly what set of features an
+individual user was using, which has privacy implications. After
+aggregation, we can no longer tell that. We still have valuable data --
+we know which features of our product are the most used, which ones are
+not that important to our customers etc. We can store this data for
+analytics and ML purposes without having to worry about end user
+privacy.</p>
+
+<blockquote>
+<p>Data <strong>aggregation</strong> is the processing of data into a summarized
+format. This can be used to transform the data so it can no longer be
+tied to individual users.</p>
+</blockquote>
+
+<p>But maybe we want to know more: we want to see when each feature is used
+or how our customers use different features in conjunction. Now simply
+counting feature usage is not enough. We can use a different technique
+for that: anonymization.</p>
+
+<h3>Anonymization</h3>
+
+<p>We can use anonymization to unlink the data from the end user. Once the
+data is no longer connected to a user identifier, we can&#39;t tell which
+user it came from. Going back to our telemetry example, if we want to
+know when features are used, but don&#39;t care who uses them, we can get
+rid of the user identifier. The following figure shows how we can
+anonymize data by dropping the user identifiers.</p>
+
+<p><img src="fig3.png" alt="image"></p>
+
+<p>Maybe this is not enough either. What if we still need to see which
+features are used together by a user, but we don&#39;t really care who the
+user is? We can still anonymize by replacing user identifiers (which can
+be tracked back to the user) with randomly generated IDs. The following
+figure shows how we can anonymize the data by replacing each user ID
+with a randomly generated GUID.</p>
+
+<p><img src="fig4.png" alt="image"></p>
+
+<p>Note that we are intentionally not persisting a mapping between user IDs
+and corresponding random IDs. We generate the random IDs once and
+intentionally <q>forget</q> the association.</p>
+
+<p>Once this happens, we can no longer tie the data back to the user, so it
+is no longer user identifiable. We can still tie together datasets by
+the random ID, but there is no way to associate the random ID with a
+user.</p>
+
+<blockquote>
+<p><strong>Anonymization</strong> is the process of removing user identifiable
+information from the data or replacing it with data that cannot be
+linked back to a user.</p>
+</blockquote>
+
+<p>If we get new telemetry from our users, we won&#39;t be able to generate
+the same GUID when anonymizing. Each time we run the query we will get
+different random IDs corresponding to our users. In some cases, this
+might not be enough. Or we might need to maintain that ability to link
+back to our original user IDs but restrict who can make that
+association. For these cases, we can use pseudonymization.</p>
+
+<h3>Pseudonymization</h3>
+
+<p>In this case, we have scenarios for which we still need to know who the
+data belongs to, but this is not needed for all scenarios. For example,
+we might want to keep track of which user used which features so we can
+notify them of updates to that feature. But for other analytics, it is
+irrelevant who the user is. For the first case, we have a small set of
+people who can view this association. For analytics, we have a large
+team of people looking at the data, but from their perspective, it is
+anonymous.</p>
+
+<p>We can achieve this by pseudonymizing the data. The difference between
+pseudonymization and anonymization is that pseudonymization gives us a
+way to reconstruct the relationship.</p>
+
+<p>When we looked at anonymizing data, we swapped out the user ID with a
+randomly generated ID. Unless we explicitly stored which user ID got
+assigned which random ID, we can no longer recover the link.</p>
+
+<p>For pseudonymization, we replace random IDs with something more
+deterministic. This can be either a hash of the user ID, or an
+encryption of the user ID.</p>
+
+<p>As a reminder, hashing is a one-way function. Give the result of a hash,
+you cannot <q>un-hash</q> it to get the original value. Encryption is
+different -- an encrypted value can be decrypted if we know the
+encryption key.</p>
+
+<blockquote>
+<p><strong>Pseudonymization</strong> is the process of replacing user identifiable
+information with a pseudonym. The data can be linked back to a user
+given some additional information.</p>
+</blockquote>
+
+<p>Let&#39;s look at both approaches.</p>
+
+<h4>Pseudonymizing by hashing</h4>
+
+<p>If we hash the user IDs and provide a dataset with just hashes, the only
+way to tie this pseudonymous data back to actual users would be to take
+all the user IDs in our system and hash them to see where we find a
+match.</p>
+
+<p>If we restrict the access to the user IDs, then someone who can only
+query the pseudonymized table can still see all the connections within
+the dataset (which features are used by which user), but instead of
+seeing a user ID, they see a pseudonymous identifier. The following
+figure shows the transformation.</p>
+
+<p><img src="fig5.png" alt="image"></p>
+
+<p>Note that if we only have this dataset consisting of <em>Pseudonymous ID</em>,
+<em>Timestamp</em>, and <em>Feature</em>, we can&#39;t produce a user ID. On the other
+hand, if we have a user ID, we can always hash it and link it to the
+pseudonymized data.</p>
+
+<p>We can use this technique in cases when the data scientists processing
+the pseudonymized data don&#39;t have access to the unprocessed, end user
+identifiable data. This way, they get a dataset that is, for all intents
+and purposes, just like the original, except there is no mention of user
+IDs.</p>
+
+<p>This doesn&#39;t work if the user IDs are also visible since it is easy to
+hash them again and produced the pseudonymous IDs. One option is to keep
+the hashing algorithm secret and add a salt. In cryptography, a salt is
+some additional secret data mixed-in, to make it harder to recreate the
+connection. For example we can XOR the user ID with some number (our
+salt).</p>
+
+<p>Now, as long as the salt is kept secret, someone can&#39;t get from user ID
+to the pseudonymous ID even if they know which hashing algorithm is used
+for pseudonymization.</p>
+
+<p>Let&#39;s now look at the alternative to hashing: encryption.</p>
+
+<h4>Pseudonymizing by encrypting</h4>
+
+<p>If we encrypt the user IDs and provide a dataset with encrypted values,
+the only way to tie this back to actual users would be to decrypt. As
+long as the encryption key is secure and only available on a
+need-to-know basis, people that don&#39;t need to know can&#39;t recover the
+association.</p>
+
+<p>This is similar to the hashing technique we just saw, except it is a
+two-way transformation. Even without having access to a user ID to hash,
+we can produce a user ID by decrypting an encrypted pseudonymized ID.
+Figure 6 shows how this would look like.</p>
+
+<p><img src="fig6.png" alt="image"></p>
+
+<p>We will use encryption instead of hashing if we have a scenario in which
+we don&#39;t have the original dataset available, but we need a way to
+recover it. In this case, we can rely on the two-way transformation
+provided by encryption and restore the original dataset by decrypting
+the pseudonymized dataset.</p>
+
+<p>An alternative to transforming data is masking.</p>
+
+<h3>Masking</h3>
+
+<p>Masking means hiding parts of the data from whoever access it, even if
+the data is fully available in our system. Think of how social security
+numbers are reduced to the last 4 digits: <code>***-**-1234</code>.</p>
+
+<p>Masking sensitive data makes it less sensitive -- obviously, even with
+bad intent, someone can&#39;t do much with just the last 4 digits of a
+social security number, with just the city and state of a home address,
+or with the first few digits of a phone number.</p>
+
+<p>Masking the data does require an additional layer in between the raw
+storage and people querying the data, which determines who gets to see
+the unmasked, full dataset, and who is restricted to a more limited view
+of the data. The following figure shows how masking looks like for our
+<em>User profile</em> table.</p>
+
+<p><img src="fig7.png" alt="image"></p>
+
+<p>Unlike our previous techniques, which transformed the data, this happens
+in-place. We still have the full credit card number stored, but not
+everyone querying the table will be able to see it.</p>
+
+<blockquote>
+<p><strong>Masking</strong> leverages an additional layer between the raw data and
+query issuers to hide sensitive information from non-privileged
+access.</p>
+</blockquote>
+
+<p>The good news is many storage solutions and database engines offer such
+a layer out-of-the-box (see Azure Data Explorer&#39;s <a href="https://docs.microsoft.com/en-us/azure/data-explorer/kusto/management/rowlevelsecuritypolicy">row level
+security</a>
+for example).</p>
+
+<h2>Summary</h2>
+
+<p>In this article we looked at a few ways in which we can take sensitive
+data and make it less sensitive:</p>
+
+<ul>
+<li>Aggregating data makes it impossible to connect it back to
+individual users.</li>
+<li>Anonymizing data, while a bit more involved than aggregating,
+preserves the granularity of user-level data, while removing the
+identifiable parts.</li>
+<li>In some cases, we do have legitimate scenarios in which we want to
+trace back the data to actual users. In this case, we can use
+pseudonymization to make the data partially anonymous and only
+restore the link with the real user ID on a need-to-know basis.</li>
+<li>Hashing is a one-way transformation of the data. Given a
+pseudonymized ID, we can&#39;t recover a user ID. We can restore the
+association by hashing user ID again and joining on the
+pseudonymized ID. Adding secret salt to a hash makes it harder to
+restore the association (one would need to also know the salt
+value).</li>
+<li>Encryption is a two-way transformation, which requires an additional
+piece of information: a key. Given a pseudonymized ID, we can
+recover the user ID if we have the key by decrypting the data.</li>
+<li>Masking is another technique for hiding sensitive information. In
+this case, the data is not transformed, rather an in-between layer
+can hide sensitive information and only make it available when
+appropriate.</li>
+</ul>
+
+<p>This are important techniques to know when dealing with sensitive data,
+since they all allow us to make more data available to more analytical
+scenarios without compromising on user privacy.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2020/11/13/data-quality-testing-patterns.html>Data Quality Testing Patterns</a></span></div>
+<div id="next"><span><a href=../../.././2020/12/10/notes-on-design-patterns.html>Notes on Design Patterns</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

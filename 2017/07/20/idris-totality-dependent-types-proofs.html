@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Idris: Totality, Dependent Types, Proofs &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>July 20, 2017</span></header>
+<article>
+<h1>Idris: Totality, Dependent Types, Proofs</h1>
+
+<p>Idris is a programming language inspired by Haskell, with a set of
+innovative features to facilitate type safety and program correctness.
+<a href="https://www.manning.com/books/type-driven-development-with-idris">Type Driven Development with
+Idris</a>
+is a great introductory book which I highly recommend. In this post, I
+will try to cover the features I was most impressed with, providing some
+simple code samples. I will not cover syntax since most should be
+familiar from Haskell. If you are not familiar with Haskell syntax, here
+is a nice <a href="https://matela.com.br/pub/cheat-sheets/haskell-ucs-0.4.pdf">syntax cheat
+sheet</a>. If
+you are not interested in either Haskell or Idris syntax, start with the
+last section of this post, <a href="#thoughts-about-the-future">Thoughts about the
+Future</a>.</p>
+
+<h2>Totality Checking</h2>
+
+<p>A total function in Idris is a function which is defined for all
+possible inputs and is guaranteed to produce a result in a finite amount
+of time<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>. The compiler obviously employs a heuristic, since the
+halting problem is undecidable, but is usually close enough to the truth
+to guarantee correctness from this point of view. It achieves this not
+by evaluating the function, but by ensuring that every recursive branch
+converges to a halting branch.</p>
+
+<p>Natural numbers are defined in Idris using Peano axioms, so it is easy
+to prove things about them. Here is a minimal definition of natural
+numbers<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup>:</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">|</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"></span>
+</pre></div>
+
+<p>This defines <code>Nat&#39;</code> as a data type which can be constructed either as
+<code>Z</code> (zero) or <code>S Nat&#39;</code> (successor of another natural number). With this
+definition, the compiler can easily determine the following function is
+total:</p>
+<div class="highlight"><pre><span></span><span class="nf">f</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">()</span><span class="w"></span>
+f<span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="ow">()</span><span class="w"></span>
+f<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>f<span class="w"> </span>k<span class="w"></span>
+</pre></div>
+
+<p>This function return a unit given <code>Z</code>, otherwise it recursively takes
+the predecessor of the argument. This converges to the <code>Z</code> case. The
+following function, on the other hand, is correctly identified as
+potentially non-terminating:</p>
+<div class="highlight"><pre><span></span><span class="nf">g</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">()</span><span class="w"></span>
+g<span class="w"> </span>n<span class="w"> </span><span class="ow">=</span><span class="w"> </span>g<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>n<span class="ow">)</span><span class="w"></span>
+</pre></div>
+
+<p>These are trivial examples, but in general, having a compile-time check
+for termination is a very powerful tool.</p>
+
+<h2>Dependent Types</h2>
+
+<p>Dependent types are types computed from other types. To put it another
+way, Idris has first-order types, meaning functions can take types as
+arguments and return types as their output. Functions that compute types
+are evaluated at compile time. This is similar to C++ metaprogramming,
+but without employing a different syntax.</p>
+
+<p>Before an example, we first need to define addition on naturals as
+follows:</p>
+<div class="highlight"><pre><span></span><span class="ow">(+)</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"></span>
+<span class="ow">(+)</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span>r<span class="w"> </span><span class="ow">=</span><span class="w"> </span>r<span class="w"></span>
+<span class="ow">(+)</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>l<span class="ow">)</span><span class="w"> </span>r<span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="ow">(</span>l<span class="w"> </span><span class="ow">+</span><span class="w"> </span>r<span class="ow">)</span><span class="w"></span>
+</pre></div>
+
+<p>Now we can declare a vector type consisting of a size (<code>Nat&#39;</code>) and a
+type argument:</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Type</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Type</span><span class="w"> </span><span class="kr">where</span><span class="w"></span>
+<span class="w">     </span><span class="nf">Nil</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span>a<span class="w"></span>
+<span class="w">     </span><span class="ow">(::)</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">:</span><span class="w"> </span>a<span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">(</span>xs<span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>k<span class="w"> </span>a<span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span>a<span class="w"></span>
+</pre></div>
+
+<p>Here <code>a</code> is a type argument. <code>Vect&#39;</code> has two constructors: <code>Nil</code>,
+creating a <code>Vect&#39;</code> of size <code>Z</code> containing elements of type <code>a</code> (0
+elements) and <code>(::)</code>, which concatenates an object of type <code>a</code> with a
+vector of size <code>k</code> of <code>a</code> and produces a vector of size <code>S k</code> containing
+<code>a</code>.</p>
+
+<p>Now to see dependent types in action, we can define <code>append&#39;</code>, a
+function that appends a vector to another vector:</p>
+<div class="highlight"><pre><span></span><span class="nf">append&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>m<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span>n<span class="w"> </span><span class="ow">+</span><span class="w"> </span>m<span class="ow">)</span><span class="w"> </span>a<span class="w"></span>
+append&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span>ys<span class="w"> </span><span class="ow">=</span><span class="w"> </span>ys<span class="w"></span>
+append&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span>ys<span class="w"> </span><span class="ow">=</span><span class="w"> </span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>append&#39;<span class="w"> </span>xs<span class="w"> </span>ys<span class="w"></span>
+</pre></div>
+
+<p>The interesting part is the function signature - given a vector of size
+<code>n</code> and a vector of size <code>m</code>, the resulting vector will have size
+<code>n + m</code>. This information is captured in the declaration and the
+compiler knows to apply the <code>(+)</code> defined above and type-check that this
+is indeed true for a given pair of arguments.</p>
+
+<h2>Proofs</h2>
+
+<p>We can also attempt to define a <code>reverse&#39;</code> function, which recursively
+appends the head of the vector to the reversed tail:</p>
+<div class="highlight"><pre><span></span><span class="nf">reverse&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"></span>
+reverse&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nil</span><span class="w"></span>
+reverse&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>append&#39;<span class="w"> </span><span class="ow">(</span>reverse&#39;<span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">[</span>x<span class="ow">]</span><span class="w"></span>
+</pre></div>
+
+<p>This doesn&#39;t compile though. We get the following error message:</p>
+<div class="highlight"><pre><span></span>When checking right hand side of reverse&#39; with expected type
+        Vect&#39; (S k) a
+
+Type mismatch between
+        Vect&#39; (k + S Z) a (Type of append&#39; (reverse&#39; xs) [x])
+and
+        Vect&#39; (S k) a (Expected type)
+
+Specifically:
+        Type mismatch between
+                k + S Z
+        and
+                S k
+</pre></div>
+
+<p>We are claiming the function returns a vector of the same length as the
+input vector, but we haven&#39;t proven enough theorems about our definition
+of natural numbers to convince the type checker. In this particular
+case, the problem is that the compiler expects an <code>S k</code> but finds an
+<code>k + S Z</code>. We need to prove that these are indeed equal
+(<code>successor of k</code> is the same as <code>k + successor of Z</code>). Here is the
+proof:</p>
+<div class="highlight"><pre><span></span><span class="nf">addOneProof</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="ow">(</span>n<span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span>n<span class="w"> </span><span class="ow">=</span><span class="w"> </span>n<span class="w"> </span><span class="ow">+</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="kt">Z</span><span class="w"></span>
+addOneProof<span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Refl</span><span class="w"></span>
+addOneProof<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>cong<span class="w"> </span><span class="ow">(</span>addOneProof<span class="w"> </span>k<span class="ow">)</span><span class="w"></span>
+</pre></div>
+
+<p>Proofs are functions. There are a few things worth noting here: first,
+the return type of this function is an equality (our theorem). Given a
+natural <code>n</code>, the function proves that the equality holds. <code>Refl</code> is the
+built-in reflexivity constructor, which constructs <code>x = x</code>. For the <code>Z</code>
+case, we can use <code>Refl</code> to say that <code>S Z = Z + S Z</code> which is true by the
+definition of <code>(+)</code>. For the <code>(S k)</code> case, we use <code>cong</code>. <code>cong</code> is a
+built in function that states that equality holds after function
+application. It&#39;s signature is <code>cong : (a = b) -&gt; f a = f b</code>, which
+basically means if <code>a</code> is equal to <code>b</code>, then <code>f a</code> is equal to <code>f b</code>. In
+our case, we are saying that if <code>addOneProof k</code> holds, then so does
+<code>addOneProof (S k)</code>, which allows us to converge on the <code>Z</code> case.</p>
+
+<p>We now have a proof that <code>S n = n + S Z</code>. With this, we can prove that
+the type <code>Vect (k + (S Z)) a</code> can be rewritten as <code>Vect (S k) a</code>:</p>
+<div class="highlight"><pre><span></span><span class="nf">reverseProof</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span>k<span class="w"> </span><span class="ow">+</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span><span class="kt">Z</span><span class="ow">))</span><span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span>a<span class="w"></span>
+reverseProof<span class="w"> </span><span class="ow">{</span>k<span class="ow">}</span><span class="w"> </span>result<span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">rewrite</span><span class="w"> </span>addOneProof<span class="w"> </span>k<span class="w"> </span><span class="kr">in</span><span class="w"> </span>result<span class="w"></span>
+</pre></div>
+
+<p>There is some Idris-specific syntax here: <code>{k}</code> brings <code>k</code> from the
+function declaration in scope, so we can refer to it in the function
+body even if it is not passed in as an argument. The <code>rewrite ... in</code>
+expression applies the equality in the proof above to the input, in this
+case effectively rewriting <code>Vect (k + (S Z)) a</code> to <code>Vect (S k) a</code>. Note
+these proofs are evaluated at compile time and simply provide
+information to the type checker. With this proof, we can implement
+reverse like this:</p>
+<div class="highlight"><pre><span></span><span class="nf">reverse&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"></span>
+reverse&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nil</span><span class="w"></span>
+reverse&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>reverseProof<span class="w"> </span><span class="ow">(</span>append&#39;<span class="w"> </span><span class="ow">(</span>reverse&#39;<span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">[</span>x<span class="ow">])</span><span class="w"></span>
+</pre></div>
+
+<p>This is similar to the previous implementation, we just apply
+<code>reverseProof</code> to the result of <code>append&#39;</code>. This definition compiles.</p>
+
+<h2>Thoughts About the Future</h2>
+
+<p>Software development is generally driven by economics, where we more
+often than not trade correctness for speed to market. But once the
+software is up and running, correctness becomes an issue. As code
+increases in complexity, the number of issues tends to increase, and the
+velocity with which changes can be made without introducing regression
+drops dramatically. We have various techniques that aim to maintain
+stability, like automated testing, but these are not perfect: a test can
+prove that for a given input we get an expected output, but cannot prove
+that for <em>any</em> input we would get the expected output.</p>
+
+<p>On the other hand, we have solutions that do eliminate entire classes of
+issues. An example is typing. Python, Ruby, and JavaScript, all
+dynamically typed, are extremely expressive and make it very easy to
+whip up a proof of concept. But there is an entire class of type errors
+which now turns into runtime issues. We are notoriously bad at
+predicting what our code does, so the more help we get from machines to
+ensure correctness, the better. In a strongly typed language, even
+though it takes longer to convince the compiler that the code is
+type-safe, this whole class of errors is eliminated. Language evolution
+over the years tends to converge towards stronger typing: dynamic
+languages are augmented with type checkers (Python has type hints,
+JavaScript has TypeScript etc.) and statically typed languages are
+becoming less verbose as type inference evolves. There will always be a
+need for a quick prototype, but code we want to deem <em>reliable</em> should
+be typed. This includes a wide range of business-critical applications
+where errors are very costly.</p>
+
+<p>I see Idris as the next step beyond this. Totality checking allows the
+compiler to guarantee termination, eliminating hangs from the code.
+First-order types allows us to push more information to the
+type-checker, allowing for stricter type-checking. Proofs, expressed as
+functions with regular syntax, allow the compiler to provide formal
+verification of programs - here, as opposed to unit tests, we are
+actually proving that we get the expected output for <em>any</em> input. These
+are all tools for writing better, more correct code. As other functional
+concepts got adopted over the years into more mainstream languages (for
+example first-order functions, anonymous functions, algebraic types
+etc.), I expect (and hope) these features to eventually be adopted too.</p>
+
+<p>There is still a lot of room for improvement: writing proofs is tedious,
+compiler errors are not always very clear, and, coming back to the speed
+to market tradeoff, I doubt we will ever get to entire large
+applications formally proven correct (barring some form of proof
+inference to speed things up by a couple of orders of magnitude). That
+being said, I would love to have these facilities as optional features
+in other languages and at least have the ability to prove that the core
+functionality of a component does what it is supposed to do, and get a
+compile break whenever a regression is introduced.</p>
+
+<p>Programming languages are continuously evolving and the future looks
+exciting!</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>Idris also supports functions that produce an infinite stream of
+values which can be used with lazy evaluation. The full definition
+of totality includes functions which don&#39;t terminate but produce
+<code>Inf</code>. This allows for non-terminating functions, but ensures
+non-termination is intentional.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p>I am using <code>&#39;</code> to avoid naming conflicts with the built-in types
+and functions. Idris already provides <code>Nat</code>, <code>Vect</code>, <code>append</code> and
+<code>reverse</code>.&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2017/07/10/singletons.html>Singletons</a></span></div>
+<div id="next"><span><a href=../../.././2017/08/13/24.html>24</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

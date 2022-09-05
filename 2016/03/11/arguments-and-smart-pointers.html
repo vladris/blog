@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Arguments and Smart Pointers &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>March 11, 2016</span></header>
+<article>
+<h1>Arguments and Smart Pointers</h1>
+
+<p>For efficiency reasons, C++ had a myriad of ways to pass data around. A
+function can take arguments in several forms:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">*</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">**</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;&amp;</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>No to mention adding <code>const</code> and smart pointers into the mix.</p>
+
+<p>And speaking of pointers, we have raw pointers, <code>unique_ptr</code>,
+<code>shared_ptr,</code> <code>CComPtr</code>/<code>ComPtr</code> (for Windows COM objects), and, if you
+are working in older codebases, <code>auto_ptr</code>, and maybe even some
+homebrewed refcounted pointers.</p>
+
+<p>All of this might seem a bit daunting and make C++ seem more complicated
+than it really is. One way to think about it is from the ownership
+perspective: objects are resources and the key question is <q>who owns
+this resource?</q>. This should dictate both how a particular resource is
+allocated (and released) and the shape function arguments should take.
+Lifetime is also an important consideration - a resource shouldn&#39;t be
+released while other components expect it to be available, but it should
+be released as soon as it is no longer needed.</p>
+
+<p>In this post I will try to cover the various ways in which resources can
+be allocated, owned, and passed around.</p>
+
+<h2>Stack Objects and Passing Arguments</h2>
+
+<p>The simplest, clearest thing to do is allocate objects on the stack. A
+stack object doesn&#39;t involve any pointers:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>The variable <code>bar</code> of type <code>Bar</code> is created on the stack. Once the stack
+frame is popped (once the function is done executing, either through a
+normal return or due to an exception) the object goes away. This is the
+easiest, safest thing to do. The only reasons we wouldn&#39;t always do
+this are time and space requirements: lifetime-wise, we might want to
+somehow use <code>bar</code> after <code>foo()</code> returns - for example we might want to
+pass it around to some other object that wants to use at a later time;
+in terms of space, stack memory is more limited than the heap, so large
+objects are better kept on the heap to avoid overflow.</p>
+
+<h3>Pass by value</h3>
+
+<p>One way to get around the lifetime requirement is to pass the object by
+value:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_suff</span><span class="p">(</span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"> </span><span class="c1">// hands bar off to some other object</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Let&#39;s assume for this example that <code>do_suff</code> takes the argument and
+sticks it into some global object which will use it as some future time.</p>
+
+<p>The above code will simply create a copy of the object, so whatever
+<code>do_suff</code> gets won&#39;t be the original resource which gets freed once the
+function returns, rather a copy of it. Copying an object costs both run
+time and space, but if neither are a big concern, this is a great, safe
+way of ensuring resources don&#39;t get released before we&#39;re done with
+them.</p>
+
+<h3>Move</h3>
+
+<p>C++11 introduces a cheaper way of achieving this, through move
+semantics:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_suff</span><span class="p">(</span><span class="n">Bar</span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"> </span><span class="c1">// hands bar off to some other object</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">bar</span><span class="p">));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>With move semantics, the resource is actually <em>moved</em> into the <code>do_suff</code>
+function. Once this happens, the original object is left in an undefined
+state and shouldn&#39;t be used anymore. This approach is usually employed
+when we have a sink argument - we <em>sink</em> <code>bar</code> to its final resting
+place somewhere and <code>foo()</code> no longer cares about it after passing it
+down to <code>do_stuff</code>.</p>
+
+<p>One thing to keep in mind is that <code>move</code> is not magic, so <code>Bar</code> needs to
+declare a <a href="http://en.cppreference.com/w/cpp/language/move_constructor">move
+constructor</a>
+in order for this to do what we expect it to do. If Bar doesn&#39;t declare
+a move constructor, the above becomes a simple copy<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>.</p>
+
+<h3>Pass by reference</h3>
+
+<p>On the flipside, when we care about the size, so that we don&#39;t want to
+create a copy of the object, but we aren&#39;t worried about the lifetime -
+meaning the object we pass to <code>do_stuff</code> won&#39;t have to outlive the
+function call, we can pass by reference:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_suff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"> </span><span class="c1">// bar is only used within do_suff</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Note the <code>const</code> above - this means <code>do_suff</code> will use <code>bar</code> but won&#39;t
+modify it. By default, arguments should be marked as <code>const</code> unless the
+function does indeed need to alter the object. Regardless of constness,
+in this case we pass a reference to <code>bar</code> as an argument, which is very
+cheap (a reference has the same size as a pointer). The only caveat is
+that <code>do_stuff</code> should not pass this to some other object that outlives
+the function call (eg. a global object which tries to use it later),
+because as soon as <code>foo</code> returns, the reference becomes invalid.</p>
+
+<h3>Pass by pointer</h3>
+
+<p>A pointer argument would look like this:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">*</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>A good rule of thumb is to not do this. The difference between passing
+by reference and by pointer in this case is that a pointer can be null,
+while a reference can&#39;t. So passing by pointer here automatically
+brings the need to perform null checks to ensure bad things don&#39;t
+happen. You would need to make a very good argument to convince me
+during code review that using a pointer instead of a reference is
+appropriate. Unless working against a legacy API which can&#39;t be
+changed, I highly discourage use of raw pointers.</p>
+
+<h3>Summary</h3>
+
+<p>In summary, when designing an API:</p>
+
+<ol>
+<li>Take argument by value if copying it is not a concern</li>
+<li>Take argument by <code>const&amp;</code> if it&#39;s not a sink argument, meaning we
+don&#39;t need to refer to it passed the function call</li>
+<li>Take argument by reference (<code>&amp;</code>) if 2) but the API needs to modify
+it</li>
+<li>Take argument by <code>&amp;&amp;</code> if it&#39;s a sink argument, the type has a move
+constructor, and copying it is expensive</li>
+<li>Don&#39;t pass raw pointers around</li>
+</ol>
+
+<h2>Heap Objects and Smart Pointers</h2>
+
+<p>In all of the examples above, <code>bar</code> was an object created on the stack.
+This works great in some cases, but some objects are simply too big to
+fit on the stack, or it doesn&#39;t make sense for them to do so (if, for
+example, we want to vary their size at runtime). In this case, we
+allocate the object on the heap and keep a pointer to it.</p>
+
+<p>Once we start working with heap objects, ownership becomes even more
+important: unlike stack objects, which get automatically destroyed when
+their stack frame gets popped, heap objects need to be explicitly
+deleted. This responsibility should be with the <em>owner</em> of the object.</p>
+
+<h3>Unique pointer</h3>
+
+<p>A unique pointer (<code>std::unique_ptr</code>) is a wrapper around a raw pointer
+which will automatically delete the heap object when it goes out of
+scope itself:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// ptrBar goes out of scope =&gt; heap object gets deleted</span>
+</pre></div>
+
+<p>The above call to <code>make_unique</code> allocates an instance of Bar on the heap
+and wraps the pointer to it into the unique pointer <code>ptrBar</code>. Now
+<code>ptrBar</code> <em>owns</em> the object and as soon as ptrBar goes out of scope, the
+heap object is also deleted.</p>
+
+<p>Unique pointers cannot be copied, so we can never accidentally have more
+than one single <code>unique_ptr</code> pointing to the same heap object:</p>
+<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">;</span><span class="w"> </span><span class="c1">// Won&#39;t compile</span>
+</pre></div>
+
+<p>Of course, if we <em>really</em> want to, we can get the raw pointer out of
+<code>ptrBar</code> using <code>get()</code> and we can initialize a <code>unique_ptr</code> from a raw
+pointer -</p>
+<div class="highlight"><pre><span></span><span class="c1">// Please don&#39;t do this</span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar2</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">.</span><span class="n">get</span><span class="p">())</span><span class="w"></span>
+</pre></div>
+
+<p>but this is very bad - now both pointers think they have sole ownership
+of the resource, and as soon as one goes out of scope, using the other
+one leads to undefined behavior. In general, the same way there are very
+few good reasons to use raw pointers, there are very few good reasons to
+call <code>get()</code> on a smart pointer.</p>
+
+<h3>Shared pointer</h3>
+
+<p>Sometimes, we do need to have several pointers pointing to the same heap
+object. In this case, we can use shared pointers. Shared pointers
+pointing to the same heap object keep a common reference count. Whenever
+a new shared pointer is created for that particular heap object, the
+reference count is incremented. Whenever a shared pointer for that heap
+object goes out of scope, the reference count is decremented. Once the
+last shared pointer goes out of scope, the heap object is deleted.</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// one pointer to a Bar object on the heap (ref count = 1)</span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar2</span><span class="p">(</span><span class="n">ptrBar1</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// second shared pointer (ref count = 2)</span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// ptrBar2 goes out of scope (ref count = 1)</span>
+<span class="p">}</span><span class="w"></span>
+<span class="c1">// ptrBar1 goes out of scope (ref count = 0) =&gt; heap object is deleted</span>
+</pre></div>
+
+<p>Shared pointers incur a bit more overhead than unique pointers -
+reference counting needs to be atomic to account for multi-threaded
+environments, which comes with a runtime cost. The reference count
+itself also needs to be stored somewhere, which is a small space cost.
+Unique pointers don&#39;t have these time and space costs since they don&#39;t
+need to count references - there is always only one pointer to the
+object.</p>
+
+<p>Costs aside, shared pointers also don&#39;t make the ownership clear -
+there are several instances <q>owning</q> the heap resource at the same
+time, which can potentially alter it and step on each other&#39;s toes. In
+general, prefer unique pointers to shared pointers whenever possible.</p>
+
+<h3>Raw pointer</h3>
+
+<p>Avoid using raw pointers. Raw pointers don&#39;t express ownership, so they
+don&#39;t offer the same guarantees that a) the resource pointed to gets
+properly cleaned up and b) the resource pointed to is still valid at a
+given time. This leads to dereferencing invalid memory and
+double-deletes (trying to free the same heap object multiple times),
+which means undefined behavior. Also, don&#39;t mix smart and raw
+pointers - the smart pointers will keep doing their job happily, with
+the potential of making the raw pointers invalid.</p>
+
+<h3>COM pointers</h3>
+
+<p>On Windows, COM uses a different reference counting mechanism: the base
+<code>IUnknown</code> interface declares <code>AddRef</code> and <code>Release</code> methods, which
+implementations are expected to use to keep track of the reference
+count. <code>CComPtr</code> (in ATL) and <code>ComPtr</code> (in WRL) are the COM smart
+pointers. They call <code>AddRef</code> and <code>Release</code> on the owned object, and the
+owned object is supposed to delete itself once its reference count drops
+to 0. Note that COM uses a slightly different mechanism than the
+standard library shared pointers -instead of the smart pointer keeping
+track of the reference count in the control block and deleting the
+object once the last reference goes away, COM objects are expected to
+keep track of their reference count themselves through the <code>AddRef</code> and
+<code>Release</code> methods and self-delete when the last reference goes away
+(through <code>Release</code> call). The COM smart pointers only need to call
+<code>Release</code> when they go out of scope.</p>
+
+<p>It&#39;s not a good idea to have both standard library and COM pointers
+point to the same object, as each might decide to delete the object at
+different times -<code>shared_ptr</code> looks at the <code>shared_ptr</code> refcount while
+COM objects look at their internal reference count. So a <code>shared_ptr</code>
+might decide to delete an object while a <code>ComPtr</code> still expects it to be
+valid or vice-versa. In general, when working with COM objects, use COM
+smart pointers.</p>
+
+<h3>auto_ptr</h3>
+
+<p><code>auto_ptr</code> is a deprecated smart pointer. Unless working with an old
+compiler and standard library, use <code>unique_ptr</code> or <code>shared_ptr</code> instead.</p>
+
+<h3>Other smart pointers</h3>
+
+<p>Old code bases might have custom smart pointer implementations, for the
+simple fact that automatic memory management is always a good idea, and
+there is C++ code that predates the introduction of smart pointers into
+the standard library. When interoperating with legacy code, use whatever
+works, but when writing new code, do prefer standard library smart
+pointers to homebrewed ones.</p>
+
+<h3>Summary</h3>
+
+<p>In summary, when creating objects:</p>
+
+<ol>
+<li>Create them on the stack if feasible (note that standard library
+types like <code>std::vector</code> and <code>std::string</code> internally keep their
+data on the heap, but they fit perfectly well on the stack, so you
+don&#39;t need to create an <code>std::vector</code> on the heap just because you
+are planning to store a lot of elements in it - the vector manages a
+heap array internally already).</li>
+<li>Use a <code>unique_ptr</code> when creating them on the heap, to make ownership
+obvious.</li>
+<li>Use a <code>shared_ptr</code> only when <code>unique_ptr</code> isn&#39;t sufficient (review
+your design first, might be a design issue).</li>
+<li>Use COM smart pointers like <code>CComPtr</code> when dealing with COM.</li>
+<li>Don&#39;t use <code>auto_ptr</code> or other old constructs unless working with
+legacy code/compiler.</li>
+<li>Don&#39;t use raw pointers.</li>
+</ol>
+
+<h2>Passing Smart Pointers as Arguments</h2>
+
+<p>We covered passing arguments and smart pointers. Now combining the two,
+how do we pass heap objects as arguments? Turns out Herb Sutter has <a href="http://bit.ly/227Na5c">a
+great post</a> on this exact topic on his blog. I
+can&#39;t hope to explain better than him, so go read his post. I will try
+to summarize:</p>
+
+<h3>Pass by reference the pointed-to type</h3>
+
+<p>Rather than forcing callers to use <code>unique_ptr</code> or <code>shared_ptr</code> by
+specifying the smart pointer type (which makes assumptions about
+ownership), just ask for a reference to the pointed-to-type:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="o">*</span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Herb also mentions raw pointer to the underlying type if the argument
+can be null, but as I mentioned above, I&#39;d rather stick to references
+and discourage use of raw pointers as a general rule of thumb.</p>
+
+<h3>Pass smart pointer by value</h3>
+
+<p>Passing a <code>unique_ptr</code> by value implies a sink argument - since a
+<code>unique_ptr</code> cannot be copied, it has to be <code>std::move</code>&#39;d in.
+Interestingly, Scott Meyers has <a href="http://bit.ly/1WgkvEh">a post</a> on his
+blog where he disagrees with this and argues that arguments of move-only
+types should be specified as <code>&amp;&amp;</code>:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"> </span><span class="c1">// sink</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Passing a <code>shared_ptr</code> by value implies the function wants to partake in
+the ownership - in other words, will keep somewhere a reference to the
+object after the function returns, but unlike the above <code>unique_ptr</code>
+example, it won&#39;t have exclusive ownership of the resource:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">);</span><span class="w"> </span><span class="c1">// copy-constructs another shared_ptr which shares ownership of the heap object</span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<h3>Pass smart pointer by reference</h3>
+
+<p>Only expect a smart pointer by non-const reference if the function is
+going to modify the smart pointer itself (eg. by making it point to a
+different object). In my experience, this is a rare occurrence.</p>
+<div class="highlight"><pre><span></span><span class="c1">// Implies this function modifies the pointer itself.</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>There is no good reason to expect a <code>const&amp;</code> to a <code>unique_ptr</code>, just
+reference the underlying type:</p>
+<div class="highlight"><pre><span></span><span class="c1">// void do_stuff(const unique_ptr&lt;Bar&gt;&amp; ptrBar);</span>
+<span class="c1">// No reason to use the above as opposed to</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>Expect <code>const&amp;</code> to <code>shared_ptr</code> only if the function <em>might</em> create a
+copy of the smart pointer. If the function would never create a copy of
+the pointer, simply use <code>&amp;</code> to underlying type. If the function would
+always copy the pointer, expect <code>shared_ptr</code> by value.</p>
+<div class="highlight"><pre><span></span><span class="c1">// Might or might not share ownership</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// Will never share ownership</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// Will always share ownership</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<h3>Summary</h3>
+
+<p>A summary of the summary:</p>
+
+<ol>
+<li>Take argument by <code>&amp;</code> to underlying type if you only care about the
+heap object, not about the pointer.</li>
+<li>Take <code>unqiue_ptr</code> by <code>&amp;&amp;</code> to transfer ownership.</li>
+<li>Take <code>shared_ptr</code> argument by value to partake in ownership.</li>
+<li>Take smart pointer by (non-const) reference only if you are going to
+modify the smart pointer itself.</li>
+<li>No need for <code>const&amp;</code> to <code>unique_ptr</code> (just take <code>&amp;</code> to underlying
+type)</li>
+<li>Take <code>const&amp;</code> to <code>shared_ptr</code> only if unknown whether function wants
+ownership (take by <code>&amp;</code> to underlying type if function never wants
+ownership, <code>shared_ptr</code> by value if function always wants
+ownership).</li>
+</ol>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>Move constructors can be implicitly declared by the compiler if
+certain conditions are met, see
+<a href="http://en.cppreference.com/w/cpp/language/move_constructor#Implicitly-declared_move_constructor">here</a>
+for details.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2016/01/07/clean-code-part-2.html>Clean Code - Part 2</a></span></div>
+<div id="next"><span><a href=../../.././2016/04/24/abusing-maps.html>(Ab)using Maps</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Clean Code - Part 2 &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>January 07, 2016</span></header>
+<article>
+<h1>Clean Code - Part 2</h1>
+
+<p>In <a href="https://vladris.com/blog/2016/01/07/clean-code-part-2.html">Part 1</a> I
+talked about writing less code and writing simple code. In this post I will
+cover writing stateless code and writing readable code.</p>
+
+<h2>Write Stateless Code</h2>
+
+<blockquote>
+<p>A <strong>pure function</strong> is a <strong>function</strong> where the return value is
+only determined by its input values, without observable side effects.
+This is how <strong>functions</strong> in math work: <code>Math.cos(x)</code> will, for the
+same value of <code>x</code>, always return the same result.</p>
+
+<p><em>Source:</em>
+<a href="http://www.sitepoint.com/functional-programming-pure-functions/">SitePoint</a></p>
+</blockquote>
+
+<p>Things break when a program gets into a <q>bad state</q>. There are a
+couple of ways to make this less likely to happen: making data immutable
+and writing functions that don&#39;t have side-effects (<em>pure</em> functions).</p>
+
+<h3>Immutable data</h3>
+
+<p>If something shouldn&#39;t change, mark it as immutable and let the
+compiler enforce that. A good rule of thumb is to mark things as <code>const</code>
+(<code>const&amp;</code>, <code>const*</code> etc.) and/or <code>readonly</code> by default, and make them
+mutable only when truly needed<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>.</p>
+
+<p>A simple example:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">StringUtil</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat1</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">str2</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat2</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">str2</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>Both <code>StringUtil::Concat1</code> and <code>StringUtil::Concat2</code> return the same
+thing for the same input, the difference being that <code>Concat2</code>, as
+opposed to <code>Concat1</code>, modifies its first argument. In a bigger function,
+such a change might be introduced accidentally and have unexpected
+consequences down the line.</p>
+
+<p>A simple way to address this is by explicitly marking the arguments as
+<code>const</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">StringUtil</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat1</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">         </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">str2</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat2</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">         </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">str2</span><span class="p">);</span><span class="w"> </span><span class="c1">// Won&#39;t compile - can&#39;t call append on str1</span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>In this case, <code>Concat2</code> won&#39;t compile, so we can rely on the compiler
+to eliminate this type of unintended behavior.</p>
+
+<p>Another example: a simple <code>UpCase</code> function which calls <code>toupper</code> on
+each character of the given string, upcasing it in place:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">UpCase</span><span class="p">(</span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">string</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">string</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="o">*</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">toupper</span><span class="p">(</span><span class="o">*</span><span class="n">string</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">string</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>Calling it with</p>
+<div class="highlight"><pre><span></span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">UpCase</span><span class="p">(</span><span class="n">myString</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>will lead to a crash at runtime - the function will try to call
+<code>toupper</code> on the characters of <code>myString</code>. The problem is that
+<code>myString</code> is a <code>char*</code> to a string literal which gets compiled into the
+read-only data segment of the binary. This cannot be modified.</p>
+
+<p>To catch this type of errors at compile-time, we again only need to mark
+the immutable data as such:</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">UpCase</span><span class="p">(</span><span class="n">myString</span><span class="p">);</span><span class="w"> </span><span class="c1">// Won&#39;t compile - can&#39;t call UpCase on myString</span>
+</pre></div>
+
+<p>In contrast with the previous example, the argument to <code>UpCase</code> is
+mutable by design (the API is modifying the string in-place), but
+marking <code>myString</code> as <code>const</code> tells the complier this is non-mutable
+data, so it can&#39;t be used with this API.</p>
+
+<h3>Pure functions</h3>
+
+<p>Another way to reduce states is to use pure functions. Unfortunately
+there isn&#39;t a lot of syntax-level support for this in C++ and C# (C++
+supports <code>const</code> member functions, which guarantee at compile time that
+calling the member function on an instance of the type won&#39;t change the
+attributes of that instance)<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup></p>
+
+<p>This goes back to the recommendation from Part 1 of using generic
+algorithms and predicates rather than implementing raw loops. In many
+cases, traversal state is encapsulated in the library algorithm or in an
+iterator, and predicates ideally don&#39;t have side-effects.</p>
+<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">numbers</span><span class="p">.</span><span class="w"></span>
+<span class="w">                </span><span class="n">Where</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="p">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="p">!=</span><span class="w"> </span><span class="m">0</span><span class="p">).</span><span class="w"></span>
+<span class="w">                </span><span class="n">Select</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">number</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>Above code (also from Part 1) doesn&#39;t hold any state: traversal is
+handled by the Linq methods, the predicates are pure.</p>
+
+<p>In general, try to encapsulate state in parts of the code built to
+manage state, and keep the rest stateless. Note that immutable data and
+pure functions are also an advantage in concurrent applications, since
+they can&#39;t generate race conditions.</p>
+
+<p>Key takeaways:</p>
+
+<ul>
+<li>Prefer pure functions to stateful functions and, if state is needed,
+keep it contained</li>
+<li>By default mark everything as <code>const</code> (or <code>readonly</code>), and only
+remove the constraint when mutability is explicitly needed</li>
+</ul>
+
+<h2>Write Readable Code</h2>
+
+<blockquote>
+<p>In computer science, the <strong>expressive power</strong> (also called
+<strong>expressiveness</strong> or expressivity) of a language is the breadth of
+ideas that can be represented and communicated in that language
+[...]</p>
+
+<ul>
+<li>regardless of ease (theoretical expressivity)</li>
+<li><strong>concisely and readily</strong> (practical expressivity)</li>
+</ul>
+
+<p><em>Source:</em>
+<a href="https://en.wikipedia.org/wiki/Expressive_power_(computer_science)">Wikipedia</a></p>
+</blockquote>
+
+<p>Code is read many more times than it is written/modified, so it should
+be optimized for readability. What I mean by this is making the intent
+of the code clear at a glance - this includes giving good descriptive
+names to variables, functions, and types, adding useful comments where
+appropriate (a comment should describe what the code does if it is
+non-obvious; a comment like <code>foo(); // calls foo()</code> is not a useful
+comment), and in general structure the code for easy reading.</p>
+
+<p>For a counterexample, think back on a piece of code you read that
+elicited a WTF. That&#39;s the kind of code you don&#39;t want to write.</p>
+
+<p>I won&#39;t insist much here, since there are countless books and industry
+best practices for improving code readability.</p>
+
+<p>Another way to make the code more readable is to have a good knowledge
+of the language you are using. The strength of a language lies in its
+particularities, so use them whenever appropriate. This means writing
+<a href="http://stackoverflow.com/questions/84102/what-is-idiomatic-code">idiomatic
+code</a>,
+which implies knowledge of the language idioms. Don&#39;t write C++ code
+like C code, write it like C++ code. Don&#39;t write C# code as C++, write
+it as C# etc.</p>
+
+<p>Also, keep up to date on the language. Language syntax evolves to
+address needs, so in general modern syntax introduces simpler, better
+ways to implement things than old syntax. Take object allocation and
+initialization in C++ as an example:</p>
+<div class="highlight"><pre><span></span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Foo</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Foo</span><span class="p">));</span><span class="w"></span>
+<span class="n">init</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">deinit</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span><span class="w"></span>
+<span class="n">free</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>This is the C way of allocating and initializing a structure on the
+heap, then deinitializing and freeing it. Allocation and initialization
+are separate steps, with opportunity to leak both memory (by omitting
+the <code>free</code> call) and managed resources (by omitting the <code>deinit</code> call).
+Not to mention opportunity to end up with an initialized struct (by
+omitting the <code>init</code> call), or accidental double-initialization,
+double-deinitialization, double-free etc.</p>
+
+<p>C++ introduced classes, and the following syntax:</p>
+<div class="highlight"><pre><span></span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+
+<p><code>new</code> both allocates memory and calls the constructor, while <code>delete</code>
+calls the destructor then releases the memory. Many of the problems in
+the C example go away, but there is still the problem of leaking the
+resource by omitting the <code>delete</code> call, and the issue of calling
+<code>delete</code> twice on the same memory address.</p>
+
+<p>To address these issues, smart pointers were introduced in the language:</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+
+<p>Smart pointers encapsulate reference counting (how many <code>shared_ptr</code>
+objects point to the same memory address), and automatically release the
+resource when the last reference goes away. This gets rid of most
+problems, but there is an even better way of allocating heap objects:</p>
+<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+
+<p><code>make_shared</code> has the advantage of improved performance, by allocating
+memory in a single operation for both the object and the shared
+pointer&#39;s own control block<sup id="fnref3"><a href="#fn3" rel="footnote">3</a></sup>. It also prevents leaks due to
+interleaving<sup id="fnref4"><a href="#fn4" rel="footnote">4</a></sup>. So as the C++ language evolved, new constructs
+appeared to address potential problems. Keeping up to date with these
+updates, and incorporating them into your code will reduce the
+opportunity for bugs, make the code more concise, and thus more
+readable.</p>
+
+<h3>Beautiful Code</h3>
+
+<p>I encourage you to not stop at writing <em>working</em> code, rather strive to
+write <em>beautiful</em> code. I have the following quote from <a href="http://www.goodreads.com/book/show/5608045-apprenticeship-patterns">Apprenticeship
+Patterns</a>
+on the wall behind my monitors, so I can see it while I work:</p>
+
+<blockquote>
+<p>There&#39;s always a better/faster/smarter way to do what you&#39;re
+currently doing</p>
+</blockquote>
+
+<p>So don&#39;t stop as soon as something works, ask yourself <em>is this the
+best way to implement this?</em></p>
+
+<p>Key takeaways:</p>
+
+<ul>
+<li>Come up with good names</li>
+<li>Write meaningful comments</li>
+<li>Keep up to date with your language</li>
+<li>Don&#39;t just write working code, write beautiful code.</li>
+</ul>
+
+<h2>Epilogue</h2>
+
+<p>As I was working on putting together the talk that inspired this post, I
+realized there are a few more rules of thumb which I could cover. The
+current working draft is:</p>
+
+<ul>
+<li>Write safe code</li>
+<li>Write leakproof code</li>
+<li>Write responsive code</li>
+<li>Write testable code</li>
+</ul>
+
+<p>Sometime in the future I hope to continue the series with the above, in
+the meantime, I&#39;ll leave you with this one sentence summary:</p>
+
+<blockquote>
+<p>Always code as if the person who ends up maintaining your code is a
+violent psychopath who knows where you live</p>
+
+<p><em>Source:</em> <a href="http://blog.codinghorror.com/coding-for-violent-psychopaths/">Coding
+Horror</a></p>
+</blockquote>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>At the time of this writing, there is an <a href="https://github.com/dotnet/roslyn/issues/7626">active
+proposals</a> to extend
+the C# language with an <code>immutable</code> keyword.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p>C# has a <code>PureAttribue</code> in the <code>System.Diagnostics.Contracts</code>
+namespace (purity not compiler-enforced) and there is an <a href="https://github.com/dotnet/roslyn/issues/7561">active
+proposal</a> to add a
+keyword for it too.&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn3">
+<p>This is a non-binding requirement in the standard, meaning a
+standard library implementation doesn&#39;t <em>have to</em> do this, but most
+implementations will. You can read more about it
+<a href="http://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared">here</a>.&nbsp;<a href="#fnref3" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn4">
+<p>Interleaving occurs since call order is not guaranteed. For
+example, in <code>bar(std::share_ptr&lt;Foo&gt;(new foo()), baz())</code>, there is
+no guarantee that call order will be <code>new foo()</code>, then the shared
+pointer&#39;s constructor, then <code>baz()</code>. Calls might get interleaved
+and executed as <code>new foo()</code>, then <code>baz()</code>, then the shared pointer
+constructor, in which case an exception thrown by <code>baz()</code> would leak
+the newly allocated <code>Foo</code> object, since the shared pointer didn&#39;t
+get ownership of it yet.&nbsp;<a href="#fnref4" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2016/01/04/clean-code-part-1.html>Clean Code - Part 1</a></span></div>
+<div id="next"><span><a href=../../.././2016/03/11/arguments-and-smart-pointers.html>Arguments and Smart Pointers</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

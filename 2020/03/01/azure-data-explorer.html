@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Azure Data Explorer &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>March 01, 2020</span></header>
+<article>
+<h1>Azure Data Explorer</h1>
+
+<p>This is a cross-post of the article I wrote for Data Science @
+Microsoft, <a href="https://medium.com/data-science-at-microsoft/azure-data-explorer-at-the-azure-business-scale-89262ef8c1fd">Azure Data Explorer at the Azure business
+scale</a>.</p>
+
+<p>As I mentioned in my previous post, <a href="https://vladris.com/blog/2020/02/01/self-serve-analytics.html"><q>Self-Serve
+Analytics</q></a>,
+our team uses Azure Data Explorer (ADX) as our main data store. In this
+post, I will delve deeply into how we use ADX.</p>
+
+<h2>Use Case</h2>
+
+<p>The <a href="https://docs.microsoft.com/en-us/azure/data-explorer">ADX
+documentation</a>
+describes it as <q>a fast, fully managed data analytics service for
+real-time analysis on large volumes of data streaming from applications,
+websites, IoT devices, and more.</q> ADX streams terabytes of data and
+enables real-time analytics to be performed on it. In many cases, this
+ADX-enabled data is used in the context of ingesting and analyzing
+telemetry from various services or endpoints. Our use case for ADX is
+different: We use it as the main data store for our big data platform.</p>
+
+<p>We rely on the ingestion capabilities of ADX to pull in terabytes of
+data pertaining to the Azure business from various sources. Our data
+science team then leverages the fast query capabilities offered by ADX
+to explore the data in real time and perform modeling work, which leads
+to a better understanding of our customers.</p>
+
+<p>Some of the data points our team uses are already stored in ADX when we
+access them, in different clusters managed by other teams. We use the
+<a href="https://docs.microsoft.com/en-us/azure/kusto/query/cross-cluster-or-database-queries?pivots=azuredataexplorer">cross-cluster query
+capabilities</a>
+provided by ADX to join these external data sets with local data.</p>
+
+<p>Our engineering team also relies on the same fast query capabilities of
+ADX to power some of our web APIs.</p>
+
+<h2>Ingestion</h2>
+
+<p>We have a well-defined process to bring new data sets into our cluster.
+First, we take a one-time snapshot of a potential data set and store it
+in a separate cluster (our <em>acquisition</em> cluster), where access is even
+further restricted to the small set of individuals tasked with exploring
+this new data set. This initial exploration gives us a good sense of
+which parts of the data are useful for ingesting on a regular cadence,
+and what our data model should look like. We can then create a data
+contract with the upstream team to define SLAs and start automating the
+data pull.</p>
+
+<p>All data movement is set up in <a href="https://azure.microsoft.com/en-us/services/data-factory/">Azure Data
+Factory</a> and
+actively monitored.</p>
+
+<h2>DevOps and Analytics</h2>
+
+<p>As I mentioned in my <a href="https://vladris.com/blog/2020/02/01/self-serve-analytics.html">previous
+post</a> on
+our data environment, we use the <a href="https://docs.microsoft.com/en-us/azure/data-explorer/devops">Azure DevOps ADX
+Task</a> to
+deploy objects from git. Tables are set up using a
+<code>.create-or-merge table</code> script while functions are set up using a
+<code>.create-or-alter function</code> script. Both commands are idempotent so we
+can replay them even if objects already exist.</p>
+
+<p>As a team, we&#39;ve standardized on ADX functions for analytics, so all
+the reports, KPIs, and metrics our team produces end up implemented as
+functions stored in git and deployed using Azure DevOps. The ability to
+organize objects in a folder structure helps us group them by focus
+area.</p>
+
+<h2>Customer Model</h2>
+
+<p>Not only do we ingest large amounts of data into our main ADX cluster,
+we are also processing and enhancing it to build what we call the
+<em>customer model</em>.</p>
+
+<p>The customer model consists of three components:</p>
+
+<ul>
+<li>A <em>keyring</em>, which helps us tie together various identifiers used
+across the business, enabling us to understand, for example, which
+company a subscription belongs to.</li>
+<li>A set of <em>customer properties</em>, which you can think of as key-value
+pairs attached to an identity in our system.</li>
+<li>An <em>activity model</em>, which represents a timeline view of various
+relevant events for an identity in our system. For example, for a
+subscription identifier we have events such as <q>created</q> and
+<q>closed</q>.</li>
+</ul>
+
+<p><img src="customer-model.png" alt="image"></p>
+
+<p><em>We use a set of Logic Apps and CosmosDB to process and enhance raw data
+into our customer model, which consists of a keyring, customer
+properties, and an activity model.</em></p>
+
+<p>The customer model is continuously updated as we ingest new data points
+and represents an enhanced view of the raw data. It is implemented as a
+small set of (very large) tables and multiple functions to improve
+navigation. The expressive ADX function syntax allows us to create
+functions that can be combined to produce very complex queries of the
+data model.</p>
+
+<p>The workflow of building the model is orchestrated by <a href="https://azure.microsoft.com/en-us/services/logic-apps/">Logic
+Apps</a>, which run
+ADX functions to join and enhance the raw data. The keyring is an
+exception: We build it using
+<a href="https://docs.microsoft.com/en-us/azure/cosmos-db/introduction">CosmosDB</a>,
+namely the <a href="https://docs.microsoft.com/en-us/azure/cosmos-db/graph-introduction">Gremlin
+API</a>,
+which can perform graph traversal. We load all identifiers as vertices
+and known connections as edges, and then we group each connected
+component of the graph into a key group. This gives us the association
+across all identities within our system. The output is written back to
+ADX.</p>
+
+<p>We consume the customer model through ADX functions. As an example, the
+<code>GetRelatedKeysByType()</code> function takes as arguments an identifier value
+and an identifier type name and returns all identifiers related to it
+from the keyring. We can pass the result of this call to the
+<code>GetActivities()</code> function, which also takes as arguments a <code>startDate</code>
+datetime and an <code>endDate</code> datetime, to get all activities for the given
+ID group within that time range.</p>
+
+<p>Different activities are described by different properties. For example,
+a <em>subscription created</em> activity contains, among other things, an Offer
+ID, an Offer Type, and a flag indicating whether the subscription was
+created as a trial. As another example, a <em>daily usage</em> activity
+contains the name of the sold service and consumption units. We use the
+ADX
+<a href="https://docs.microsoft.com/en-us/azure/kusto/query/packfunction">pack()</a>
+function to store these properties as dynamic objects in the underlying
+data model, allowing us to maintain a standard schema.</p>
+
+<h2>Compliance</h2>
+
+<p>Because we store some high business impact data sets, such billing data
+for Azure services, we must govern who can see different parts of the
+data. We set role-base access control (RBAC) at the database level, so
+we can place sensitive data sets in dedicated databases.</p>
+
+<p>We can also mark tables as <em>restricted</em>, which limits users to those
+with the <a href="https://docs.microsoft.com/en-us/azure/kusto/management/access-control/role-based-authorization">UnrestrictedViewer
+role</a>.
+In ADX, a Viewer role can view any table in a database except those
+marked as restricted. The UnrestrictedViewer role can view any table in
+a database regardless of whether it is restricted or not. The ADX team
+is also working on enabling table-level access control, which will allow
+even more granular RBAC assignments.</p>
+
+<p>We are also leveraging ADX retention policies to ensure data doesn&#39;t
+stick around forever. In some cases, this is a requirement of the
+Microsoft data handling standards that are mandatory across the company.
+In other cases, we ensure prototypes and proofs-of-concept are cleaned
+up so they don&#39;t make their way into our production boundary. I
+detailed this in my <a href="https://vladris.com/blog/2020/02/01/self-serve-analytics.html">previous
+post</a>,
+where I discussed how we move analytics from the prototype Scratch
+database (with its 30-day retention policy) to WorkArea and then to
+Production.</p>
+
+<h2>Scaling Out</h2>
+
+<p>As more and more workloads are served by our main ADX cluster, we need
+to start thinking about performance and scale. We are addressing this in
+two main ways: With our approach to data distribution and by looking
+into follow clusters.</p>
+
+<p><img src="scale-out.png" alt="image"></p>
+
+<p><em>Scaling out from a single ADX cluster serving all workloads to multiple
+follow clusters supporting different workloads and ADLS for low
+frequency, high volume data movement.</em></p>
+
+<p>We used to simply grant access to our data in ADX to teams interested in
+consuming it. The problem with this approach is that external teams
+might end up running expensive queries against our cluster and disrupt
+other operations. This happened frequently in the common scenario of
+bulk data movement of the large data sets our team produces. Because of
+this, we are no longer granting access to any service principles to ADX.
+We allow individuals to come in and explore our data sets but when they
+want to start copying it on a regular cadence, we use a different
+storage solution: <a href="https://azure.microsoft.com/en-us/services/storage/data-lake-storage/">Azure Data Lake
+Storage</a>
+(ADLS).</p>
+
+<p>Because our data sets are updated on a daily, weekly, or monthly
+cadence, we only need to copy them to ADLS once after an update, and
+then other teams can pick them up from there without having an impact on
+the performance of our ADX cluster. ADLS provides large scale storage at
+very low cost, so it is ideal for this scenario.</p>
+
+<p>The other scaling method we are considering is setting up <a href="https://docs.microsoft.com/en-us/azure/kusto/management/cluster-follower">follow
+clusters</a>.
+A follower cluster can replicate data from the followed cluster, which
+would enable us to offload some workloads to separate compute. By
+default, everything is followed, which is redundant for the amount of
+data we have, but a follower can be configured to mirror only a subset
+of the followed data. We can do this by starting with a caching policy
+of 0 (which prevents any data replication), and then selectively
+overwrite it for the databases and tables we want to replicate.</p>
+
+<h2>Summary</h2>
+
+<p>In this post, I&#39;ve discussed our team&#39;s use of Azure Data Explorer:</p>
+
+<ul>
+<li>Many of our scenarios involve data exploration. That activity,
+combined with the large data ingestion and cross-cluster
+capabilities of ADX, makes ADX a great data store solution.</li>
+<li>We bring data into our cluster via a clearly defined process so that
+data loads can be consistently performed and monitored.</li>
+<li>We use DevOps to deploy objects to production from git.</li>
+<li>We enhance our raw data with a Customer Model, a curated data set
+consisting of three major pieces: A keyring, a set of customer
+properties, and an activity model. We use ADX functions as an
+interface to this data set.</li>
+<li>For compliance, we place data in different databases depending on
+its classification, and we have granular access control for each
+database.</li>
+<li>Scaling out, we offload large copy jobs to Azure Data Lake Storage,
+and we can create follow clusters to partition the compute load.</li>
+</ul>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2020/02/01/self-serve-analytics.html>Self-Serve Analytics</a></span></div>
+<div id="next"><span><a href=../../.././2020/04/27/machine-learning-at-scale.html>Machine Learning at Scale</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

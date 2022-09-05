@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Common Algorithms &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>August 10, 2019</span></header>
+<article>
+<h1>Common Algorithms</h1>
+
+<p>This blog post is an excerpt from my book, <a href="https://www.manning.com/books/programming-with-types">Programming with
+Types</a>. The code
+samples are in TypeScript. If you enjoy the article, you can use the
+discount code <strong>vlri40</strong> for a 40% discount on the book.</p>
+
+<h2>A Few Common Algorithms</h2>
+
+<p>There are many algorithms commonly used to process a sequence of data.
+Let&#39;s list a few of them. We will not look at the implementation, just
+describe what arguments besides the iterable they expect and how they
+process the data. We&#39;ll also mention some synonyms under which the
+algorithm might appear.</p>
+
+<ul>
+<li><code>map()</code> takes a sequence of <code>T</code> values, a function <code>(value: T) =&gt; U</code>
+and returns a sequence of <code>U</code> values applying the function to all
+the elements in the sequence. It is also known as <code>fmap()</code>,
+<code>select()</code>.</li>
+<li><code>filter()</code> takes a sequence of <code>T</code> values, a predicate
+<code>(value: T) =&gt; boolean</code> and returns a sequence of <code>T</code> values
+containing all the items for which the predicate returns true. It is
+also known as <code>where()</code>.</li>
+<li><code>reduce()</code> takes a sequence of <code>T</code> values, an initial value of type
+<code>T</code>, and an operation which combines two <code>T</code> values into one
+<code>(x: T, y: T) =&gt; T</code>. It returns a single value <code>T</code> after combining
+all the elements in the sequence using the operation. It is also
+known as <code>fold()</code>, <code>collect()</code>, <code>accumulate()</code>, <code>aggregate()</code>.</li>
+<li><code>any()</code> takes a sequence of <code>T</code> values and a predicate
+<code>(value: T) =&gt; boolean</code>. It returns true if any one of the elements
+of the sequence satisfies the predicate.</li>
+<li><code>all()</code> takes a sequence of <code>T</code> values and a predicate
+<code>(value: T) =&gt; boolean</code>. It returns true if all of the elements of
+the sequence satisfy the predicate.</li>
+<li><code>none()</code> takes a sequence of <code>T</code> values and a predicate
+<code>(value: T) =&gt; boolean</code>. It returns true if none of the elements of
+the sequence satisfy the predicate.</li>
+<li><code>take()</code> takes a sequence of <code>T</code> values and a number <code>n</code>. It returns
+a sequence consisting of the first <code>n</code> elements of the original
+sequence. It is also known as <code>limit()</code>.</li>
+<li><code>drop()</code> takes a sequence of <code>T</code> values and a number <code>n</code>. It returns
+a sequence consisting of all the elements of the original sequence
+except the first <code>n</code>. The first <code>n</code> elements are dropped. It is also
+known as <code>skip()</code>.</li>
+<li><code>zip()</code> takes a sequence of <code>T</code> values and a sequence of <code>U</code> values.
+It returns a sequence containing pairs of <code>T</code> and <code>U</code> values,
+effectively <q>zipping</q> together the two sequences.</li>
+</ul>
+
+<p>There are many more algorithms for sorting, reversing, splitting and
+concatenating sequences. The good news is that, because these algorithms
+are so useful and generally applicable, we don&#39;t need to implement
+them. Most languages have libraries which provide these algorithms and
+more. For JavaScript, there is the <code>underscore.js</code> package and the
+<code>lodash</code> package, both providing a plethora of such algorithms (at the
+time of writing, these libraries don&#39;t support iterators, only the
+JavaScript built-in array and object types). In Java, they are found in
+the <code>java.util.stream package</code>. In C# they are in the <code>System.Linq</code>
+namespace. In C++ they are found in the <code>&lt;algorithm&gt;</code> standard library
+header.</p>
+
+<h2>Algorithms Instead of Loops</h2>
+
+<p>While you might be surprised, a good rule of thumb is to check, whenever
+you find yourself writing a loop, whether there is a library algorithm
+or a pipeline that can do the job. Usually we write loops to process a
+sequence - exactly what the algorithms we talked about do.</p>
+
+<p>The reason to prefer library algorithms to custom code in loops is that
+there is less opportunity for mistakes: library algorithms are tried and
+tested, implemented efficiently, and the code we end up with is easier
+to understand as the operations are spelled out.</p>
+
+<h2>Implementing a Fluent Pipeline</h2>
+
+<p>Most libraries also provide a fluent API to chain algorithms together
+into a pipeline. Fluent APIs are APIs based on method chaining, making
+the code much easier to read. To see the difference between a fluent and
+a non-fluent API, let&#39;s take a look at a simple filter/reduce pipeline.</p>
+
+<p>Let&#39;s start with a simple implementation of the two algorithms. To
+implement <code>filter()</code> we can use a generator. We take an <code>Itreable&lt;T&gt;</code> as
+the input sequence and a predicate from <code>T</code> to <code>boolean</code>, and return
+another sequence as an <code>IterableIterator&lt;T&gt;</code>. <code>ItreableIterator</code> is the
+return type of all generators in TypeScript. The function will simply
+traverse the sequence and for each element, if the predicate returns
+true, yield the element to the caller:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="o">*</span><span class="nx">filter</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="kt">Iterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nx">pred</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kt">boolean</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">:</span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">item</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">items</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">pred</span><span class="p">(</span><span class="nx">item</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">yield</span><span class="w"> </span><span class="nx">item</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p><code>reduce()</code> takes an <code>Iterable&lt;T&gt;</code> as the input sequence and an initial
+value of type <code>T</code>. It also takes a function <code>(T, T) =&gt; T</code> which combines
+(reduces) two values of type <code>T</code> into one. This function iterates over
+the sequence and reduces all the elements to a single value, which it
+returns:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">reduce</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="kt">Iterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nx">init</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nx">op</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">T</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="p">{</span><span class="w">    </span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">init</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">item</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">items</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">op</span><span class="p">(</span><span class="nx">result</span><span class="p">,</span><span class="w"> </span><span class="nx">item</span><span class="p">);</span><span class="w">    </span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Now let&#39;s look at how we could combine these algorithms into a pipeline
+which sums up all even values of an array. We will pass the array to
+<code>filter()</code> first, with a predicate which returns true for even numbers.
+Next, we will reduce the resulting sequence using an initial value of 0
+and the function <code>(x, y) =&gt; x + y</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">sequence</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span><span class="w"> </span><span class="mf">4</span><span class="p">,</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span><span class="w"> </span><span class="mf">6</span><span class="p">];</span><span class="w"></span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
+<span class="w">    </span><span class="nx">reduce</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="nx">filter</span><span class="p">(</span><span class="w"></span>
+<span class="w">            </span><span class="nx">sequence</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="mf">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="p">(</span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">y</span><span class="p">);</span><span class="w"></span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>Even though we apply <code>filter()</code> first, then pass the result to
+<code>reduce()</code>, if we read the code from left to right, we see <code>reduce()</code>
+before <code>filter()</code>. It&#39;s also a bit hard to make sense of which
+arguments go with which function in the pipeline. Fluent APIs make the
+code much easier to read. Currently, all our algorithms take an iterable
+as the first argument and return an iterable. We can use object-oriented
+programming to improve our API. We can put all our algorithms into a
+class which wraps an iterable. Then we can call any of them without
+explicitly providing an iterable as the first argument - the iterable
+is a member of the class. Let&#39;s do this for <code>map()</code>, <code>filter()</code>, and
+<code>reduce()</code>, by grouping them into a new <code>FluentIterable&lt;T&gt;</code> class
+wrapping an iterable:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">iter</span><span class="o">:</span><span class="w"> </span><span class="kt">Iterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">iter</span><span class="o">:</span><span class="w"> </span><span class="kt">Iterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">iter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">iter</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="o">*</span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">iter</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">yield</span><span class="w"> </span><span class="nx">func</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="o">*</span><span class="nx">filter</span><span class="p">(</span><span class="nx">pred</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kt">boolean</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">iter</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">pred</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="k">yield</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">reduce</span><span class="p">(</span><span class="nx">init</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">op</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">T</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">init</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">iter</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">op</span><span class="p">(</span><span class="nx">result</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We can create a <code>FluentIterable&lt;T&gt;</code> out of an <code>Iterable&lt;T&gt;</code>, so we can
+rewrite our filter/reduce pipeline into a more fluent form. We create a
+<code>FluentIterable&lt;T&gt;</code>, call <code>filter()</code> on it, then we create a new
+<code>FluentIterable&lt;T&gt;</code> out of its result, and call <code>reduce()</code> on it:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">sequence</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span><span class="w"> </span><span class="mf">4</span><span class="p">,</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span><span class="w"> </span><span class="mf">6</span><span class="p">];</span><span class="w"></span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="ow">new</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="p">(</span><span class="w"></span>
+<span class="w">            </span><span class="nx">sequence</span><span class="w">  </span>
+<span class="w">        </span><span class="p">).</span><span class="nx">filter</span><span class="p">((</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w">    </span>
+<span class="w">    </span><span class="p">).</span><span class="nx">reduce</span><span class="p">(</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">y</span><span class="p">);</span><span class="w">    </span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>Now <code>filter()</code> appears before <code>reduce()</code>, and it&#39;s very clear which
+arguments go to which function. The only problem is we need to create a
+new <code>FluentIterable&lt;T&gt;</code> after each function call. We can improve our API
+by having our <code>map()</code> and <code>filter()</code> functions return a
+<code>FluentIterable&lt;T&gt;</code> instead of the default <code>IterableIterator&lt;T&gt;</code>. Note
+we don&#39;t need to change <code>reduce()</code>, because <code>reduce()</code> returns a single
+value of type <code>T</code>, not an iterable.</p>
+
+<p>Since we&#39;re using generators, we can&#39;t simply change the return type.
+Generators exist to provide convenient syntax for functions, but they
+always return an <code>IterableIterator&lt;T&gt;</code>. What we can do instead is to
+move the implementations to a couple of private methods, <code>mapImpl()</code> and
+<code>filterImpl()</code>, and handle the conversion from <code>IterableIterator&lt;T&gt;</code> to
+<code>FluentIterable&lt;T&gt;</code> in the public <code>map()</code> and <code>reduce()</code> methods:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">iter</span><span class="o">:</span><span class="w"> </span><span class="kt">Iterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">iter</span><span class="o">:</span><span class="w"> </span><span class="kt">Iterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">iter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">iter</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">mapImpl</span><span class="p">(</span><span class="nx">func</span><span class="p">));</span><span class="w">    </span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="o">*</span><span class="nx">mapImpl</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">iter</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">    </span>
+<span class="w">            </span><span class="k">yield</span><span class="w"> </span><span class="nx">func</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">filter</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">pred</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kt">boolean</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">filterImpl</span><span class="p">(</span><span class="nx">pred</span><span class="p">));</span><span class="w">    </span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="o">*</span><span class="nx">filterImpl</span><span class="p">(</span><span class="nx">pred</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kt">boolean</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">iter</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">    </span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">pred</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="k">yield</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">reduce</span><span class="p">(</span><span class="nx">init</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">op</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">T</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="p">{</span><span class="w">    </span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">init</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">iter</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">op</span><span class="p">(</span><span class="nx">result</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>With this updated implementation, we can more easily chain the
+algorithms, as each returns a <code>FluentIterable</code>, which contains all the
+algorithms as methods:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">sequence</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span><span class="w"> </span><span class="mf">4</span><span class="p">,</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span><span class="w"> </span><span class="mf">6</span><span class="p">];</span><span class="w"></span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">FluentIterable</span><span class="p">(</span><span class="nx">sequence</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">.</span><span class="nx">filter</span><span class="p">((</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w">    </span>
+<span class="w">        </span><span class="p">.</span><span class="nx">reduce</span><span class="p">(</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">y</span><span class="p">);</span><span class="w">    </span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>Now, in true fluent fashion, the code reads easily from left to right
+and we can chain any number of algorithms that make up our pipeline with
+a very natural syntax. Most algorithm libraries take a similar approach,
+making it as easy as possible to chain multiple algorithms together.</p>
+
+<p>Depending on the programming language, one downside of a fluent API
+approach is that our <code>FluentIterable</code> ends up containing all the
+algorithms, so it is difficult to extend - if it is part of a library,
+calling code can&#39;t easily add a new algorithm without modifying the
+class. C# provides extension methods, which enable us to add methods to
+a class or interface without modifying its code. Not all languages have
+such features though. That being said, in most situations you should be
+using an existing algorithm library, not implementing a new one from
+scratch.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2019/07/16/a-switchless-state-machine.html>A Switchless State Machine</a></span></div>
+<div id="next"><span><a href=../../.././2019/09/06/higher-kinded-types-functors.html>Higher Kinded Types: Functors</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

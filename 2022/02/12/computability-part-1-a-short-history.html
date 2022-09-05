@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Computability Part 1: A Short History &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>February 12, 2022</span></header>
+<article>
+<h1>Computability Part 1: A Short History</h1>
+
+<blockquote>
+<p>An algorithm (/ˈælɡərɪðəm/ ) is a finite sequence of well-defined
+instructions, typically used to solve a class of specific problems or
+to perform a computation.</p>
+</blockquote>
+
+<h2>Ancient computers</h2>
+
+<p>The first computer (we know of) is the Antikythera mechanism. It was
+found in 1901 in a shipwreck. The device was built sometime between 100
+BC and 150 BC and uses gears to predict astronomical positions of the
+Sun, Moon, and planets through the zodiac.</p>
+
+<p><img src="device.jpg" alt="image"></p>
+
+<p><em>Image from Wikimedia Commons user Marsyas, <a href="https://creativecommons.org/licenses/by/2.5/">CC BY
+2.5</a></em></p>
+
+<p>This millennia old device is a hand-powered analog computer. Humanity
+has been looking at automating computation for quite some time.</p>
+
+<h2>The father of computer science</h2>
+
+<p>Skipping forward a few hundred years, the famous Gottfried Wilhelm
+Leibniz (1646-1714) designed the first device that could perform the 4
+arithmetic operations and used an internal memory. He also invented the
+binary system, and his Algebra of Thought is a precursor to Boolean
+Algebra. Leibniz is famous as a mathematician (inventing calculus
+independently of Isaac Newton), but some also call him <em>the father of
+computer science</em>.</p>
+
+<p>After creating his arithmetic machine, Leibniz dreamt of a machine that
+could manipulate symbols in order to decide the truth value of
+mathematical statements.</p>
+
+<h2>The Difference Engine and the Analytical Engine</h2>
+
+<p>Over a century later, Charles Babbage (1791-1871) invents the Difference
+Engine, a mechanical calculator that can tabulate polynomial functions.
+Babbage created a small version of this, the Difference Engine 0, in
+1822. Work on a larger version, which was supposed to enable larger
+calculations, was funded by the British government. Unfortunately, this
+did not materialize due to the manufacturing limitations of the time. It
+took 20 years and large amounts until the project was abandoned. The
+Difference Engine 1 was never completed.</p>
+
+<p>During this time, Babbage started thinking about a general-purpose
+computer, the Analytical Engine. The Analytical Engine would include an
+arithmetic logic unit, control flow, and memory - components of modern
+electronic computers. The programming language resembled modern day
+assembly languages and would have been fed to the computer through punch
+cards. This machine was never built.</p>
+
+<p>Even though the physical Analytical Engine did not materialize, several
+programs were created for it, both by Babbage and Ada Lovelace
+(1815-1852). Ada published the first algorithm for the Analytical
+Engine, used to compute Bernoulli numbers, and is regarded as the first
+programmer.</p>
+
+<h2>The foundational crisis of mathematics</h2>
+
+<p>At the beginning of the 20th century, mathematicians were looking for a
+proper foundation for mathematics: a set of axioms from which all
+theorems could be derived.</p>
+
+<p>David Hilbert (1862-1943) put forward 23 problems in 1900, which heavily
+influenced the direction of mathematics research in the 20th century.
+Some of the problems have since been solved, others, like the famous
+Riemann hypothesis (problem 8), are still unresolved.</p>
+
+<p>The 2nd problem, directly tying into the foundational crisis, was to
+prove that the axioms of arithmetic are consistent (meaning no
+contradictions can arise as theorems are derived from the axioms).</p>
+
+<p>Alfred North Whitehead (1861-1947) and Bertrand Russell (1872-1970)
+start working on the Principia Mathematica. 3 volumes are published in
+1910, 1912, and 1913. Starting with a minimum set of primitive notions,
+axioms, and inference rules, they deduce theorems pertaining to logic,
+arithmetic, set theory and so on. Famously, the proof that 1+1=2 appears
+on page 379 of volume 1.</p>
+
+<p><img src="proof.png" alt="image"></p>
+
+<p>Kurt Gödel (1906-1978) proves, with his incompleteness theorem (1930),
+that a formal system powerful enough to describe arithmetic cannot be
+both consistent and complete. In other words, starting from a set of
+axioms, if these are consistent (no contradictions can be derived), they
+cannot be complete (there will be true statements that cannot be derived
+from these axioms).</p>
+
+<p>Building upon this work, in 1933, Gödel develops general recursive
+functions as a model of computability (more on this later).</p>
+
+<h2>Entscheidungsproblem and models of computability</h2>
+
+<p>David Hilbert proposes another challenge in 1928: the decision problem.
+The problem asks for an algorithm that takes a statement as an input and
+decides whether the statement is provable within the considered set of
+axioms. Note that Gödel&#39;s incompleteness theorem shows that some true
+statements cannot be proved from a consistent set of axioms. That
+doesn&#39;t mean there isn&#39;t an algorithm that can decide whether a
+statement is provable or not. Hilbert believed such an algorithm exists.</p>
+
+<p>Alonzo Church (1903-1995) develops lambda calculus as a model of
+computation that uses function abstraction, application, and variable
+binding and substitution. Church&#39;s Theorem (1936) provides a negative
+answer to the decision problem, based on lambda calculus. He shows there
+is no computable function that can decide whether two lambda expressions
+are equivalent.</p>
+
+<p>During the same time, Alan Turing (1912-1954) develops another model of
+computation: the Turing machine. This is an abstract computer consisting
+of an infinite tape of cells, a head that can read from a cell, write to
+a cell, and move left or right over the tape, and a set of rules which
+direct the head based on the read symbol and the current state of the
+machine. Turing also provides a negative answer to the decision problem
+during the same year as Church (1936), based on Turing machines: he
+shows that there is no general method to decide whether any given Turing
+machine halts or not (the halting problem).</p>
+
+<h2>Universal computability and Turing completeness</h2>
+
+<p>These are remarkable results: we now have proof that some problems are
+incomputable. More than that, we know that a Turing machine can compute
+anything that is computable.</p>
+
+<p>The Church-Turing thesis shows that lambda calculus can be used to
+simulate a Turing machine. That means that lambda calculus can compute
+anything that a Turing machine can compute, thus the two systems have
+the same computability power.</p>
+
+<p>In general, if a system can be used to simulate a Turing machine, this
+makes it <em>Turing complete</em>, meaning capable of computing anything that
+is computable.</p>
+
+<p>Gödel&#39;s general recursive functions are also shown to be an equivalent
+model of computation (these are the functions that Turing machines can
+compute).</p>
+
+<p>We have 3 quite different approaches to universal computability: general
+recursive functions, lambda calculus, and Turing machines. These turn
+out to all be equivalent in terms of what is possible to compute.</p>
+
+<p>Turing machines, with their simple definition, are easy to simulate,
+thus making Turing completeness the preferred way of proving that a
+system is capable of universal computation.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2021/12/30/timsort.html>Timsort</a></span></div>
+<div id="next"><span><a href=../../.././2022/04/03/computability-part-2-turing-machines.html>Computability Part 2: Turing Machines</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

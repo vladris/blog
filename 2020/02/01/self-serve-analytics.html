@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Self-Serve Analytics &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>February 01, 2020</span></header>
+<article>
+<h1>Self-Serve Analytics</h1>
+
+<p>This is a cross-post of the article I wrote for Data Science @
+Microsoft, <a href="https://medium.com/data-science-at-microsoft/how-we-built-self-serve-data-environment-tools-with-azure-3951a698fc9d">How we built self-serve data environment tools with
+Azure</a>.
+Many thanks to my colleague Casey Doyle for editing this into good
+shape.</p>
+
+<p>Our team not only helps the engineering org build Azure - we use it,
+too, in our data science work. Our team consists of program managers,
+data scientists, and data engineers. In this post I describe how our
+data engineering team developed a scalable, self-serve analytics
+platform for our data science organization.</p>
+
+<p>We maintain a big data platform with all the required data points to
+view and understand the Azure business. While we work with multiple data
+fabrics (such as Azure SQL and Azure Data Lake Storage), our main
+storage solution is Azure Data Explorer (ADX). We use ADX for several
+reasons, but two key ones involve the scale of the data we are dealing
+with and the exploratory nature of the work our data scientists are
+doing. ADX excels at quickly running queries across huge volumes of
+data.</p>
+
+<h2>Reproducibility</h2>
+
+<p>When we were a small team, data scientists produced ad hoc reports and
+analyses, building queries and running them from their own machines.
+This worked for a while, but soon we hit issues of reproducibility: If a
+set of queries exists only on one person&#39;s machine and that person goes
+on vacation, nobody else on the team can reproduce their work.</p>
+
+<p>Of course, this is a well known issue in the software engineering world,
+with an industry-standard solution: Source control. As a first step, we
+asked everyone on the team to use Git to store their ADX scripts. This
+not only enabled capturing <q>canonical</q> queries in a public repository,
+it also allowed us to adopt other good practices such as mandatory code
+reviews.</p>
+
+<p>Bringing engineering best practices to analytics was the first step
+toward a reliable analytics platform.</p>
+
+<h2>Environments</h2>
+
+<p>Another problem we ran into was around the interdependencies among
+various data sets. Some reports or metrics took dependencies on the
+output of other metrics. But consider a situation in which the dependent
+metric consists of one-off exploratory output, while the other is a
+monthly report. Without a systematic way of keeping track of what
+depends on what, things start to look like Jenga - maybe a critical
+piece of an important artifact disappears because the original author
+didn&#39;t realize anyone cared about it.</p>
+
+<p>To solve this problem, we split our ADX cluster into three different
+environments: Scratch, Work Area, and Production.</p>
+
+<p><img src="areas.png" alt="image"></p>
+
+<p><em>Changes flow from Scratch to Work Area to Production. Production is
+read-only for everyone except engineering.</em></p>
+
+<p><em>Scratch</em> is an area open to everyone on the team to do anything they
+want, with one important rule: No production dependencies are allowed.
+Scratch is used for prototyping, proof-of-concepts, and other
+exploratory work. To enforce this, we set a 30-day <a href="https://docs.microsoft.com/en-us/azure/kusto/management/retention-policy">retention
+policy</a>.
+This ensures that nothing beyond prototypes exists there. Only our team
+has access to this area.</p>
+
+<p><em>Work Area</em> is the place data scientists use once they are done
+prototyping and have a good idea of what they need to do next. They
+still have full access to Work Area but unlike Scratch, data scientists
+can share work-in-progress with external stakeholders for user
+acceptance testing. If the artifact is a one-time analysis, it stops
+here. If it is recurring, for example a monthly report, it graduates to
+Production.</p>
+
+<p><em>Production</em> is a locked down environment and only a few data engineers
+have Write access to it. This is the equivalent of a production services
+environment, where access is restricted such that nobody can
+accidentally cause an impact to a live application. In our case, nobody
+can accidentally modify a recurring report or key metric others depend
+on.</p>
+
+<p>Moving work from Scratch to Work Area to Production ensures dependencies
+can only flow in one direction (Scratch can depend on something in
+Production, but not vice versa). Quality gates like mandatory code
+reviews ensure that whatever makes it to Production meets a high quality
+bar.</p>
+
+<p>We also created explicit guidelines for what should go into Production:
+Queries should be packaged into functions, tables and functions should
+be created with <code>.create-or-alter</code>, and so on.</p>
+
+<h2>Self-Serve</h2>
+
+<p>Because the Production environment is restricted to data engineers,
+graduating something to Production first involved a hand-off process: A
+data scientist would have to ask the data engineering team to create or
+update an entity in the Production environment. This usually meant
+creating a work item that had to be prioritized against others.</p>
+
+<p>Our data engineering team is much smaller than our data science
+organization (we have about one engineer for every five data
+scientists), and so this approach didn&#39;t scale very well. To optimize
+this, we invested in enabling a self-serve model.</p>
+
+<p>We created an <a href="https://docs.microsoft.com/en-us/azure/devops/pipelines/release/?view=azure-devops">Azure DevOps release
+pipeline</a>
+that uses the <a href="https://docs.microsoft.com/en-us/azure/data-explorer/devops">ADX
+Task</a> to
+execute ADX scripts in the git repo against the Production database. We
+release from the master branch, but in order for a new script to make it
+to master, it must be submitted as a pull request and code review
+signoff is required from a member of the engineering team.</p>
+
+<p>With this model, data scientists send a pull request and, once reviewed
+by a maintainer of the Production environment, it is automatically
+merged and deployed. In contrast to the original hand-off process (via
+work items), engineering involvement can be as simple as approving a
+pull request. The code review process still ensures that the engineers
+who operate the Production environment have a say in what makes it into
+that environment and can always request changes to scripts if they
+believe, for example, a query can be further optimized.</p>
+
+<h2>Data Movement</h2>
+
+<p>Similar to the analytics needs described above, we needed to orchestrate
+data movement. This includes copying data from external sources into our
+ADX cluster and running functions on a schedule to produce reports.</p>
+
+<p>Production data movement was originally operated by the engineering
+team, and so requests again used to come in the form of work items to be
+prioritized and scheduled. But because our data scientists are familiar
+with <a href="https://azure.microsoft.com/en-us/services/data-factory/">Azure Data
+Factory</a> (ADF)
+and use it for data movement in the Work Area environment, we realized
+we could enable self-serve capabilities for data movement too, by
+leveraging the <a href="https://docs.microsoft.com/en-us/azure/data-factory/continuous-integration-deployment">ADF continuous integration and delivery
+setup</a>.
+This way, scientists can create ADF pipelines and submit pull requests
+that engineers deploy to production.</p>
+
+<p>We are using <a href="https://azure.microsoft.com/en-us/services/monitor/">Azure
+Monitor</a> integrated
+with IcM, the company-wide incident management system, to monitor the
+production pipelines. Azure Monitor <a href="https://docs.microsoft.com/en-us/azure/data-factory/monitor-using-azure-monitor">integrates natively with
+ADF</a>.
+Our support model entails the engineering team looking at tickets
+generated by pipeline failures, which are then restarted to recover from
+transient issues. In case of persistent failures, we involve the
+original pipeline authors to help debug. This way, the engineering team
+operates all Production data movement without having full ownership of
+the pipelines.</p>
+
+<p><img src="devops.png" alt="image"></p>
+
+<p><em>We deploy both Kusto objects and Data Factory pipelines from ADO git
+using ADO pipelines. The Production environment is operated by
+engineering.</em></p>
+
+<h2>Data Contracts</h2>
+
+<p>But there is still more to it than just deploying and monitoring ADF
+pipelines: Bringing external data into the production area of our
+cluster means taking an upstream dependency on that data. There are
+several properties to be defined for such a dependency, including things
+like the service level agreement (SLA) with the upstream provider and
+the data classification, which ensures our system stays compliant. The
+topic of maintaining compliance in a big data platform deserves an
+article by itself, so I won&#39;t go into details in this one. The key
+point is that in this case, self-serve is not enough - we also need data
+contracts.</p>
+
+<p>A <em>data contract</em> specifies all the details of a dependency, whether
+upstream or downstream of our platform. As part of the quality gates for
+pull requests, we thoroughly review proposed pipelines and in general we
+don&#39;t allow new
+<a href="https://docs.microsoft.com/en-us/azure/data-factory/connector-overview">connectors</a>
+to be added with this model. A new connector implies a new dependency,
+so before deploying to production we need to ensure we have a contract
+in place and that the connector uses the production service principles
+the engineering team is maintaining.</p>
+
+<h2>Summary</h2>
+
+<p>In this article we reviewed several of the infrastructure and processes
+built by our data engineering team:</p>
+
+<ul>
+<li>We brought engineering rigor to our analytics through source
+control, code reviews, and automated deployment.</li>
+<li>We enabled self-serve by leveraging Azure DevOps.</li>
+<li>We similarly enabled self-serve for data movement using ADF CI/CD.</li>
+<li>We have processes in place to ensure our data is compliant and that
+production dependencies are properly documented.</li>
+</ul>
+
+<p>More importantly, we achieved all of the above without maintaining any
+custom application code: Our entire solution is built on Azure PaaS
+services, which frees up our engineering team to tackle other
+challenges, ones we will discuss in future articles.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2020/01/19/time-and-complexity.html>Time and Complexity</a></span></div>
+<div id="next"><span><a href=../../.././2020/03/01/azure-data-explorer.html>Azure Data Explorer</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

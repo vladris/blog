@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Notes on Error Handling &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>December 03, 2016</span></header>
+<article>
+<h1>Notes on Error Handling</h1>
+
+<p>I recently read Joe Duffy&#39;s excellent blog post <a href="http://joeduffyblog.com/2016/02/07/the-error-model/">The Error
+Model</a>. Joe worked
+on Midori and has some great insights on error model design. I wanted to
+write down a couple of personal notes on error handling.</p>
+
+<h2>Using the Type System</h2>
+
+<p>Before even talking about error scenarios, it&#39;s worth pointing out that
+there are categories of errors where the type system helps if not to
+eliminate them, at least to scope them and prevent them from propagating
+unchecked throughout the system.</p>
+
+<h3>Arguments</h3>
+
+<p>In many cases, an error means the value of some variable has an invalid
+value. If this invalid value is passed down to called functions, it can
+manifests itself deep in the stack when it could&#39;ve been caught
+earlier. A simple example would be move directions for a game - let&#39;s
+say the player can move <code>Up</code>, <code>Down</code>, <code>Left</code>, or <code>Right</code>. This can be
+encoded as:</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">UP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">LEFT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">DOWN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">RIGHT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">move</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">player</span><span class="w"> </span><span class="n">player</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">direction</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">UP</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_up</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">LEFT</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_left</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">DOWN</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_down</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">RIGHT</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_right</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">default</span><span class="o">:</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// direction should only be 0, 1, 2, 3</span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>but ultimately a caller can still pass any int value to this function
+which would end up in the default branch as a direction the code
+doesn&#39;t know how to handle. The alternative is, of course:</p>
+<div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">direction</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">up</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">left</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">down</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">right</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">move</span><span class="p">(</span><span class="n">direction</span><span class="w"> </span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">player</span><span class="w"> </span><span class="n">player</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>In this case, the type system ensures direction can only possibly hold
+one of the allowed values. This is a trivial example but there are many
+more interesting ones. Take for example some connection which, if
+opened, can receive data and close and, if not opened, can be opened.
+This can be modelled like this:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">connection</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">open</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection already opened */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">...</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection not opened */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">...</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">receive</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection not opened */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">...</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_opened</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>Here we have to handle various cases where we try to perform an
+open-connection operation on a connection that hasn&#39;t been opened yet,
+and vice-versa. Another way to model this (as of C++17) is using a
+variant and separate types for open and closed connections:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">opened_connection</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">close</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">receive</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">closed_connection</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">open</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">using</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">closed_connection</span><span class="p">,</span><span class="w"> </span><span class="n">opened_connection</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+
+<p>Here, as long as we have a <code>closed_connection</code> instance, we can only
+perform closed-connection operations and as long as we have an
+<code>open_connection</code> instance, we can only perform opened-connection
+operations. The error states we had to handle above go away as the type
+system ensures we can never call <code>receive</code> on a closed connection etc.</p>
+
+<h3>Return Values</h3>
+
+<p>The type system can also be leveraged to embellish return types as an
+alternative to using return codes. For example, assume we have a
+function which parses a phone number provided by the user into some
+<code>phone_number_t</code> used internally. There are a few ways to implement
+this:</p>
+<div class="highlight"><pre><span></span><span class="n">phone_number_t</span><span class="w"> </span><span class="nf">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">from_string</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"> </span><span class="c1">// assume we can construct a phone_number_t from a valid string</span>
+<span class="w">    </span><span class="k">else</span><span class="w"></span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="n">invalid_phone_number</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This is not ideal though, since exception should really be exceptional
+(more on this below), and user providing invalid input should be a
+completely valid scenario. The alternative would be to use a return
+code:</p>
+<div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">&amp;</span><span class="w"> </span><span class="n">output</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">from_string</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This works, but calling code is uglier:</p>
+<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">phone_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>now becomes:</p>
+<div class="highlight"><pre><span></span><span class="n">phone_number_t</span><span class="w"> </span><span class="n">phone_number</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">phone_number</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>We can also end up in a bad state if we forget to check the return
+value. The alternative is to encode the information that we either have
+a <code>phone_number_t</code> or an invalid number in a type. In C++ we have (as of
+C++17) <code>optional&lt;T&gt;</code> for this:</p>
+<div class="highlight"><pre><span></span><span class="n">optional</span><span class="o">&lt;</span><span class="n">phone_number_t</span><span class="o">&gt;</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">nullopt</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">from_string</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This is not quite a return error code and cannot really be ignored -
+there is no implicit case from <code>optional&lt;T&gt;</code> to <code>T</code>, so callers need to
+explicitly handle the case when the operation failed. Calling this is as
+natural as the throwing version, but does not rely on exceptions<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>.
+This is also called <em>monadic error handling</em> and is widely employed by
+functional languages. I find this a good alternative to throwing
+exceptions as long as it is well scoped and error checks don&#39;t have to
+pollute too many functions in the call stack.</p>
+
+<h2>Preconditions</h2>
+
+<p>Preconditions are conditions that should be satisfied upon entering a
+function to ensure the function works as expected. When a function is
+called but the preconditions are not met, it is not an error, it is a
+developer bug. The recommended way of handling such a situation is, if
+possible, to crash immediately. The reason for crashing is that calling
+a function with preconditions not being met means the system is an
+invalid state and attempting recovery is usually not worth it. Crashing
+on the other hand would provide developers with dumps to help understand
+how the system got into this state and fix the underlying bug.</p>
+
+<p>The alternative to this is undefined behavior - calling a function
+without meeting the preconditions cannot guarantee anything about the
+execution of the function. Undefined behavior is used extensively
+throughout the C++ standard <sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup>. While failing fast is the preferred
+approach, sometimes it is unfeasible to check preconditions at runtime:
+for example a precondition of binary search is that it searches over an
+ordered range. Performing a binary search takes logarithmic time but
+validating that a range is ordered takes linear time, so adding this
+check would negatively impact the run time of the algorithm. In this
+case, it is OK to say that we cannot provide any guarantees on what the
+function will do. Debug-time asserts are a middle ground solution, since
+we can afford to perform more expensive checks in debug builds to
+deterministically fail when preconditions are not met. That being said,
+if the check is not prohibitively expensive, it should be performed on
+all build flavors and immediately fail (via <code>std::terminate</code> or
+equivalent).</p>
+
+<p>What should not be done is treating such a state as an error - this is a
+bug in the code and throwing an exception or returning some error result
+would just leak the bug and make it impact more of the system. There
+really isn&#39;t anything useful to do with such an error - it only tells
+us that there is an issue in the code and we are now in a state we
+should never be in. At this point we don&#39;t know which component
+originated the error and we cannot deterministically recover - we might
+abort the current operation but there is no guarantee that this would
+bring us back to a valid state. We are in undefined behavior land, where
+crashing is the best option.</p>
+
+<h2>Recoverable Errors</h2>
+
+<p>We covered several ways to handle errors by either eliminating invalid
+states at compile-time or by failing fast when in an invalid state.
+There are, on the other hand, classes of errors from which we can
+legitimately recover, which brings us to exception and error codes.</p>
+
+<h3>Exceptions</h3>
+
+<p>I am a big fan of handling exceptional states using exceptions over
+returning error codes. For one, the code is more readable: instead of
+reserving the return type of a function to signal success or failure and
+resort to out parameters, functions can be declared in a natural way. We
+also end up with less code overall as instead of having to check error
+codes inside all functions in the call stack in order to propagate back
+an error, we simply throw it from the top of the stack and catch it
+where we can deal with it. This approach also composes better - take,
+for example, a generic algorithm that takes some throwing function.
+Since we supply the predicate, we know what exception it can throw and
+we can catch it in the code that invokes the generic algorithm, keeping
+this invisible to the algorithm:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">InputIt</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">UnaryFunction</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="n">for_each</span><span class="p">(</span><span class="n">InputIt</span><span class="w"> </span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">InputIt</span><span class="w"> </span><span class="n">last</span><span class="p">,</span><span class="w"> </span><span class="n">UnaryFunction</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">(</span><span class="k">noexcept</span><span class="p">(</span><span class="n">UnaryFunction</span><span class="p">))</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">last</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">first</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">first</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>If our predicate returns an error code instead, the generic algorithm
+must be aware of this:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">InputIt</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">UnaryFunction</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">auto</span><span class="w"> </span><span class="n">for_each</span><span class="p">(</span><span class="n">InputIt</span><span class="w"> </span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">InputIt</span><span class="w"> </span><span class="n">last</span><span class="p">,</span><span class="w"> </span><span class="n">UnaryFunction</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">last</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">first</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">first</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Note that here we are also making an assumption that 0 means success,
+which is an arbitrary decision for a plug-in function.</p>
+
+<p>That being said, I want to reiterate that exceptions should only be used
+for exceptional cases. The readability advantage gained with exceptions
+is lost if they are abused. It&#39;s great if the callee throws one or two
+exception types which the caller catches and handles. On the other hand,
+if we have to resort to catch-all <code>catch (...)</code> and we have so many
+possible exception types coming out of a function that we can&#39;t keep
+track of them, the code actually becomes harder to reason about.</p>
+
+<p>An example and a counter-example: when reading a file with a set schema
+generated by our application, we expect it to be in a valid format. If
+it isn&#39;t, it means some data corruption occurred but this should really
+be an exceptional case. If we encounter such data corruption, we can
+throw an exception and let the caller handle the fact that we cannot
+interpret this file. On the other hand, when reading user input, we
+should never throw an exception if input is not conforming - this should
+be a much more common scenario of user error.</p>
+
+<h3>Return Codes</h3>
+
+<p>There are cases which are not exceptional enough to warrant an exception
+but where some error information needs to be propagated through the call
+stack. Take, for example, a compiler which encounters an invalid token
+while parsing a file. Since this is user input, it should not be treated
+as an exception. On the other hand, simply using an optional and failing
+to parse without providing additional information is also not ideal. In
+this case we probably want to return additional information around the
+encountered error.</p>
+
+<p>In this case we would return the error rather than throw it, but I would
+still prefer an embellished type like Rust&#39;s <code>Result</code> and return an
+<code>std::variant&lt;T, Error&gt;</code> (as of C++17). In general I consider bad
+practice returning an <code>int</code> or an <code>HRESULT</code> which would afterwards have
+to be decoded to understand the actual error. For simple cases, if no
+other information besides success/failure has to be returned, a <code>bool</code>
+would suffice, or an <code>enum</code> or <code>struct</code> which contains the expected
+error information. Such an error type can be composed with a valid
+return type using a variant which brings us back to monadic
+error-handling.</p>
+
+<p>My general rule of thumb is to use exceptions for really exceptional
+situations, which keeps the code cleaner as long as the number of
+exception types is managable, and use monadic error handling when errors
+are expected, as long as these can be scoped to a limited number of
+functions (repeated error checking all over the place is messy,
+error-prone, and makes code hard to read).</p>
+
+<h2>Summary</h2>
+
+<p>We went over various ways of handling errors:</p>
+
+<ul>
+<li>Declaring types that restrict the range of values a variable can
+take to eliminate invalid states at compile-time.</li>
+<li>Monadic error handling using embelished return types.</li>
+<li>Failing fast when preconditions of a function are not met.</li>
+<li>Throwing exceptions in exceptional cases.</li>
+<li>Returning strongly typed errors when errors are not exceptional.</li>
+</ul>
+
+<p>There is still a fair amount of controversy around what is <em>the right
+way</em> of handling errors. My personal take on this is that there are
+tradeoffs that come with each approach and rather than saying <q>always
+use exceptions</q> or <q>never use exceptions</q>, it&#39;s more a matter of
+choosing <em>the right tool for the job</em>. I tried to list some of the
+possible approaches with their pros and cons, and how I employ them.
+Your mileage may vary depending on your specific language, runtime,
+problem domain, application type etc.</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>This is the recommended way of <a href="https://doc.rust-lang.org/book/error-handling.html">handling errors in
+Rust</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p>See Chandler Carruth&#39;s CppCon talk <a href="https://www.youtube.com/watch?v=yG1OZ69H_-o">Garbage In, Garbage
+Out</a>.&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2016/10/16/notes-on-types.html>Notes on Types</a></span></div>
+<div id="next"><span><a href=../../.././2017/02/20/memory-management.html>Memory Management</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

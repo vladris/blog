@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>(Ab)using Maps &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>April 24, 2016</span></header>
+<article>
+<h1>(Ab)using Maps</h1>
+
+<h2>Mapping pattern</h2>
+
+<p>Using hash maps (or dictionaries, or lookups) is a very natural way of
+coding in some languages, especially dynamic languages, where usually an
+object can be treated as a map itself, to which attributes and methods
+can be added or removed at runtime.</p>
+
+<p>In practice though, maps are often used to convert a value of one type
+into a value of a different type. It is not uncommon to have very small
+maps like</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span><span class="w"></span>
+</pre></div>
+
+<p>Here it is useful to make a distinction between the pattern and the data
+structure. The coding pattern itself is great - mapping a value from a
+type to a value of another type should definitely be declarative. Below
+is a counterexample of non-declarative mapping:</p>
+<div class="highlight"><pre><span></span><span class="n">Bar</span><span class="w"> </span><span class="nf">barFromFoo</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo1</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo2</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar2</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo3</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar3</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This is really ugly. As I mentioned in
+<a href="https://vladris.com/blog/2016/01/04/clean-code-part-1.html">Clean Code - Part 1</a>,
+branching should be avoided whenever possible, and this is
+a good opportunity to use a declarative approach as opposed to a bunch
+of branching logic. That being said, while the mapping pattern is great,
+in C++ the data structure most developers default to is not the optimal
+one for this.</p>
+
+<h2>The problem with unordered_map</h2>
+
+<p>If you are coding in C++, odds are you care a little bit about the
+runtime footprint of your code. In that case, you might be surprised to
+learn that, while an <code>unordered_map</code> in C++ (or a lookup or hash map or
+dictionary in any other language) has an average lookup cost of <code>O(1)</code>,
+there are better ways to implement the above pattern.</p>
+
+<p>A map in C++ is implemented as a red-black tree containing buckets of
+hashed values. Calling <code>at()</code> on a map implies the given key has to be
+hashed and the tree traversed to find the value. Calling <code>[]</code> on an
+inexistent key will add it to the data structure, which might trigger a
+rebalancing of the tree. There is a lot of work happening under the
+hood, and while this makes sense for an <code>unordered_map</code> of arbitrarily
+large size, for small lookups it is a lot of overhead.</p>
+
+<h2>Alternatives</h2>
+
+<p>An alternative to <code>unordered_map</code> provided by the boost library is
+<code>flat_map</code><sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>. This has similar semantics to an <code>unordered_map</code>, but
+the key-values are stored in a contiguous data structure so traversing
+it is more efficient than walking a tree.</p>
+
+<p>In general, there are a couple of approaches for keeping a hash map in a
+linear data structure:</p>
+
+<ul>
+<li>The keys can be kept sorted, which has <code>O(N)</code> worst case insertion
+since it might require all elements to be moved to fit a new one and
+<code>O(logN)</code> lookup (binary search)</li>
+<li>The keys can be kept unsorted, which has <code>O(1)</code> insertion (simple
+append) but <code>O(N)</code> lookup (linear search)</li>
+</ul>
+
+<p>For very small-sized lookups, the cost of hashing itself might
+out-weight a linear traversal, so for a small N</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span><span class="w"></span>
+</pre></div>
+
+<p>performs worse than</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">find_if</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">fooBarMap</span><span class="p">.</span><span class="n">cbegin</span><span class="p">(),</span><span class="w"></span>
+<span class="w">    </span><span class="n">fooBarMap</span><span class="p">.</span><span class="n">cend</span><span class="p">(),</span><span class="w"></span>
+<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">elem</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">elem</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+</pre></div>
+
+<p>On my machine (using MSVC 2015 STL implementation), for an N of 5,
+<code>find_if</code> on a vector is about twice as fast as the equivalent
+<code>unordered_map</code> lookup.</p>
+
+<h2>Initialization cost</h2>
+
+<p>There&#39;s event more hidden cost: <code>std::vector</code> manages a dynamic array
+which is allocated on the heap. Having an <code>std::vector</code> initialized with
+key-values as described above, even if more efficent than an
+<code>unordered_map</code>, still has some associated cost in terms of heap
+allocations (albeit smaller than <code>unordered_map</code>). <code>std::array</code> is a
+much better suited container for cases when the key-values are known at
+compile time, as <code>std::array</code> simply wraps a regular array which is not
+allocated on the heap. So a more efficient (in terms of initialization
+cost) way of declaring such a look up is</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">arrray</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}};</span><span class="w"></span>
+</pre></div>
+
+<p>We can still apply the <code>std::find_if</code> algorithm on this array, but we
+skip a heap allocation. Depending on the template types used, we might
+be able to skip any allocations whatsoever (if both types are
+trivial<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup>). For example, note that <code>std::string</code>, similarly to a
+vector, wraps a heap-allocated <code>char*</code> and constructing it requires heap
+allocations. <code>const char*</code> to a string literal on the other hand is just
+a pointer to the <code>.rodata</code> segment. So this</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}};</span><span class="w"></span>
+</pre></div>
+
+<p>performs three heap allocations (for <code>&quot;foo1&quot;</code>, <code>&quot;foo2&quot;</code>, and <code>&quot;foo3&quot;</code>),
+while the (mostly) equivalent</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}};</span><span class="w"></span>
+</pre></div>
+
+<p>shouldn&#39;t perform any allocations.</p>
+
+<h2>associative_array</h2>
+
+<p>Since in practice maps are often used to implement the above described
+pattern of mapping a value from one type to a value of a different type
+for a small set of known values, it would be great to combine the
+efficiency of an array with the nice lookup semantics of an
+<code>unordered_map</code> conatiner.</p>
+
+<p>I propose a generic container of the following shape:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="w"></span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">TKey</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">KeyEqual</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">key_equal</span><span class="o">&lt;</span><span class="n">TKey</span><span class="o">&gt;&gt;</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">associative_array</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">TKey</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_array</span><span class="p">[</span><span class="n">N</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p><code>keq_equal</code> should simply resolve to <code>==</code> for most types, but be
+specialized for strings types (to use <code>strcmp</code>, <code>wcscmp</code> etc.) and allow
+clients to specialize their own <code>key_equal</code> when needed.</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_equal</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">operator</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">lhs</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">rhs</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_equal</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">*&gt;</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">operator</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">strcmp</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="c1">// specializations for wchar_t and const variations of the above</span>
+</pre></div>
+
+<p>Satisfying the container concept is fairly easy (eg. <code>size()</code> would
+return <code>N</code>, iterators over the member array are trivial to implement
+etc.), the only interesting methods are <code>find()</code>, <code>at()</code>, and
+<code>operator[]</code>:</p>
+<div class="highlight"><pre><span></span><span class="p">...</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">associative_array</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="w">    </span><span class="n">iterator</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">find_if</span><span class="p">(</span><span class="w"></span>
+<span class="w">            </span><span class="n">begin</span><span class="p">(),</span><span class="w"></span>
+<span class="w">            </span><span class="n">end</span><span class="p">(),</span><span class="w"></span>
+<span class="w">            </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">elem</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">KeyEqual</span><span class="p">{}(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">elem</span><span class="p">.</span><span class="n">first</span><span class="p">);</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">at</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">it</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">end</span><span class="p">())</span><span class="w"></span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">out_of_range</span><span class="p">(</span><span class="s">&quot;...&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p><code>find()</code> wraps <code>std::find_if</code> leveraging <code>KeyEqual</code> (with default
+implementation as <code>key_equal</code>), <code>at()</code> wraps a bounds-checked <code>find</code>,
+while <code>operator[]</code> does not check bounds. <code>const</code> implementations of the
+above are also needed (identical except returning <code>const T&amp;</code>).</p>
+
+<p>Such a container would have similar semantics to <code>std::unordered_map</code>
+(minus the ability to add elements given a key not already present in
+the container) and the same performance profile of <code>std::array</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">associative_array</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span><span class="w"></span>
+</pre></div>
+
+<p>Note the only syntax difference between above and <code>unordered_map</code> is the
+container type, the extra size <code>N</code> which needs to be specified at
+declaration time, and an extra pair of curly braces. In practice, this
+should have a significantly better lookup time than an unordered_map for
+a small N (linear time, but since N is small and no hashing or heap
+traversal occurs, should clock better than a map lookup) and virtually
+zero initialization time - depending on the <code>TKey</code> and <code>T</code> types used,
+it is possible to declare an <code>associative_array</code> as a <code>constexpr</code> fully
+evaluated at compile-time.</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>Boost <code>flat_map</code> documentation is
+<a href="http://www.boost.org/doc/libs/1_56_0/doc/html/boost/container/flat_map.html">here</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p>For more details on trivial types, see the <a href="http://www.cplusplus.com/reference/type_traits/is_trivial/">is_trivial type
+trait</a>.&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2016/03/11/arguments-and-smart-pointers.html>Arguments and Smart Pointers</a></span></div>
+<div id="next"><span><a href=../../.././2016/07/06/dependency-injection-in-c.html>Dependency Injection in C++</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

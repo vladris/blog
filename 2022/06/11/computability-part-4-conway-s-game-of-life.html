@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Computability Part 4: Conway&#x27;s Game of Life &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>June 11, 2022</span></header>
+<article>
+<h1>Computability Part 4: Conway&#39;s Game of Life</h1>
+
+<script src="https://vladris.com/static/js/gol.js"></script>
+
+<p>In the <a href="https://vladris.com/blog/2022/05/20/computability-part-3-tag-systems.html">previous
+post</a>
+we talked about tag systems. In this post (and the next one) we will
+cover cellular automata. The most famous cellular automata is Conway&#39;s
+Game of Life. Before providing the formal definitions, here is the Game
+of Life in action:</p>
+
+<div id="demo" style="overflow: scroll; text-align: center"></div>
+
+<script>animate(50, 30, [[14, 25], [15, 24], [15, 25], [15, 26], [16, 24]], "demo");</script>
+
+<p>Formal definition:</p>
+
+<blockquote>
+<p>A cellular automaton consists of a discrete n-dimensional lattice of
+cells, a set of states (for each cell), a notion of neighborhood for
+each cell, and a transition function mapping the neighborhood of each
+cell to a new cell state.</p>
+</blockquote>
+
+<p>The system evolves over time, where at each step, the transformation
+function is applied over the lattice to determine the states of the next
+generation of cells.</p>
+
+<p>Conway&#39;s Game of Life is a cellular automaton on a 2D plane with the
+following rules:</p>
+
+<blockquote>
+<ol>
+<li>Any live cell with fewer than two live neighbors dies.</li>
+<li>Any live cell with two or three live neighbors lives on to the
+next generation.</li>
+<li>Any live cell with more than three live neighbors dies.</li>
+<li>Any dead cell with exactly three live neighbors becomes a live
+cell.</li>
+</ol>
+</blockquote>
+
+<p>In other words, a live cell stays alive during the next iteration if it
+has 2 or 3 live neighbors. A dead cell becomes live if it has exactly 3
+live neighbors.</p>
+
+<p>In the case of Conway&#39;s Game of Life, the lattice is a 2D grid, we have
+2 states (<em>on</em> or <em>off</em>), the neighborhood of a cell consists of all
+adjacent cells (including corners), and the transition function is the
+one described above. Mathematician John Conway proposed the Game of Life
+in 1970.</p>
+
+<p>The reason we started with Conway&#39;s Game of Life for discussing
+cellular automata is that this simple game with simple rules exhibits
+some very interesting behavior that has been classified for many years
+by people toying with the simulation.</p>
+
+<p>First, we have <em>still lives</em>, patterns that don&#39;t change while stepping
+through the simulation. These patterns are stable: no cells die, no
+cells become live.</p>
+
+<div id="still" style="overflow: scroll; text-align: center"></div>
+
+<script>animate(50, 30, [[9, 14], [9, 15], [10, 14], [10, 15], [10, 33], [9, 34], [9, 35], [11, 34], [11, 35], [10, 36], [19, 14], [20, 13], [20, 15], [21, 14], [19, 33], [19, 34], [20, 33], [20, 35], [21, 34]], "still");</script>
+
+<p>Next, we have <em>oscillators</em>, patterns that repeat with a certain
+periodicity:</p>
+
+<div id="oscillator" style="overflow: scroll; text-align: center"></div>
+
+<script>animate(50, 30, [[9, 14], [9, 15], [9, 16], [10, 33], [10, 34], [10, 35], [9, 34], [9, 35], [9, 36], [19, 14], [20, 14], [19, 15], [21, 17], [22, 16], [22, 17], [19, 31], [20, 31], [18, 32], [21, 32], [17, 33], [22, 33], [16, 34], [23, 34], [16, 35], [23, 35], [17, 36], [22, 36], [18, 37], [21, 37], [19, 38], [20, 38]], "oscillator");</script>
+
+<p>In the above example, the last (bottom right) pattern has period 5 and
+is called <em>Octagon 2</em>. The other 3 patterns all have period 2.</p>
+
+<p>More interestingly, we have <em>spaceships</em> - these are patterns that
+repeat but translate through space:</p>
+
+<div id="ships1" style="overflow: scroll; text-align: center"></div>
+
+<script>animate(30, 30, [[14, 14], [15, 15], [16, 13], [16, 14], [16, 15]], "ships1");</script>
+
+<div id="ships2" style="overflow: scroll; text-align: center"></div>
+
+<script>animate(30, 30, [[14, 14], [15, 14], [16, 14], [13, 15], [16, 15], [16, 16], [16, 17], [13, 18], [15, 18]], "ships2");</script>
+
+<p>The above examples shows a couple of small spaceships, the tiny 5-cell
+<em>glider</em> and the <em>lightweight spaceship</em> or <em>LWSS</em>. There are many more
+spaceship patterns, some of them quite large (hundreds or even thousands
+of cells).</p>
+
+<p>Most simulations tend to eventually stabilize into a combination of
+oscillators and still lives. Patterns that start from a small seed of a
+handful of cells and take a long time (in terms of iterations) to
+stabilize are called <em>Methuselahs</em>. Here is an example, nicknamed
+<em>Acorn</em>:</p>
+
+<div id="acorn" style="overflow: scroll; text-align: center"></div>
+
+<script>animate(50, 30, [[13, 22], [15, 21], [15, 22], [14, 24], [15, 25], [15, 26], [15, 27]], "acorn");</script>
+
+<p>Conway conjectured that for any initial configuration, there is an upper
+limit of how many live cells can ever exist. This was proved wrong by
+the discovery of <em>glider guns</em>. A glider gun generates gliders every few
+iterations. The gliders continue moving away from the gun, thus running
+the simulation the number of live cells continues to grow.</p>
+
+<p>One of the most popular glider guns is called <em>Gosper glider gun</em>, named
+after Mathematician and programmer Bill Gosper:</p>
+
+<div id="gun" style="overflow: scroll; text-align: center"></div>
+
+<script>animate(50, 30, [[5, 1], [6, 1], [5, 2], [6, 2], [5, 11], [6, 11], [7, 11], [4, 12], [8, 12], [3, 13], [9, 13], [3, 14], [9, 14], [6, 15], [4, 16], [8, 16], [5, 17], [6, 17], [7, 17], [6, 18], [3, 21], [4, 21], [5, 21], [3, 22], [4, 22], [5, 22], [2, 23], [6, 23], [1, 25], [2, 25], [6, 25], [7, 25], [3, 35], [4, 35], [3, 36], [4, 36]], "gun", false);</script>
+
+<p>There are many other interesting patterns and constructions in the Game
+of Life discovered throughout the years. A few examples:</p>
+
+<ul>
+<li><em>Eaters</em> are still life or oscillator patterns that can interact
+and, over a number of iterations, <q>absorb</q> other patterns like
+spaceships, and return to their original state.</li>
+<li><em>Reflectors</em> are still life or oscillator patterns that can change
+the direction of incoming spaceships, and return to their original
+state.</li>
+<li><em>Puffers</em> are patterns that move like spaceships but leave behind a
+trail of patterns in their wake (unlike spaceships that cleanly
+translate).</li>
+</ul>
+
+<p>There are many others, and combinations of them which give rise to
+interesting systems like circuits and logic gates based on spaceships
+and strategically placed still lives and oscillators.</p>
+
+<h2>Implementation</h2>
+
+<p>Let&#39;s look at a Python implementation for the Game of Life. We will use
+a wrap-around space, so we&#39;ll consider cells on the last column to be
+neighbors with cells on the first column and similarly cells on the last
+row to be neighbors with cells on the first row.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_matrix</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">width</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">height</span><span class="p">)]</span>
+
+<span class="k">def</span> <span class="nf">neighbors</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+    <span class="n">last_j</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">last_i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">last_j</span><span class="p">]</span> <span class="o">+</span>
+        <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">last_j</span><span class="p">]</span> <span class="o">+</span>
+        <span class="n">m</span><span class="p">[</span><span class="n">last_i</span><span class="p">][</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">last_i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">last_i</span><span class="p">][</span><span class="n">last_j</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="n">m1</span><span class="p">):</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="n">make_matrix</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">neighbors</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">m2</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">m1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]:</span>
+                <span class="n">m2</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">m2</span>
+</pre></div>
+
+<p>To run a simulation, we also need a function to print the game state and
+some initial conditions:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">print_matrix</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">m</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;#&#39;</span> <span class="k">if</span> <span class="n">c</span> <span class="k">else</span> <span class="s1">&#39; &#39;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">line</span><span class="p">]))</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">make_matrix</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">print_matrix</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">step</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+</pre></div>
+
+<p>Another very simple to implement system with powerful computational
+capabilities.</p>
+
+<h2>Turing completeness</h2>
+
+<p>It turns out the Game of Life is Turing complete, meaning it is also
+capable of universal computation. Gliders are key to this. In general,
+if the behavior of cells would be either repetitive (still life or
+oscillators cycle through 1 or more patterns) or chaotic, it would be
+hard to perform any computation. But gliders <q>move</q> and can interact
+with each other, thus enabling some non-chaotic processes.</p>
+
+<p>We briefly discussed above how Game of Life patterns can be combined to
+form circuits that can process signals (in the form of spaceships) like
+logic gates and <q>memory storage</q>. Paul Rendell <q>implemented</q> a
+universal Turing machine in the Game of Life. His website
+(<a href="http://rendell-attic.org/gol/tm.htm">http://rendell-attic.org/gol/tm.htm</a>) covers the details, which we
+won&#39;t go into due to the complexity. Suffice to say the patterns
+emerging in the Game of Life can be combined to build such a device.
+Paul also wrote a book about it<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>.</p>
+
+<p>We again encountered a system capable of computing anything computable,
+based only on a matrix of cells and a couple of rules (live cells with 2
+or 3 neighbors stay alive, dead cells with exactly 3 neighbors become
+live).</p>
+
+<p>The website <a href="https://conwaylife.com/">https://conwaylife.com/</a> includes a lot of details on
+Conway&#39;s Game of Life, various patterns discovered, and a forum where
+people discuss their exploration of the system.</p>
+
+<p>In the next post, we&#39;ll look at even simpler cellular automata:
+elementary cellular automata where cells have 2 possible states and 2
+neighbors.</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>See <a href="https://www.amazon.com/Machine-Universality-Emergence-Complexity-Computation-ebook/dp/B012A45DVO/">Turing Machine Universality of the Game of
+Life</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2022/05/20/computability-part-3-tag-systems.html>Computability Part 3: Tag Systems</a></span></div>
+<div id="next"><span><a href=../../.././2022/07/06/computability-part-5-elementary-cellular-automata.html>Computability Part 5: Elementary Cellular Automata</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

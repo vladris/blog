@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Notes on Types &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>October 16, 2016</span></header>
+<article>
+<h1>Notes on Types</h1>
+
+<h2>Type Systems</h2>
+
+<p>A good type system can eliminate entire categories of errors in a
+program and simply make invalid code not compile. Before digging into
+types, below are a few common distinctions between the type systems of
+various programming languages:</p>
+
+<h3>Dynamic Typing vs Static Typing</h3>
+
+<p>In a statically typed language, the types are determined at compile time
+so if a function was declared as only accepting a certain type <code>T</code> but
+we attempt to pass it an unrelated type <code>U</code>, the program is considered
+invalid. This is invalid C++:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">sqr</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">sqr</span><span class="p">(</span><span class="s">&quot;not an int&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// does not compile</span>
+</pre></div>
+
+<p>On the other hand, in a dynamically typed language, we do not perform
+any compile time checks and, if the data we get is of an unexpected
+type, we treat it as a runtime error. Below is a Python function that
+squares a number:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sqr</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span>
+<span class="o">...</span>
+<span class="n">sqr</span><span class="p">(</span><span class="s2">&quot;not an int&quot;</span><span class="p">)</span>
+<span class="c1">## runs but fails with TypeError: unsupported operand type(s)</span>
+<span class="c1">## for ** or pow(): &#39;str&#39; and &#39;int&#39;</span>
+</pre></div>
+
+<p>Some of the interesting features of dynamic languages are <em>duck typing</em>
+(<q>if it walks like a duck, and it quacks like a duck...</q>) and <em>monkey
+patching</em>. Duck typing means that accessing a member of an object works
+as long as that object has such a member, regardless of the type of the
+object. In Python:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+
+<span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Foo</span><span class="p">(),</span> <span class="n">Bar</span><span class="p">()]]</span> <span class="c1"># prints &quot;foo&quot; and &quot;bar&quot;</span>
+</pre></div>
+
+<p>This can&#39;t work in a statically typed language where, at the bare
+minimum, we would have to add some form of constraint for the types in
+the list to ensure they contain a <code>func()</code> method we can call.</p>
+
+<p>Monkey patching refers to the ability to change the structure of an
+object at runtime. For example we can swap the <code>func</code> method from an
+instance of <code>foo</code> with another function like this:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">func_bar</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+
+<span class="n">obj</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="c1"># prints &quot;foo&quot;</span>
+<span class="n">obj</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func_bar</span>
+<span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="c1"># prints &quot;bar&quot;</span>
+</pre></div>
+
+<p>These are useful capabilities, but the tradeoff is a whole class of type
+errors which a statically typed language would&#39;ve caught.</p>
+
+<p>As a side note, the fact that dynamic languages don&#39;t need to specify
+types makes them more terse. That being said, the <a href="https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system">Hindley-Milner
+algorithm
+W</a> can
+infer the types of a program in linear time with respect to the source
+size. So while Python is starting to support type annotations for better
+static analysis and TypeScript provides a way for writing type-safe
+JavaScript, C++ has better and better type inference, while in Haskell
+(which has one of the strongest static type systems) type annotations
+are mostly optional.</p>
+
+<h3>Strong Typing vs Weak Typing</h3>
+
+<p>At a high level, a strongly typed language does not implicitly convert
+between unrelated types. This is good in most situations as implicit
+conversions are often meaningless or have surprising effects - for
+example, adding a number to a list of characters. This can either result
+in runtime errors or garbage data. In contrast, a strongly typed
+language will not accept code that attempts to do this.</p>
+
+<p>In Python, which is strongly typed, this doesn&#39;t work:</p>
+<div class="highlight"><pre><span></span><span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span> <span class="c1"># foo is &quot;foo&quot;</span>
+<span class="n">foo</span> <span class="o">=</span> <span class="n">foo</span> <span class="o">+</span> <span class="s2">&quot; bar&quot;</span> <span class="c1"># foo is &quot;foo bar&quot;</span>
+<span class="n">foo</span> <span class="o">=</span> <span class="n">foo</span> <span class="o">+</span> <span class="mi">5</span> <span class="c1"># TypeError: Can&#39;t convert &#39;int&#39; object to str implicitly</span>
+</pre></div>
+
+<p>It works just fine in JavaScript though:</p>
+<div class="highlight"><pre><span></span><span class="kd">var</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;foo&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo&quot;</span><span class="w"></span>
+<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot; bar&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo bar&quot;</span><span class="w"></span>
+<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">5</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo bar5&quot;</span><span class="w"></span>
+</pre></div>
+
+<p>Note type strength is not an either/or - C++, while considered strongly
+typed, still allows several implicit casts between types (eg. pointer to
+bool). Some languages are more strict about converting between types
+implicitly, others less so.</p>
+
+<h3>Dynamic Polymorphism vs Static Polymorphism</h3>
+
+<p>Another difference to note is between static and dynamic polymorphism.
+Dynamic polymorphism happens at runtime, when calling a function on a
+base type gets resolved to the actual function of the deriving type:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">base</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">base</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">bar</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">base</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">call_func</span><span class="p">(</span><span class="n">base</span><span class="o">&amp;</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">obj</span><span class="p">.</span><span class="n">func</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">call_func</span><span class="p">(</span><span class="n">foo</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;foo&quot;</span>
+<span class="n">call_func</span><span class="p">(</span><span class="n">bar</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;bar&quot;</span>
+</pre></div>
+
+<p>In the above case, we effectively have a single function <code>call_func</code>
+which takes a reference to a <code>base</code> struct. The compiler generates a
+v-table for <code>struct base</code> and a call to <code>func()</code> on <code>base</code> involves a
+v-table jump to the actual implementation of the function, which is
+different between the inheriting types <code>foo</code> and <code>bar</code>.</p>
+
+<p>Contrast this with the static alternative:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">bar</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">call_func</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">obj</span><span class="p">.</span><span class="n">func</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">call_func</span><span class="p">(</span><span class="n">foo</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;foo&quot;</span>
+<span class="n">call_func</span><span class="p">(</span><span class="n">bar</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;bar&quot;</span>
+</pre></div>
+
+<p>In this case there is no relationship between <code>foo</code> and <code>bar</code> and no
+v-table is needed. On the other hand, we no longer have a single
+<code>call_func</code>, we have a templated function which is instantiated for both
+<code>foo</code> and <code>bar</code> types. This is all done at compile-time, the advantage
+being faster code, the drawback being compiler needs to be aware of all
+the types involved - we can no longer <q>inject</q> types implementing an
+interface at runtime. When calling <code>call_func</code>, we need to have both the
+definition of the function and the declaration of the type we&#39;re
+passing in visible.</p>
+
+<h2>Types</h2>
+
+<p>During the rest of this post, I will talk about types in the context of
+a statically and strongly typed language, with a focus on static
+polymorphism. This pushes as much as possible of the type checking to
+the compilation stage, so many of the runtime issues of less strict
+languages become invalid syntax.</p>
+
+<p>I will focus on C++ and cover some of the new C++17 feature which enable
+or make some of these concepts easier to work with. That being said,
+since this post focuses on types, I will also provide examples in
+Haskell, as Haskell can express these concepts much more succinctly.</p>
+
+<h3>Type Basics</h3>
+
+<p>Let&#39;s start with the definition of a type: <em>a type represents the set
+of possible values</em>. For example, the C++ type <code>uint8_t</code> represents the
+set of integers from 0 to 255. Effectively this means that a variable of
+a given type can only have values from within that set.</p>
+
+<h3>Interesting Types</h3>
+
+<p>Since we defined a type as a set of possible values, we can talk about
+the cardinality of a type, in other words the number of values in the
+set. Based on cardinality, there are a few interesting classes of types
+to talk about:</p>
+
+<h3>Empty Type</h3>
+
+<p>The first interesting type to talk about is the type that represents the
+empty set, with <code>|T| = 0</code>.</p>
+
+<p>In Haskell, this type is named <code>Void</code>. Since Haskell is a functional
+language, all functions must return a value, so it does not make sense
+to have a function that returns <code>Void</code> - the same way it doesn&#39;t make
+sense to define a mathematical function with the empty set as its
+codomain. We do have an <code>absurd</code> function though, which maps the empty
+set to any value:</p>
+<div class="highlight"><pre><span></span><span class="nf">absurd</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Void</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"></span>
+</pre></div>
+
+<p>This function cannot be called though.</p>
+
+<p>In C++, the absence of a value is represented as the <code>void</code> type. Since
+C++ is not purely functional, we can define functions that don&#39;t return
+anything. We can even say that a function does not take any arguments by
+putting a <code>void</code> between the parenthesis:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>This is the equivalent of:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+
+<p>Note though that we cannot have a <em>real</em> argument of type <code>void</code>, that
+is a compile error as it doesn&#39;t make any sense - we would be mandating
+the function takes a value from the empty set. So we can say <code>foo(void)</code>
+but not <code>foo(void arg)</code>, or even <code>foo(int arg, void)</code>.</p>
+
+<h3>Unit Type</h3>
+
+<p>The next interesting class consists of types with cardinality 1. A type
+<code>T</code> with <code>|T| = 1</code> is called a <em>unit</em> or <em>singleton type</em>. A variable of
+such a type can only ever have a single possible value. In Haskell, the
+anonymous representation is the empty tuple <code>()</code>. Here is an example of
+a function that maps anything to this type:</p>
+<div class="highlight"><pre><span></span><span class="nf">unit</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="nb">()</span><span class="w"></span>
+<span class="nf">unit</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="nb">()</span><span class="w"></span>
+</pre></div>
+
+<p>Of course, we can declare our own singleton types. Below is a custom
+<code>Singleton</code> type and an equivalent unit function:</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"></span>
+<span class="nf">unit</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"></span>
+<span class="nf">unit</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"></span>
+</pre></div>
+
+<p>In C++, the anonymous representation of a singleton is an empty
+<code>std::tuple</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">unit</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>As can be seen from the above, Haskell makes it easier to define a
+function that takes an argument of any type, as it provides syntactic
+sugar for type parameters (<code>a</code> in our example). In C++, the equivalent
+declaration involves a template, but they boil down to the same thing.
+The non-anonymous C++ representation is a struct which doesn&#39;t contain
+anything. All instances of such a struct are equivalent:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">singleton</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">singleton</span><span class="w"> </span><span class="n">unit</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<h3>Sum Types</h3>
+
+<p>Here, things get a bit more interesting: a <code>sum type</code> is a type which
+can represent a value from any of the types it sums. So given type <code>A</code>
+and type <code>B</code>, the type <code>S</code> summing up <code>A</code> and <code>B</code> is
+<code>S = { i : i ∈ A U B }</code>. So a variable of type <code>S</code> could have any value
+in <code>A</code> or any value in <code>B</code>. <code>S</code> is called a sum type because its
+cardinality is the sum of the cardinalities of <code>A</code> and <code>B</code>,
+<code>|S| = |A| + |B|</code>.</p>
+
+<p>Sum types are great, because they allow us to build up more complex
+types from simpler ones. Once we have unit types, we can build up more
+complex types out of them by summing them. For example, a boolean type
+which can be either <code>true</code> or <code>false</code> can be thought of as the sum of
+the singleton <code>true</code> type and the singleton <code>false</code> type. In Haskell, a
+boolean is defined as:</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Bool</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">True</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">False</span><span class="w"></span>
+</pre></div>
+
+<p>Similarly, a <code>Weekday</code> type can be defined as:</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Weekday</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Monday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Tuesday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Wednesday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Thursday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Friday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Saturday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Sunday</span><span class="w"></span>
+</pre></div>
+
+<p>Theoretically, numerical types could also be defined as huge sum types
+of every possible value they can represent. Of course, this is
+impractical, but we can reason about them the same way we reason about
+other sum types, we don&#39;t have to treat them as a special case.</p>
+
+<p>In C++, an equivalent of the above is an <code>enum class</code>. <code>bool</code> is a
+built-in type with special syntax, but we could define an equivalent as:</p>
+<div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Boolean</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">True</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">False</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>It&#39;s easy to see how a <code>Weekday</code> definition would look like. Things get
+more interesting when we throw type parameters into the mix. In Haskell,
+we have the <code>Either</code> type, which is declared as follows:</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span><span class="w"></span>
+</pre></div>
+
+<p>An instance of this could be either a <code>Left a</code>, where <code>a</code> is a type
+itself, which means it can be any of the values of <code>a</code>, or it can be
+<code>Right b</code>, with any of the values of <code>b</code>. In Haskell we use
+pattern-matching to operate on such a type, so we can declare a simple
+function that tells us whether we were given a <code>Left a</code> like this:</p>
+<div class="highlight"><pre><span></span><span class="nf">isLeft</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="w"></span>
+<span class="nf">isLeft</span><span class="w"> </span><span class="p">(</span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">True</span><span class="w"></span>
+<span class="nf">isLeft</span><span class="w"> </span><span class="p">(</span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">False</span><span class="w"></span>
+</pre></div>
+
+<p>This might not look like much, but of course we can compose more complex
+functions. For example, say we have a function <code>foo</code> that takes an <code>a</code>
+and returns an <code>a</code>, a function <code>bar</code> that takes a <code>b</code> and returns a <code>b</code>.
+We can then write a <code>transform</code> function which takes an <code>Either a b</code>
+and, depending on the contained type, it applies the appropriate
+function:</p>
+<div class="highlight"><pre><span></span><span class="c1">-- Implementation of foo and bar not provided in this example</span><span class="w"></span>
+<span class="nf">foo</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"></span>
+<span class="nf">bar</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"></span>
+
+<span class="nf">transform</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"></span>
+<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Left</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
+<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Right</span><span class="w"> </span><span class="p">(</span><span class="n">bar</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
+</pre></div>
+
+<p>This is way beyond the capabilities of a C++ <code>enum class</code>. The old way
+of implementing something like this in C++ was using a union and a tag
+enum to keep track of which is the actual type we&#39;re working with:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Declaration of A and B not provided in this example</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">A</span><span class="p">;</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">B</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">Either</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Either</span><span class="p">(</span><span class="n">A</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">ab</span><span class="p">.</span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tag</span><span class="o">::</span><span class="n">isA</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">Either</span><span class="p">(</span><span class="n">B</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">ab</span><span class="p">.</span><span class="n">right</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tag</span><span class="o">::</span><span class="n">isB</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">A</span><span class="w"> </span><span class="n">left</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">B</span><span class="w"> </span><span class="n">right</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">ab</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">tag</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">isA</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">isB</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">tag</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>Our implementation of transform would look like this:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Implementation of A and B not provided in this example</span>
+<span class="n">A</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">A</span><span class="p">);</span><span class="w"></span>
+<span class="n">B</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="n">B</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">Either</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="n">Either</span><span class="w"> </span><span class="n">either</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">tag</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">Either</span><span class="o">::</span><span class="no">tag</span><span class="o">::</span><span class="no">isA</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">ab</span><span class="p">.</span><span class="n">left</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">Either</span><span class="o">::</span><span class="no">tag</span><span class="o">::</span><span class="no">isB</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">bar</span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">ab</span><span class="p">.</span><span class="n">right</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Our <code>Either</code> type definition is obviously much more verbose than what we
+had in Haskell, and it doesn&#39;t even support type parameters - at this
+point it only works with <code>struct A</code> and <code>struct B</code>, while the Haskell
+version works for any <code>a</code> and <code>b</code> types. The other major problem is
+that, while unions provide efficient storage for different types (the
+size of the union is the size of the maximum contained type), it is up
+to the implementer to make sure we don&#39;t try to read an <code>A</code> as a <code>B</code> or
+vice-versa. That means we need to keep our tag in sync with what we put
+in the type and respect it when accessing the value of the union.</p>
+
+<p>C++17 introduces a better, safer, parameterized type for this:
+<code>std::variant</code>. Variant takes any number of types as template arguments
+and stores an instance of any one of those types. Using variant, we can
+re-write the above as:</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="o">&gt;</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="o">&gt;</span><span class="w"> </span><span class="n">either</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">visit</span><span class="p">([](</span><span class="k">auto</span><span class="w"> </span><span class="n">e</span><span class="o">&amp;&amp;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="k">constexpr</span><span class="w"> </span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">is_same_v</span><span class="o">&lt;</span><span class="k">decltype</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="w"> </span><span class="n">A</span><span class="o">&gt;</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="p">(</span><span class="n">e</span><span class="p">));</span><span class="w"></span>
+<span class="w">        </span><span class="k">else</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">bar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="n">B</span><span class="o">&gt;</span><span class="p">(</span><span class="n">e</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="n">either</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This is a lot of new syntax, so let&#39;s break it down:
+<code>std::variant&lt;A, B&gt;</code> is the new C++17 sum type. In this case, we specify
+it holds either <code>A</code> or <code>B</code> (but it can hold an arbitrary number of
+types).</p>
+
+<p><code>std::visit</code> is a function that applies the visitor function given as
+its first argument to the variants given as its subsequent arguments. In
+our example, this effectively expands to applying the lambda to
+<code>std::get&lt;0&gt;(either)</code> and <code>std::get&lt;1&gt;(either)</code>.</p>
+
+<p><code>if constexpr</code> is also a new C++17 construct which evaluates the if
+expression at compile time and discards the else branch from the final
+object code. So in this example, we determine at compile time whether
+the type we are being called with is <code>A</code> or <code>B</code> and apply the correct
+function based on that. Something very similar can be achieved with
+templates and <code>enable_if</code>, but this syntax makes for more readable code.</p>
+
+<p>Note that with this version we can simply prepend a
+<code>template &lt;typename A, typename B&gt;</code> and make the whole function generic,
+as in the Haskell example. It doesn&#39;t read as pretty (because we don&#39;t
+have good pattern matching syntax in the language), but this is the new,
+type safe way of implementing and working with sum types, which is a
+major improvement.</p>
+
+<h3>Product Types</h3>
+
+<p>With sum types out of the way, the remaining interesting category is
+that of <em>product types</em>. Product types combine the values of several
+other types into one. For types <code>A</code> and <code>B</code>, we have
+<code>P = { (a, b) : a ∈ A, b ∈ B }</code>, so <code>|P| = |A| x |B|</code>.</p>
+
+<p>In Haskell, the anonymous version of product types is represented by
+tuples, while the named version is represented by records. An example of
+a <code>perimeter</code> function which computes the perimeter of a rectangle
+defined by two points, where each point is a tuple of numbers:</p>
+<div class="highlight"><pre><span></span><span class="nf">perimeter</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="p">(</span><span class="kt">Num</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">n</span><span class="w"></span>
+<span class="nf">perimeter</span><span class="w"> </span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="w"> </span><span class="n">y1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="n">x2</span><span class="p">,</span><span class="w"> </span><span class="n">y2</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">y1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y2</span><span class="p">))</span><span class="w"></span>
+</pre></div>
+
+<p>The named version would declare a <code>Point</code> type with <code>Int</code> coordinates
+and use that instead:</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Int</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="nf">perimeter</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Int</span><span class="w"></span>
+<span class="nf">perimeter</span><span class="w"> </span><span class="p">(</span><span class="kt">Point</span><span class="w"> </span><span class="n">x1</span><span class="w"> </span><span class="n">y1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="kt">Point</span><span class="w"> </span><span class="n">x2</span><span class="w"> </span><span class="n">y2</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">y1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y2</span><span class="p">))</span><span class="w"></span>
+</pre></div>
+
+<p>The C++ equivalents are <code>std::tuple</code> for anonymous product types and
+<code>struct</code> for named types:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Anonymous</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">perimeter</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p2</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">((</span><span class="n">abs</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p2</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p2</span><span class="p">)));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// Named</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">point</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">perimeter</span><span class="p">(</span><span class="n">point</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">point</span><span class="w"> </span><span class="n">p2</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">p1</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">p2</span><span class="p">.</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">p1</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">p2</span><span class="p">.</span><span class="n">y</span><span class="p">));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>While sum types allow us to express values from multiple types into one,
+product types allow us to express values from several types together.
+Empty, unit, sum, and product types are the building blocks of a type
+system.</p>
+
+<h3>Bonus: Optional Types</h3>
+
+<p>An optional type is a type that can hold any of the values of another
+type, or not hold any value, which is usually represented as a
+singleton. So an optional is effectively a sum type between a given type
+and a singleton representing <q>doesn&#39;t hold a value</q>. In other words,
+the cardinality of an optional for a type <code>T</code> is <code>|O| = |T| + 1</code>.</p>
+
+<p>In Haskell, an optional is the famous <code>Maybe</code> type:</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Just</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Nothing</span><span class="w"></span>
+</pre></div>
+
+<p>A function that operates on <code>Maybe</code> could say <q>only apply <code>foo</code> if the
+optional contains an <code>a</code></q>:</p>
+<div class="highlight"><pre><span></span><span class="c1">-- Implementation of foo not provided in this example</span><span class="w"></span>
+<span class="nf">foo</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"></span>
+
+<span class="nf">transform</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span><span class="w"></span>
+<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Just</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Just</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
+<span class="nf">transform</span><span class="w"> </span><span class="kt">Nothing</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nothing</span><span class="w"></span>
+</pre></div>
+
+<p>The new C++17 equivalent is the <code>optional</code> type:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Implementation of foo not provided in this example</span>
+<span class="n">A</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">A</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">nullopt</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">nullopt</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This might read a bit like the pointer implementation:</p>
+<div class="highlight"><pre><span></span><span class="n">A</span><span class="o">*</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="n">A</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">nullptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>There is a key difference though: the type contained in the optional is
+part of the object, so it is not allocated dynamically the way we would
+allocate a pointer. <code>nullopt</code> is a helper object of the singleton type
+<code>nullopt_t</code>.</p>
+
+<p>Types are important because a big part of programming effectively
+consits of designing and composing types. Having a good understanding of
+the fundamentals leads to better, safer, and saner code.</p>
+
+<h2>Summary</h2>
+
+<p>We started by outlining some of the basic principles of type systems:</p>
+
+<ul>
+<li>Static and dynamic typing.</li>
+<li>Weak and strong typing.</li>
+<li>Static and dynamic polymorphism.</li>
+</ul>
+
+<p>Then we went over the building block types of a type system, with
+Haskell and C++ examples:</p>
+
+<ul>
+<li>Empty types (cardinality 0).</li>
+<li>Unit types (cardinality 1).</li>
+<li>Sum types (<code>S</code> of <code>A</code> and <code>B</code> has cardinality <code>A + B</code>).</li>
+<li>Product types (<code>P</code> of <code>A</code> and <code>B</code> has cardinality <code>A x B</code>).</li>
+<li>Optional types (<code>O</code> of <code>A</code> has cardinality <code>A + 1</code>).</li>
+</ul>
+
+<h2>Further Reading</h2>
+
+<p>Ben Dean had an excellent talk at CppCon this year, <a href="https://www.youtube.com/watch?v=ojZbFIQSdl8">Using Types
+Effectively</a>. Another great
+talk about type design from CppCon is <a href="https://www.youtube.com/watch?v=632a-DMM5J0">C++, Abstract Algebra and
+Practical Applications</a> by
+Robert Ramey. And then there is Bartosz Milewski
+<a href="https://bartoszmilewski.com/">blog</a> about Haskell, C++, and category
+theory.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2016/10/09/composable-generators.html>Composable Generators</a></span></div>
+<div id="next"><span><a href=../../.././2016/12/03/notes-on-error-handling.html>Notes on Error Handling</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

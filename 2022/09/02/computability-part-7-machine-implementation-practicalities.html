@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Computability Part 7: Machine Implementation Practicalities &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>September 02, 2022</span></header>
+<article>
+<h1>Computability Part 7: Machine Implementation Practicalities</h1>
+
+<p>In the <a href="https://vladris.com/blog/2022/07/31/computability-part-6-von-neumann-architecture.html">previous
+post</a>
+we covered the von Neumann architecture and even built a small VM
+implementing the different components. Such naïve implementation does
+make for a very inefficient machine though. In this post, we&#39;ll dive a
+bit deeper into machine architectures (virtual and physical) and discuss
+some of the implementation details. We&#39;ll talk about processing:
+register and stack-based; we&#39;ll talk about memory: word size, byte and
+word addressing; finally, we&#39;ll talk about I/O: port and memory mapped.
+Note these are all machines that conform to the von Neumann
+architecture, with the same high-level components. We&#39;re just double
+clicking to the next level of implementation details.</p>
+
+<h2>Register machines</h2>
+
+<p>The VM we implemented in our previous post simply operated directly over
+the memory. This works for a toy example, but moving data from memory to
+the CPU and back is costly. That&#39;s why modern CPUs employ multiple
+layers of caching (we won&#39;t cover these in this post), and rely on a
+set of <em>registers</em> to perform operations.</p>
+
+<p>Registers can store a number of bits (the <em>word size</em>, more on it below)
+and operations are performed using registers. For example, to add two
+numbers, the machine would load one number into register <code>R0</code>, the
+second number into register <code>R1</code>, add the values stored in registers
+<code>R0</code> and <code>R1</code>, then finally save the result back to memory:</p>
+<div class="highlight"><pre><span></span>mov r0 @&lt;memory address 1&gt; # Move the value from memory address 1 to r0
+mov r1 @&lt;memory address 2&gt; # Move the value from memory address 2 to r1
+add r0 r1 # Add the values storing the result in r0
+mov @&lt;memory address 3&gt; r0 # Move the value from r0 to memory address 3
+</pre></div>
+
+<p>Some register are used for general computation. These are called
+<em>general-purpose registers</em>. Other register have specialized purposes.
+For example, the program counter which keeps track of the instruction to
+be executed is usually implemented as an <code>IP</code> (instruction pointer) or
+<code>PC</code> (program counter) register.</p>
+
+<p>The original 8088 Intel processor had 14 registers. Modern Intel
+processors have significantly more registers<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>, though many of them
+are special-purpose. ARM processors have 17 registers<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup>, 13 of which
+are general purpose.</p>
+
+<p>Let&#39;s emulate a simple CPU with 4 general purpose registers and a
+program counter register to get the feel of it. We will only implement
+<code>mov</code> (move) and <code>add</code> instructions for this example. Our implementation
+will check the 16th bit of an argument to determine whether it refers to
+a register (if <code>0</code>) or to a memory location (if <code>1</code>).</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="n">memory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">registers</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="c1"># r0, r1, r2, r3, pc</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
+            <span class="n">instr</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span><span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">3</span>
+
+    <span class="k">def</span> <span class="nf">get_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="c1"># 16th bit tells us whether this refers to a register or memory</span>
+        <span class="k">if</span> <span class="n">arg</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">):</span> <span class="c1"># Memory address</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span> <span class="o">^</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># Register</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">set_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># 16th bit tells us whether this refers to a register or memory</span>
+        <span class="k">if</span> <span class="n">arg</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">):</span> <span class="c1"># Memory address</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span> <span class="o">^</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># Register</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">):</span>
+        <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
+            <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># mov</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_at</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_at</span><span class="p">(</span><span class="n">arg2</span><span class="p">))</span>
+            <span class="k">case</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># add</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_at</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_at</span><span class="p">(</span><span class="n">arg1</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_at</span><span class="p">(</span><span class="n">arg2</span><span class="p">))</span>
+</pre></div>
+
+<p>Here is how it would run a small program that adds two numbers and
+stores the result:</p>
+<div class="highlight"><pre><span></span><span class="n">program</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">15</span> <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">),</span> <span class="c1"># mov r0 @15</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">16</span> <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">),</span> <span class="c1"># mov r1 @16</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>              <span class="c1"># add r0 r1</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">17</span> <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="c1"># mov @17 r0</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">18</span> <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">),</span> <span class="c1"># mov pc @18 - this ends execution</span>
+    <span class="mi">40</span><span class="p">,</span>                   <span class="c1"># this is @15</span>
+    <span class="mi">2</span><span class="p">,</span>                    <span class="c1"># this is @16</span>
+    <span class="mi">0</span><span class="p">,</span>                    <span class="c1"># this is @17</span>
+    <span class="mi">10000</span>                 <span class="c1"># this is @18</span>
+<span class="p">]</span>
+
+<span class="c1">## Load program into memory</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">program</span> <span class="o">+</span> <span class="n">memory</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">):]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">memory</span><span class="p">[</span><span class="mi">17</span><span class="p">])</span> <span class="c1"># Should print 0</span>
+
+<span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">memory</span><span class="p">[</span><span class="mi">17</span><span class="p">])</span> <span class="c1"># Should print 42</span>
+</pre></div>
+
+<p>We&#39;re doing a bunch of stuff <q>by hand</q>, like loading the program into
+memory and not using an assembler to implement the program. That&#39;s
+because we&#39;re only focusing on the register-based processing. You can
+update the assembler in the previous post to target this VM as an
+exercise.</p>
+
+<h2>Stack machines</h2>
+
+<p>An alternative to registers is to use a stack for storage. While
+hardware stack machines are not unheard of, register machines easily
+outperform them so most CPUs you interact with are register-based. That
+said, stack machines are a popular choice for virtual machines - they
+are easier to implement and port to different systems and the stack
+keeps the data being processed close together which helps with
+performance when running the VM on a physical machine. A few examples:
+JVM (the Java virtual machine), the CLR (the .NET virtual machine),
+CPython&#39;s VM (the VM for the reference Python implementation) are all
+stack-based.</p>
+
+<p>The example we used above of adding two numbers would look like this on
+a stack machine: push the first number onto the stack, push the second
+number onto the stack, add the numbers (which would pop the two numbers
+from the stack and replace them with their sum), then pop the value from
+the stack and store it in memory.</p>
+<div class="highlight"><pre><span></span>push @&lt;memory address 1&gt; # Push a value from memory address 1
+push @&lt;memory address 2&gt; # Push a value from memory address 2
+add # Add the top two values
+pop @&lt;memory address 3&gt; # Pop the top of the stack and store at memory address 3
+</pre></div>
+
+<p>Another advantage of stack machines is in general the instructions tend
+to be shorter. As you can see above, for most instructions that move
+data around, we don&#39;t need to specify both a source and a destination
+since the stack is implied.</p>
+
+<p>Let&#39;s emulate a simple stack VM with only <code>push</code>, <code>add</code>, and <code>pop</code>
+instructions, plus a <code>jmp</code> (jump) instruction so we can use the same
+mechanism to terminate:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="n">memory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
+            <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+=</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
+            <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># push</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span><span class="p">])</span>
+            <span class="k">case</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># pop</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">case</span> <span class="mi">2</span><span class="p">:</span> <span class="c1"># jmp</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">case</span> <span class="mi">3</span><span class="p">:</span> <span class="c1"># add</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+</pre></div>
+
+<p>Here is how it would run a small program that adds two numbers and
+stores the result:</p>
+<div class="highlight"><pre><span></span><span class="n">program</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="c1"># push @12</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="c1"># push @13</span>
+    <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># add</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="c1"># pop @14</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="c1"># push @15</span>
+    <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># jmp</span>
+    <span class="mi">40</span><span class="p">,</span>    <span class="c1"># this is @12</span>
+    <span class="mi">2</span><span class="p">,</span>     <span class="c1"># this is @13</span>
+    <span class="mi">0</span><span class="p">,</span>     <span class="c1"># this is @14</span>
+    <span class="mi">10000</span><span class="p">,</span> <span class="c1"># this is @15</span>
+<span class="p">]</span>
+
+<span class="c1">## Load program into memory</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">program</span> <span class="o">+</span> <span class="n">memory</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">):]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">memory</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span> <span class="c1"># Should print 0</span>
+
+<span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">memory</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span> <span class="c1"># Should print 42</span>
+</pre></div>
+
+<p>Contrast the implementation with the register-based one: the latter VM
+only needs 1 argument for the instructions we implemented and the
+program is slightly shorter.</p>
+
+<p>So far we focused on how data is processed. Let&#39;s also look at the
+different ways of referencing data.</p>
+
+<h2>Word size</h2>
+
+<p>We&#39;ve been using Python for our toy implementations. Python supports
+arbitrarily large integers, so a list of numbers in Python (the way we
+implemented our memory) doesn&#39;t imply much in terms of bits and bytes.
+Bits and bytes do become important for physical machines and serious VMs
+implemented in languages closer to the metal.</p>
+
+<p>First, let&#39;s talk about <em>word size</em>. A <em>word</em> is the fixed-size unit of
+computation for a CPU. It&#39;s size is the number of bits. For example, a
+16-bit processor has a word-size of 16-bits.</p>
+
+<p>Applied to registers, this would mean that a machine register can hold
+at most 16 bits (a value between 0 and 65535). Operations within the
+value range are blazingly fast, as they run natively. If we need to
+process larger values, we need to do extra work to chunk the values into
+words and process these in turn. For example we can split a 32-bit value
+into two 16-bit values, process them separately, then concatenate the
+result. This obviously impacts performance. The point being that we are
+not necessarily limited to the word size, but processing larger values
+becomes much costlier.</p>
+
+<p>Applied to memory addresses, this would mean how pointers are
+represented and what range of values can be addressed. For example, if
+the word size is 16 bits, then a pointer can point to any one of 65536
+distinct memory locations.</p>
+
+<p>An architecture can use the same word size for both registers and
+pointers, or different word sizes for different concerns. Commonly, a
+single word size is used (and, potentially, fractions or multiples of it
+for special concerns), that&#39;s why it&#39;s common to refer to a processor
+as a 32-bit processor, 64-bit processor etc.</p>
+
+<h2>Byte and word addressing</h2>
+
+<p>An implication of word size applied to memory addressing is how the
+machine accesses memory. Some architectures allow <em>byte addressing</em>,
+which means a pointer points to a specific byte in memory, while others
+support only <em>word addressing</em>, which means a pointer points to a word
+in memory.</p>
+
+<p>This is another important decision when designing a computer. If we want
+to be able to address individual bytes, a 16 bit pointer can refer to
+any of 65536 bytes. That is 64 Kb. If our memory is larger than that, a
+pointer won&#39;t be able to address higher locations.</p>
+
+<p>On the other hand, if we make our memory word-addressable, for our
+16-bit example, a pointer can refer to any of 65536 16-bit words. 16
+bits are 2 bytes, so our memory&#39;s upper limit is 131072 bytes (65536 x
+2), which is 128 Kb. We can now refer to higher memory addresses, but we
+can&#39;t address individual bytes as before - address 0 is no longer the
+byte at 0, is the whole 2-byte word (since address 1 refers to the next
+2 bytes and so on).</p>
+
+<p>This difference becomes even more dramatic for higher word sizes. A
+32-bit pointer can address 4294967296 bytes (up to 4 Gb of memory).
+Alternately, with word addressing, the same pointer can cover 16 Gb.</p>
+
+<p>On the flip side, word-addressing is less efficient when the unit of
+processing is smaller. Let&#39;s take text editing as an example. Say we
+want to update a one byte character, like a UTF-8 encoded common
+character like <code>a</code>. If we can refer to it directly, we can load,
+process, and update its memory location using a pointer. If, on the
+other hand, this character is part of a larger word, we would have to
+process the whole word to extract the character we care about (masking
+bits we don&#39;t need to process), apply the update to the whole word, and
+write this word back to memory.</p>
+
+<p>So depending on the scenario, byte or word addressing might make things
+faster or slower. Byte addressing is great for text processing -
+document authoring, HTML, writing code etc. Word addressing unlocks
+larger memory sizes and is great for crunching numbers - math, graphics
+etc.</p>
+
+<p>Another important design decision is how to handle I/O.</p>
+
+<h2>Port-mapped I/O</h2>
+
+<p>One way to connect I/O to the system is through specific CPU
+instructions. For example, the CPU might have an <code>inp</code> instruction used
+to consume input and an <code>out</code> instruction used to send output. Programs
+can use these instructions to perform I/O. This is called <em>port-mapped
+I/O</em>, as I/O is achieved by connecting devices to the CPU via dedicated
+ports.</p>
+
+<p>For example, let&#39;s extend our stack machine with an <code>out</code> instruction
+(also connecting an output to it):</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">memory</span><span class="p">,</span> <span class="n">out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
+            <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+=</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
+            <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># push</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span><span class="p">])</span>
+            <span class="k">case</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># pop</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">case</span> <span class="mi">2</span><span class="p">:</span> <span class="c1"># jmp</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">case</span> <span class="mi">3</span><span class="p">:</span> <span class="c1"># add</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+            <span class="k">case</span> <span class="mi">4</span><span class="p">:</span> <span class="c1"># out</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+</pre></div>
+
+<p>Here is a program that prints <q>Hello</q>:</p>
+<div class="highlight"><pre><span></span><span class="n">program</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="c1"># push @24</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="c1"># push @25</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">26</span><span class="p">,</span> <span class="c1"># push @26</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="c1"># push @27</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="c1"># push @28</span>
+    <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># out</span>
+    <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># out</span>
+    <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># out</span>
+    <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># out</span>
+    <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># out</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">29</span><span class="p">,</span> <span class="c1"># push @29</span>
+    <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># jmp</span>
+    <span class="mi">111</span><span class="p">,</span>   <span class="c1"># this is @24</span>
+    <span class="mi">108</span><span class="p">,</span>   <span class="c1"># this is @25</span>
+    <span class="mi">108</span><span class="p">,</span>   <span class="c1"># this is @26</span>
+    <span class="mi">101</span><span class="p">,</span>   <span class="c1"># this is @27</span>
+    <span class="mi">72</span><span class="p">,</span>    <span class="c1"># this is @28</span>
+    <span class="mi">10000</span><span class="p">,</span> <span class="c1"># this is @29</span>
+<span class="p">]</span>
+
+<span class="c1">## Load program into memory</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">program</span> <span class="o">+</span> <span class="n">memory</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">):]</span>
+
+<span class="k">def</span> <span class="nf">out</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+<span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<h2>Memory-mapped I/O</h2>
+
+<p>An alternative to port-mapped I/O is <em>memory-mapped I/O</em>. In this case,
+a certain address range of memory is used for I/O operations. That is,
+from the CPU&#39;s perspective, memory and I/O are addressed identically.
+But depending on the address range, data might reside in memory or it
+might actually come from/go to an I/O device.</p>
+
+<p>Let&#39;s enhance our memory implementation (which so far was just an
+array) to support mapped I/O. In this case, any values written at
+address 1000 will be instead printed on screen:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MappedMemory</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
+        <span class="c1"># MappedMemory wraps a list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="n">program</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">):]</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Use underlying list&#39;s __len__</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="c1"># Index in wrapped list</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># If key is 1000, print</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="c1"># Otherwise set in underlying list</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</pre></div>
+
+<p>And here is the corresponding program that prints <q>Hello</q> (using the
+stack CPU without the <code>out</code> instruction and connected output):</p>
+<div class="highlight"><pre><span></span><span class="n">program</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="c1"># push @24</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="c1"># push @25</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">26</span><span class="p">,</span> <span class="c1"># push @26</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="c1"># push @27</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="c1"># push @28</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="c1"># pop @1000</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="c1"># pop @1000</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="c1"># pop @1000</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="c1"># pop @1000</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="c1"># pop @1000</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">29</span><span class="p">,</span>   <span class="c1"># push @29</span>
+    <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>    <span class="c1"># jmp</span>
+    <span class="mi">111</span><span class="p">,</span>     <span class="c1"># this is @24</span>
+    <span class="mi">108</span><span class="p">,</span>     <span class="c1"># this is @25</span>
+    <span class="mi">108</span><span class="p">,</span>     <span class="c1"># this is @26</span>
+    <span class="mi">101</span><span class="p">,</span>     <span class="c1"># this is @27</span>
+    <span class="mi">72</span><span class="p">,</span>      <span class="c1"># this is @28</span>
+    <span class="mi">10000</span><span class="p">,</span>   <span class="c1"># this is @29</span>
+<span class="p">]</span>
+
+<span class="c1">## Load program into memory</span>
+<span class="n">memory</span> <span class="o">=</span> <span class="n">MappedMemory</span><span class="p">(</span><span class="n">program</span><span class="p">)</span>
+
+<span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<p>Note in this program we repeatedly <q>set</q> the value at address 1000
+which is mapped to our output device (<code>print()</code>).</p>
+
+<h2>Summary</h2>
+
+<p>In this post we discussed some of the implementation details of machines
+and virtual machines:</p>
+
+<ul>
+<li>  Register machines, which are high-performance designs for physical
+machines.</li>
+<li>  Stack machines, which are simple, portable, and great alternatives
+for VMs.</li>
+<li>  Word size, as the unit of data used by the machine for different
+purposes.</li>
+<li>  Word-addressable memory, which is great for computation intensive
+scenarios.</li>
+<li>  Byte-addressable memory, which is best for text-processing
+scenarios.</li>
+<li>  Port-mapped I/O, where special CPU instructions are used for input
+and ouptut.</li>
+<li>  Memory-mapped I/O, where reserved address ranges of memory are used
+for I/O and the CPU can access I/O just like it does memory.</li>
+</ul>
+
+<h3>Bonus</h3>
+
+<p>A few years back I implemented a toy VM with 7 registers, 16 op codes,
+128 KB of memory, and port-mapped I/O in 121 lines of C++. It comes with
+an assembler, examples, and, of course, a Brainfuck interpreter. Linking
+it here for reference: <a href="https://github.com/vladris/pixie">Pixie</a>.</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>See <a href="https://reverseengineering.stackexchange.com/questions/19693/how-many-registers-does-an-x86-64-cpu-actually-have%3E">this SO question</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p>See the <a href="https://developer.arm.com/documentation/dui0473/c/overview-of-the-arm-architecture/arm-registers?lang=en%3E">ARM documentation</a>.&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2022/07/31/computability-part-6-von-neumann-architecture.html>Computability Part 6: Von Neumann Architecture</a></span></div>
+<div id="next"></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

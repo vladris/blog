@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Computability Part 5: Elementary Cellular Automata &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>July 06, 2022</span></header>
+<article>
+<h1>Computability Part 5: Elementary Cellular Automata</h1>
+
+<p>In the <a href="https://vladris.com/blog/2022/06/11/computability-part-4-conway-s-game-of-life.html">previous
+post</a>
+we talked about Conway&#39;s Game of Life as a well-known cellular
+automaton. In this post we will cover even simpler automata - the
+<em>elementary cellular automata</em>. Stephen Wolfram covers them extensively
+in his book, <a href="https://www.wolframscience.com/">A New Kind of Science</a>.</p>
+
+<p>To recap, we defined a cellular automaton as a discrete n-dimensional
+lattice of cells, a set of states (for each cell), a notion of
+neighborhood for each cell, and a transition function mapping the
+neighborhood of each cell to a new cell state.</p>
+
+<p>An elementary cellular automaton is 1-dimensional - an array of cells. A
+cell can be either <em>on</em> or <em>off</em> (just like in Conway&#39;s Game of Life).
+The neighborhood of a cell, meaning the cells that we take into account
+when we determine the next state of the next generation, consists of the
+cell itself and its left and right neighbors.</p>
+
+<p>For example, we can define an elementary cellular automaton with the
+following rules:</p>
+<div class="highlight"><pre><span></span>[ on,  on,  on] -&gt; off
+[ on,  on, off] -&gt; off
+[ on, off,  on] -&gt; off
+[ on, off, off] -&gt;  on
+[off,  on,  on] -&gt; off
+[off,  on, off] -&gt;  on
+[off, off,  on] -&gt;  on
+[off, off, off] -&gt; off
+</pre></div>
+
+<p>If we start with a single <em>on</em> cell and produce 10 generations, we get
+(using <code>#</code> to mean <em>on</em>):</p>
+<div class="highlight"><pre><span></span>#
+###
+#   #
+### ###
+#       #
+###     ###
+#   #   #   #
+### ### ### ###
+#               #
+###             ###
+</pre></div>
+
+<h2>Rule encoding</h2>
+
+<p>The elementary cellular automata can easily be enumerated exhaustively:
+the neighborhood of a cell can be in only one of 8 states, as we saw
+above: <code>[on, on, on]</code>, <code>[on, on, off]</code>, ... <code>[off, off, off]</code>. The
+transition function maps each of these possible states to either <em>on</em> or
+<em>off</em>. If we think of the <em>on</em>/<em>off</em> as a bit, we need 8 bits to
+represent the transition function.</p>
+<div class="highlight"><pre><span></span>[ on,  on,  on] -&gt; off
+[ on,  on, off] -&gt; off
+[ on, off,  on] -&gt; off
+[ on, off, off] -&gt;  on
+[off,  on,  on] -&gt; off
+[off,  on, off] -&gt;  on
+[off, off,  on] -&gt;  on
+[off, off, off] -&gt; off
+</pre></div>
+
+<p>can be represented as the binary number <code>00010110</code>, which, in decimal,
+is 22 (where <code>[off, off, off]</code> is the least significant bit). We can
+represent numbers from 0 to 255 in 8 bits, so there are exactly 256
+elementary cellular automata. This encoding is referred to as <em>Rule</em> as
+in <q>transition rule</q>. The elementary cellular automata in our above
+example is called <em>Rule 22</em> .</p>
+
+<h2>Elementary cellular automata behavior</h2>
+
+<p>A common way to plot the evolution of an elementary cellular automata
+over multiple generation is to render each generation below the previous
+one, like our above example using <code>#</code> for <em>on</em>. A more condensed version
+with 1 pixel per cell of running rule 22 for 301 generations looks like
+this:</p>
+
+<p><img src="22.png" alt="image"></p>
+
+<p>At this level, we can clearly see patterns emerging in the automaton. We
+get an even more interesting view if, instead of starting with just a
+single <em>on</em> cell, we start with a random state - an array of random <em>on</em>
+and <em>off</em> cells. Here is rule 22 starting with 301 random cells and
+running for 301 generations:</p>
+
+<p><img src="22r.png" alt="image"></p>
+
+<p>We can also easily see some of the automatons are complements of other
+automatons: if we simply flip each bit, we end up with a complementary
+version. Rule 22&#39;s complement is Rule 151:</p>
+
+<p><img src="151r.png" alt="image"></p>
+
+<p>We can also reflect a rule by swapping the transitions for
+<code>[on, off, off]</code> with <code>[off, off, on]</code> and <code>[on, on, off]</code> with
+<code>[off, on, on]</code>. This doesn&#39;t work for rule 22, since its reflection is
+still 22, but, for example, rules 3 and 17 are reflections of each
+other.</p>
+
+<p>Rule 3:</p>
+<div class="highlight"><pre><span></span>[ on,  on,  on] -&gt; off
+[ on,  on, off] -&gt; off
+[ on, off,  on] -&gt; off
+[ on, off, off] -&gt; off
+[off,  on,  on] -&gt; off
+[off,  on, off] -&gt; off
+[off, off,  on] -&gt;  on
+[off, off, off] -&gt;  on
+</pre></div>
+
+<p>Renders as:</p>
+
+<p><img src="3.png" alt="image"></p>
+
+<p>Rule 17:</p>
+<div class="highlight"><pre><span></span>[ on,  on,  on] -&gt; off
+[ on,  on, off] -&gt; off
+[ on, off,  on] -&gt; off
+[ on, off, off] -&gt;  on
+[off,  on,  on] -&gt; off
+[off,  on, off] -&gt; off
+[off, off,  on] -&gt; off
+[off, off, off] -&gt;  on
+</pre></div>
+
+<p>Renders as:</p>
+
+<p><img src="17.png" alt="image"></p>
+
+<p>That means that, even though there are 256 possible automata, from
+behavioral perspective, some are complements or reflections of others
+thus exhibit the same behavior. In fact, there are only 88 uniquely
+behaving automata, all others being complements and/or reflections of
+these.</p>
+
+<h2>Implementation</h2>
+
+<p>Let&#39;s look at a Python implementation. We will represent the state of
+an automaton as a list of Boolean cells. We can encode the state of a
+neighborhood as a 3 bit number:
+<code>left neighbor * 4 + cell * 2 + right neighbor</code>. Given a list of cells
+and the index of a cell, we have:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">neighbors</span><span class="p">(</span><span class="n">cells</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">+</span> \
+        <span class="n">cells</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> \
+        <span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+<p>If we run off the ends of the list, we assume the state of that cell is
+<em>off</em>. In Python, <code>False</code> becomes <code>0</code> and <code>True</code> becomes 1 if we do
+arithmetic with them, so this function will return a number between 0
+and 7.</p>
+
+<p>We can derive the transitions from the rule number by taking a rule
+number and expanding it into a dictionary that maps each value from 0 to
+7 to the corresponding bit in the rule number value:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">transition</span><span class="p">(</span><span class="n">rule</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">rule</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">)}</span>
+</pre></div>
+
+<p>This might be a bit hard to understand, so let&#39;s work through an
+example. Let&#39;s take Rule 22. The binary representation of Rule 22 is
+<code>00010110</code>. We&#39;re iterating over the range 0...7 (<code>i</code>) and for each of
+these values, we shift <code>1</code> exactly <code>i</code> bits left. Then we check if the
+rule <em>logic AND</em> this shifted bit is different than 0.</p>
+
+<p>For <code>i == 0</code>: <code>00010110 &amp; (1 &lt;&lt; 0)</code>, which is <code>00010110 &amp; 00000001</code>, we
+get <code>False</code>, so <code>transitions[0] = False</code>.</p>
+
+<p>For <code>i == 1</code>: <code>00010110 &amp; (1 &lt;&lt; 1)</code>, which is <code>00010110 &amp; 00000010</code>, we
+get <code>True</code>, so <code>transitions[1] = True</code>.</p>
+
+<p>...</p>
+
+<p>For <code>i == 7</code>: <code>00010110 &amp; (1 &lt;&lt; 7)</code>, which is <code>00010110 &amp; 10000000</code>, we
+get <code>False</code>, so <code>transitions[7] = False</code>.</p>
+
+<p>Remember the keys of the dictionary are neighborhood states.</p>
+
+<p>Now we just need a function that takes a rule, an initial state, and the
+number of steps we want to run. The function will start with the initial
+state, then at each step, update the list of cells using the transition
+function:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">steps</span><span class="p">):</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">cells</span> <span class="o">=</span> <span class="n">transition</span><span class="p">(</span><span class="n">rule</span><span class="p">),</span> <span class="n">initial_state</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">cells</span>
+        <span class="n">cells</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="n">neighbors</span><span class="p">(</span><span class="n">cells</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">))]</span>
+</pre></div>
+
+<p>We talked about two ways to look at cellular automata: starting with a
+single <em>on</em> cell, or starting with a random initial state.</p>
+
+<p>Let&#39;s implement an <code>initial_state</code> function which takes a cell count as
+input and returns a list of cells, all of which are <em>off</em> except the
+middle one:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">initial_state</span><span class="p">(</span><span class="n">cell_count</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">cell_count</span>
+    <span class="n">result</span><span class="p">[</span><span class="n">cell_count</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+
+<p>We&#39;ll also want a <code>random_initial_state</code> which takes a cell count and
+returns a random cell list. We&#39;ll take advantage of the fact that
+Python supports arbitrarily large integers natively, so we&#39;ll just
+generate a random number with <code>cell_count</code> bits, then derive the cell
+list from that (if a bit is <code>1</code>, the corresponding cell is <em>on</em>):</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span> 
+
+<span class="k">def</span> <span class="nf">random_initial_state</span><span class="p">(</span><span class="n">cell_count</span><span class="p">):</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">cell_count</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">seed</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cell_count</span><span class="p">)]</span>
+</pre></div>
+
+<p>Here is all the code in one listing:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">neighbors</span><span class="p">(</span><span class="n">cells</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">+</span> \
+        <span class="n">cells</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> \
+        <span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">transition</span><span class="p">(</span><span class="n">rule</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">rule</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">)}</span>
+
+<span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">steps</span><span class="p">):</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">cells</span> <span class="o">=</span> <span class="n">transition</span><span class="p">(</span><span class="n">rule</span><span class="p">),</span> <span class="n">initial_state</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">cells</span>
+        <span class="n">cells</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="n">neighbors</span><span class="p">(</span><span class="n">cells</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">))]</span>
+
+<span class="k">def</span> <span class="nf">initial_state</span><span class="p">(</span><span class="n">cell_count</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">cell_count</span>
+    <span class="n">result</span><span class="p">[</span><span class="n">cell_count</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="kn">import</span> <span class="nn">random</span> 
+
+<span class="k">def</span> <span class="nf">random_initial_state</span><span class="p">(</span><span class="n">cell_count</span><span class="p">):</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">cell_count</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">seed</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">i</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cell_count</span><span class="p">)]</span>
+</pre></div>
+
+<p>Here is how we can use this to print the first 30 steps of Rule 22:</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">run</span><span class="p">(</span><span class="mi">22</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">(</span><span class="mi">61</span><span class="p">),</span> <span class="mi">30</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;#&#39;</span> <span class="k">if</span> <span class="n">e</span> <span class="k">else</span> <span class="s1">&#39; &#39;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">state</span><span class="p">]))</span>
+</pre></div>
+
+<h2>Wolfram classification</h2>
+
+<p>Wolfram analyzed the behavior of cellular automata and classified them
+in 4 classes (called <em>Wolfram classes</em>). These go beyond elementary
+cellular automata to cover other cellular automata like, for example,
+ones where the next generation of a cell is not determined only by the
+cell and the two cells next to it, rather the neighborhood includes
+next-next cells. In this post we&#39;ll stick to elementary cellular
+automata though.</p>
+
+<h3>Class 1</h3>
+
+<p>Class 1 automata converge quickly to a uniform state. For example rule 0
+becomes all <em>off</em> in one generation:</p>
+
+<p><img src="0r.png" alt="image"></p>
+
+<p>It&#39;s complement, rule 255, becomes all <em>on</em> in one generation:</p>
+
+<p><img src="255r.png" alt="image"></p>
+
+<h3>Class 2</h3>
+
+<p>Class 2 automata converge quickly to a repetitive state. For example
+rule 4:</p>
+
+<p><img src="4r.png" alt="image"></p>
+
+<h3>Class 3</h3>
+
+<p>Class 3 automata appear to remain in a random state, without converging.
+Rule 22, which we started with above, exhibits this type of behavior:</p>
+
+<p><img src="22r.png" alt="image"></p>
+
+<h3>Class 4</h3>
+
+<p>The most interesting class of cellular automata, class 4, has a quite
+remarkable behavior: areas of cells end up in static or repetitive
+state, while some cells end up forming structures that interact with
+each other. Rule 110 is the only elementary cellular automaton that
+exhibits this behavior:</p>
+
+<p><img src="110r.png" alt="image"></p>
+
+<h2>Turing completeness</h2>
+
+<p>The fact that Rule 110 has areas of cells that are static or repetitive
+while some other cells form structures should remind you of the
+Conway&#39;s Game of Life spaceships we discussed in the previous post. In
+the previous post, we saw that the Game of Life is Turing complete, and
+how a Turing machine was <q>implemented</q> using spaceships as signals
+<q>processed</q> by other patterns.</p>
+
+<p>Turns out Rule 110 is also Turing complete. Stephen Wolfram conjectured
+this in 1985, and the conjecture was proved in 2004 by Matthew Cook<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>.
+Cook uses Rule 110 gliders (interacting structures) to emulate a cyclic
+tag system. We saw in <a href="https://vladris.com/blog/2022/05/20/computability-part-3-tag-systems.html">Computability Part 3: Tag
+Systems</a>
+that cyclic tag systems can emulate tag systems, and an m-tag system
+with \(m \gt 1\) is Turing complete.</p>
+
+<p>Rule 110, an elementary cellular automaton, is also capable of universal
+computation. And while this all might seem very abstract, cellular
+automata are so simple they show up in nature:</p>
+
+<p><img src="cone.jpeg" alt="image"></p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>See <a href="https://wpmedia.wolfram.com/uploads/sites/13/2018/02/15-1-1.pdf">Universality in Elementary Cellular
+Automata</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2022/06/11/computability-part-4-conway-s-game-of-life.html>Computability Part 4: Conway&#x27;s Game of Life</a></span></div>
+<div id="next"><span><a href=../../.././2022/07/31/computability-part-6-von-neumann-architecture.html>Computability Part 6: Von Neumann Architecture</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

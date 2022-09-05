@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Binary Relations &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>December 10, 2017</span></header>
+<article>
+<h1>Binary Relations</h1>
+
+<h2>Definitions</h2>
+
+<p>Given a set of objects <code>A</code>, a binary relation <code>R</code> on the set is defined
+as a subset of <code>A x A</code>. The <em>characteristic function</em> <code>r</code> for <code>R</code> is the
+function <code>r : A x A -&gt; bool</code> such that <code>r(x, y)</code> is <code>true</code> if
+<code>(x, y) in R</code>, and <code>false</code> if <code>(x, y) not in R</code>. For a more natural
+notation, we can use <code>x ~ y</code> to denote <code>r(x, y)</code>.</p>
+
+<p>More generally, a binary relation can be defined on a pair of sets
+<code>A x B</code> but to keep things simple, we&#39;ll only cover binary relations
+over a single set.</p>
+
+<p>Binary relations may have several properties. A few interesting ones
+are:</p>
+
+<ul>
+<li>A binary relation is <em>reflexive</em> if for any <code>x</code> in <code>A</code>, <code>x ~ x</code>.</li>
+<li>A binary relation is <em>strict</em> or <em>irreflexive</em> if there is no <code>x</code> in
+<code>A</code> for which <code>x ~ x</code>.</li>
+<li>A binary relation is <em>symmetric</em> if for any <code>x, y</code> in <code>A</code>, <code>x ~ y</code>
+implies <code>y ~ x</code>.</li>
+<li>A binary relation is <em>antisymmetric</em> if for any <code>x, y</code> in <code>A</code>,
+<code>x ~ y</code> and <code>y ~ x</code> implies <code>x = y</code>.</li>
+<li>A binary relation is <em>transitive</em> if for any <code>x, y, z</code> in <code>A</code>, if
+<code>x ~ y</code> and <code>y ~ z</code>, then <code>x ~ z</code>.</li>
+<li>A binary relation is <em>total</em> if for any <code>x, y</code> in <code>A</code>, either
+<code>x ~ y</code>, <code>y ~ x</code>, or both (in other words, for any <code>x, y</code>, <code>~</code>
+imposes some relation between them).</li>
+</ul>
+
+<h3>Examples</h3>
+
+<p>The relation <em>is in the subtree rooted at</em> is a reflexive relation where
+<code>A</code> is the set of nodes of a tree. For any pair of nodes <code>x</code> and <code>y</code>, we
+can establish whether <code>x</code> is in the subtree rooted at <code>y</code> or not, and
+for any <code>x</code>, <code>x ~ x</code> is <code>true</code>.</p>
+
+<p>The relation <em>is parent of</em> in a tree is a strict relation: for any <code>x</code>
+in the set of tree nodes <code>A</code>, <code>x</code> cannot be a parent of itself.</p>
+
+<p>The relation <em>edge between</em> over the vertices of a non-directed graph is
+a symmetric relation: for any <code>x</code> and <code>y</code> vertices of the graph, if
+there is an edge from <code>x</code> to <code>y</code>, the same edge exists from <code>y</code> to <code>x</code>,
+in other words, if <code>x ~ y</code> then <code>y ~ x</code>.</p>
+
+<p>The <em>is in the subtree rooted at</em> relation above is also antisymmetric:
+if for a pair of nodes we can say <code>x</code> is in the subtree rooted at <code>y</code>
+and also <code>y</code> is in the subtree rooted at <code>x</code>, it&#39;s obvious that both
+<code>x</code> and <code>y</code> are, in fact, the root of the subtree, thus <code>x ~ y</code>.</p>
+
+<p>The relation <em>is reachable from</em> over the vertices of a directed graph
+is a transitive relation: if <code>x</code> is reachable from <code>y</code> and <code>y</code> is
+reachable from <code>z</code>, then <code>x</code> is reachable from <code>z</code>.</p>
+
+<p>All of the above examples are of total relations. An example of a
+non-total relation is <em>is ancestor of</em> in a tree. <code>x</code> can be an ancestor
+of <code>y</code>, in which case <code>x ~ y</code>, or <code>y</code> can be an ancestor of <code>x</code>, in
+which case <code>y ~ x</code>, but it could also be that <code>x</code> and <code>y</code> are in
+different subtrees, so neither <code>x ~ y</code> nor <code>y ~ x</code> holds.</p>
+
+<h2>Preorder</h2>
+
+<p>A <em>preorder</em> is a relation which is reflexive and transitive.</p>
+
+<p>A preorder which is also symmetric is an <em>equivalence</em>. A preorder which
+is antisymmetric is a <em>partial order</em>. More on those below.</p>
+
+<p>An example of preorder is the <em>is reachable from</em> relation over a
+directed graph in the example above. This relation is obviously
+reflexive and transitive, but it is neither symmetric nor antisymmetric.
+If <code>x</code> is reachable from <code>y</code>, it doesn&#39;t mean that <code>y</code> is reachable
+from <code>x</code>, so symmetry is not guaranteed. Similarly, if <code>x</code> is reachable
+from <code>y</code> and <code>y</code> is reachable from <code>x</code>, it does not mean that <code>y</code> equals
+<code>x</code>.</p>
+
+<h2>Equivalence and Equality</h2>
+
+<p>An <em>equivalence</em> relation <code>~</code> is a binary relation that is reflexive,
+symmetric, and transitive. In other words, it is a preorder which also
+has the symmetric property.</p>
+
+<p>Such a relation partitions the set over which it is defined into
+<em>equivalence classes</em> - groups of objects that are equivalent based on
+the relation.</p>
+
+<p>An example of equivalence is <em>same month</em> over a set of dates. This
+relation is reflexive, since a date <code>d</code> has the same month as itself
+(<code>d ~ d</code>); is symmetric, since if <code>d1</code> has the same month as <code>d2</code>, then
+<code>d2</code> has the same month as <code>d1</code> (<code>d1 ~ d2 =&gt; d2 ~ d1</code>); and transitive,
+since if <code>d1 ~ d2 and d2 ~ d3 =&gt; d1 ~ d3</code>.</p>
+
+<p>This relation partitions our set of dates in the equivalence classes
+corresponding to <em>dates in January</em>, <em>dates in February</em>, and so on.
+Note that the dates for which the relation holds are equivalent, but not
+necessarily equal.</p>
+
+<p>An <em>equality</em> relation is an equivalence relation which partitions the
+set <code>A</code> consisting of <code>n</code> objects into exactly <code>n</code> equivalence classes.
+In other words, for any <code>x</code> in <code>A</code>, only <code>x ~ x</code> is <code>true</code>.</p>
+
+<h2>Partial Order and Total Order</h2>
+
+<p>A <em>partial order</em> relation <code>&lt;=</code> is a binary relation that is reflexive,
+antisymmetric, and transitive. In other words, it is a preorder which
+also has the antisymmetric property.</p>
+
+<p>An example of a partial order is the <em>is subset of</em> relation. It is
+reflexive (<code>A</code> is a subset of <code>A</code>), antisymmetric (if <code>A</code> is a subset of
+<code>B</code> and <code>B</code> is a subset of <code>A</code>, then <code>A = B</code>), and transitive (if <code>A</code> is
+a subset of <code>B</code> and <code>B</code> is a subset of <code>C</code>, then <code>A</code> is a subset of
+<code>C</code>).</p>
+
+<p>A <em>total order</em> relation is a partial order that is also total. The
+above example relation <em>is subset of</em> is not total - there could be a
+pair of sets <code>A</code> and <code>B</code> such that neither is the subset of the other.</p>
+
+<p>An example of a total order relation is <em>less than or equal to</em> for
+integers.</p>
+
+<h2>Weak Order and Strict Weak Order</h2>
+
+<p>A <em>weak order</em> relation <code>~</code> is a binary relation that is transitive and
+total. This implies reflexivity (for any <code>x</code> and <code>y</code>, either <code>x ~ y</code>,
+<code>y ~ x</code>, or both, so for <code>x</code> and <code>x</code> we have <code>x ~ x</code>). In other words,
+it is a preorder which is also total.</p>
+
+<p>An example of a weak order is <em>less than or equal absolute value</em> for
+complex numbers. For any two complex numbers <code>c1</code> and <code>c2</code>, either
+<code>c1 ~ c2</code> ( <code>|c1| &lt;= |c2|</code>), <code>c2 ~ c1</code> (<code>|c2| &lt;= |c1|</code>), or both, so <code>~</code>
+is total. We also have <code>c1 ~ c2</code> and <code>c2 ~ c3</code> implies <code>c1 ~ c3</code>
+(<code>|c1| &lt;= |c2|</code> and <code>|c2| &lt;= |c3|</code> implies <code>|c1| &lt;= |c3|</code>). Unlike a
+total order though, the relation is not antisymmetric. We can have
+<code>c1 ~ c2</code>, <code>c2 ~ c1</code>, with <code>c1</code> and <code>c2</code> distinct complex numbers (any
+two numbers with the same absolute value but different components).</p>
+
+<p>A <em>strict weak order</em> relation <code>&lt;</code> is a binary relation that is
+transitive and strict (irreflexive).</p>
+
+<p>An example of strict weak order is <em>less than</em> for integers.</p>
+
+<h2>Applications</h2>
+
+<p>Most programming languages provide a way to customize equality,
+inequality, and comparison operators (<code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>).
+There is an interesting point to be made about what equality <em>means</em> in
+this context. For some types, this can simply mean comparing the bits
+and if they are the same, the objects are equal. But we also have
+<em>logical equality</em> - two objects can have different bitwise values but
+still be considered equal. Even more so for comparing objects -
+comparing bit representations usually does not translate to a meaningful
+comparison of objects.</p>
+
+<p>Note though that any other function <code>bool r(const T&amp; m1, const T&amp; m2)</code>
+or member function <code>bool r(const T&amp; other)</code> of <code>T</code> denotes a binary
+relation on <code>T</code>.</p>
+
+<p>Different algorithms require different types of relations to exist
+between objects.</p>
+
+<p>For example, we need at least a partial order relation to perform a
+topological sort. That is, in an directed acyclic graph, we can sort the
+vertices such that for every edge from <code>a</code> to <code>b</code>, <code>a</code> precedes <code>b</code> in
+the order. This can be used, for example, on the dependency graph in a
+makefile to determine how to sequence work.</p>
+
+<p>Having an equivalence relation (eg. <code>==</code>), we can implement a linear
+search algorithm to traverse a data structure and find an object
+equivalent to a given object. The C++ standard library algorithm <code>find</code>
+is an example of such an algorithm.</p>
+
+<p>Having a total order relation (eg. <code>&lt;=</code>) or a strict weak order (eg.
+<code>&lt;</code>), allows us to implement binary search over an ordered set of
+objects. A total order or strict weak order relation also enables
+comparison sort algorithms.</p>
+
+<p>Similarly, we need a total order or strict weak order to be able to
+determine a minimum or a maximum element from a set of objects
+(<code>min_element</code> and <code>max_element</code> algorithms in C++).</p>
+
+<h2>Summary</h2>
+
+<ul>
+<li>A binary relation <code>R</code> on a set <code>A</code> is a subset of <code>A x A</code>, denoted
+by a characterisitc function <code>r : A x A -&gt; bool</code>.</li>
+<li>A binary relation on a type <code>T</code> is denoted by either a free function
+of the the form <code>bool r(const T&amp;, const T&amp;)</code> or a member function
+<code>bool r(const T&amp;)</code>.</li>
+<li>A binary relations may have several properties: it can be reflexive
+or strict, symmetric or antisymmetric, transitive, total etc.</li>
+<li>Depending on the properties it has, a relation can be, for example:
+
+<ul>
+<li>A preorder (reflexive and transitive).</li>
+<li>An equivalence (reflexive, symmetric, and transitive).</li>
+<li>A partial order (reflexive, antisymmetric, and transitive).</li>
+<li>A weak order (reflexive, transitive, and total).</li>
+<li>A strict weak order (irreflexive, transitive, and total).</li>
+</ul></li>
+<li>Certain algorithms require the types they operate on to have
+relations with certain properties.</li>
+</ul>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2017/11/09/notes-on-unit-testing.html>Notes on Unit Testing</a></span></div>
+<div id="next"><span><a href=../../.././2017/12/30/evens-before-odds.html>Evens before Odds</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

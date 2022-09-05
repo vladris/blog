@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Memory Management &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>February 20, 2017</span></header>
+<article>
+<h1>Memory Management</h1>
+
+<p>Memory management involves handling memory resources allocated for a
+certain task, ensuring that the memory is freed once it is no longer
+needed so it can be reused for some other task. If the memory is not
+freed in a timely manner, the system might run out of resources or incur
+degraded performance. A memory resource that is never freed once no
+longer needed is called a leak - the resource becomes unusable, usually
+for the duration of the process. Another issue is <em>use after free</em>, in
+which a memory resource that was already freed is used as if it wasn&#39;t.
+This usually causes unexpected behavior as the code is trying to read,
+modify or wrongly interpret data at a memory location. Memory management
+can be <em>manual</em> - with code explicitly handling deallocation, or
+<em>automatic</em>, in which memory gets freed once no longer needed by an
+automated process.</p>
+
+<h2>Manual Memory Management</h2>
+
+<p>Manual memory management is efficient, since allocations and
+deallocations don&#39;t incur any overhead. In C:</p>
+<div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">_Foo</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">}</span><span class="w"> </span><span class="n">Foo</span><span class="p">;</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Foo</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Foo</span><span class="p">));</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="n">free</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>The disadvantage of this approach, and the main reason automatic memory
+management models were invented, is that this puts the developer in
+charge of making sure memory doesn&#39;t leak and that it is not used after
+it is freed. As the complexity of the code increases, this becomes
+increasingly difficult. As pointers are passed around the system and get
+stored in various data structures, it becomes difficult to know given
+some pointer that is no longer needed whether: a) this was the very last
+piece of code that actually needed to access the location pointed to by
+this pointer, in which case the memory should be freed, and b) whether
+the memory this pointer is pointing to is still valid and hasn&#39;t been
+freed previously.</p>
+
+<h2>Automatic Memory Management</h2>
+
+<p>Automatic memory management attempts to move the responsibility of
+tracking when a memory resource is no longer needed (and handling its
+deallocation) from the developer to the system. Such a system is called
+<em>garbage collected</em>, as memory that is no longer needed (<q>garbage</q>) is
+reclaimed by the system automatically. The two most popular methods used
+to automatically free memory are <em>tracing garbage collectors</em> and
+<em>reference counting</em>.</p>
+
+<h3>Tracing Garbage Collector</h3>
+
+<p>Tracing garbage collectors work by tracing references to objects on the
+heap and checking whether a given resource allocated on the heap has at
+least one reference path to it from the stack. If such a path exists, it
+means that from the stack (an argument to a function, a local variable),
+there is a way to perform a set of dereference and access the memory
+resource. If such a path doesn&#39;t exist, it means the memory is
+unreachable, so regardless of how executing code accesses other objects
+on the heap, there is no way to access this resource - which means the
+memory can be safely deallocated.</p>
+
+<p>For example, a naïve tracing garbage collection algorithm,
+<em>mark-and-sweep</em>, involves adding an <q>in-use</q> bit to each memory
+resource allocated then, during collection, following all references
+starting from the stack and marking each as <q>in-use</q>. Once all used
+resources are marked, the sweep stage involves walking the whole heap
+and for each memory resource, if not marked as <q>in-use</q>, freeing it.</p>
+
+<p>Tracing garbage collectors are used by many popular runtimes, like JVM
+and .NET. In C#:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Bar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Foo</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">foo</span><span class="p">.</span><span class="n">bar</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Bar</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// there is no stack variable pointing to the Bar object, but it can</span>
+<span class="w">    </span><span class="c1">// still be reached through foo (foo.bar), so there exists a path from</span>
+<span class="w">    </span><span class="c1">// the stack to it, meaning code can still access it.</span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// foo goes out of scope which means neither foo nor its member Bar can be</span>
+<span class="c1">// accessed any longer, so they can be safely collected</span>
+</pre></div>
+
+<p>There are a couple of disadvantages with the tracing GC approach: first,
+the system needs to ensure memory resources are not being allocated
+while a garbage collection is taking place. This means code execution is
+paused during collection, which obviously impacts performance. The
+second disadvantage of this approach is that the system is not as lean
+as other memory management models: memory resources are kept allocated
+longer than really needed, for the time interval between the last
+reference to them goes out of scope until the actual collection is
+performed.</p>
+
+<h3>Reference Counting</h3>
+
+<p>An alternative to tracing garbage collectors is reference counting. As
+the name implies, a memory resource in such a system has an associated
+reference count -the number of references to it. As soon as the last
+reference goes out of scope, when the reference count reaches zero, the
+memory can be safely deallocated. Unlike tracing, reference counting is
+performed as code executes: the count of a given memory resource is
+automatically increased with each assignment where the resource is on
+the right-hand-side, and is automatically decreased whenever a reference
+goes out of scope.</p>
+
+<p>Python manages memory using reference counting:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span> <span class="k">pass</span>
+
+<span class="c1"># allocate Foo, its reference count is 1</span>
+<span class="n">foo1</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+
+<span class="c1"># reference count is 2 after assignment</span>
+<span class="n">foo2</span> <span class="o">=</span> <span class="n">foo1</span>
+
+<span class="o">...</span>
+<span class="c1"># once foo1 and foo2 go out of scope, reference count becomes 0 and memory</span>
+<span class="c1"># is automatically freed</span>
+</pre></div>
+
+<p>C++ smart pointers work in a similar manner:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="c1">// foo1 is a shared_ptr pointing to a Foo stored on the heap. Reference</span>
+<span class="c1">// count for the Foo object is 1</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">foo1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+
+<span class="c1">// reference count becomes 2 after assignment</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">foo2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo1</span><span class="p">;</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+<span class="c1">// Once foo1 and foo2 go out of scope, reference count becomes 0 and memory</span>
+<span class="c1">// is automatically freed</span>
+</pre></div>
+
+<p>The main advantages over tracing garbage collection are the fact that
+execution doesn&#39;t need to be paused in order to reclaim memory and that
+resources are deallocated as soon as they are no longer used (once
+reference count becomes 0). There are also several disadvantages with
+this approach: first, each memory resource needs to store an additional
+reference count and updating the reference count in a multi-threaded
+environment needs to be performed atomically. Second, and most
+important, this memory management model does not handle <em>reference
+cycles</em>.</p>
+
+<p>Reference cycles occur when two heap objects hold references to each
+other even after no longer being reachable from the stack. In this case,
+a tracing garbage collector would mark the objects as being unreachable
+and deallocate them, but simple reference counting would not be able to
+identify this - from that point of view, each object is being referred
+to by another object thus it should not be collected. Example of
+reference cycle in Python:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span> <span class="k">pass</span>
+
+<span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(),</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="n">a</span><span class="o">.</span><span class="n">other</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">other</span> <span class="o">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span>
+<span class="c1"># a.other holds a reference to b, b.other holds a reference to a</span>
+<span class="c1"># even when a and b go out of scope, the &quot;other&quot; attributes still hold references</span>
+<span class="c1"># to the objects so their reference count would not drop to 0</span>
+</pre></div>
+
+<p>A similar example in C++:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">other</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">foo1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="k">auto</span><span class="w"> </span><span class="n">foo2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">foo1</span><span class="o">-&gt;</span><span class="n">other</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo2</span><span class="p">;</span><span class="w"></span>
+<span class="n">foo2</span><span class="o">-&gt;</span><span class="n">other</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo1</span><span class="p">;</span><span class="w"></span>
+<span class="c1">// there are two references to each Foo object: foo1 and foo2-&gt;other for the first</span>
+<span class="c1">// object, foo2 and foo1-&gt;other for the second object. Even if the foo1 and foo2</span>
+<span class="c1">// variables go out of scope, neither of the objects would be collected due to the</span>
+<span class="c1">// extra reference</span>
+</pre></div>
+
+<p>Python and C++ solve this problem in different ways: Python supplements
+reference counting with a tracing garbage collector. So while most of
+the memory management is done via reference counting, a tracing garbage
+collector is still employed to clean up cycles like in the above
+example. This hybrid approach has he pros and cons of both of the
+mechanisms discussed above. C++ avoids the execution pauses a tracing
+garbage collectors would create by, instead, leveraging <em>weak
+references</em>. Weak or non-owning references point to an object but do not
+prevent it from being collected when all <em>strong</em> references go away.
+There are several ways to express a non-owning reference, with different
+advantages and drawbacks:</p>
+
+<ul>
+<li>A <code>&amp;</code> reference has to be assigned on construction and cannot be
+re-assigned after being bound to an object. If used after the
+underlying object was destroyed, it causes undefined behavior.</li>
+<li>A <code>*</code> pointer can be <code>nullptr</code>-initialized and assigned later or
+re-assigned. Similarly, if used after the pointed-to object was
+destroyed, causes undefined behavior.</li>
+<li>A <code>weak_ptr&lt;T&gt;</code> is a standard library type implementing a non-owning
+reference. A <code>weak_ptr</code> can be converted to a <code>shared_ptr</code> (using
+its <code>lock()</code> method). If there is no strong (<code>shared_ptr</code>) reference
+to an object it gets destroyed, regardless of how many <code>weak_ptr</code>
+instances point to it. But once a <code>weak_ptr</code> successfully locks an
+object, it creates a strong reference which ensures the object is
+kept alive. The drawback of using <code>weak_ptr</code> is additional overhead:
+the control block of a smart pointer needs to store both strong and
+weak reference count (with similar atomic reference counting), and,
+even if an object gets destroyed because all strong references went
+out of scope, the control block stays alive until all weak
+references go away too.</li>
+</ul>
+
+<p>Updating the <code>Foo</code> struct in the example above to use a <code>weak_ptr</code>
+instead, the reference cycle is avoided:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">weak_ptr</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">other</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">foo1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="k">auto</span><span class="w"> </span><span class="n">foo2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">foo1</span><span class="o">-&gt;</span><span class="n">other</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo2</span><span class="p">;</span><span class="w"></span>
+<span class="n">foo2</span><span class="o">-&gt;</span><span class="n">other</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo1</span><span class="p">;</span><span class="w"></span>
+<span class="c1">// now the two Foo objects have only one strong reference to them through</span>
+<span class="c1">// the foo1 and foo2 variables The other pointers are weak references which</span>
+<span class="c1">// won&#39;t prevent the objects from being destroyed when foo1 and foo2 go out</span>
+<span class="c1">// of scope</span>
+</pre></div>
+
+<h3>Ownership and Lifetimes</h3>
+
+<p>An alternative way to think about heap objects is in terms of
+<em>ownership</em> and <em>lifetime</em>. In this model, a heap object is uniquely
+owned by some other object and gets freed automatically when the owner
+is destructed. In C++, this is achieved through <code>unique_ptr</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">Bar</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"> </span><span class="c1">// this creates a Foo object on the heap, owned by bar</span>
+<span class="p">}</span><span class="w"></span>
+<span class="c1">// the heap object gets freed once bar gets freed</span>
+</pre></div>
+
+<p>Ownership of the object can be transferred by moving the <code>unique_ptr</code>.
+The main advantage of this model is that it has no overhead - unlike
+tracing memory which involves pausing execution or reference counting
+which involves atomic count of references, a <code>unique_ptr</code> is just a
+wrapper over a pointer.</p>
+
+<p>Unique pointers cannot be copied though (by definition, otherwise there
+would no longer denote unique ownership), so when other code needs to
+access the heap object, it would need to get a reference from the owning
+object:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">UseFoo</span><span class="p">(</span><span class="o">*</span><span class="n">bar</span><span class="p">.</span><span class="n">foo</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>The problem with this approach is that if another object ends up holding
+on to a reference which outlives the owning object, the reference
+becomes dangling and refers to an object which was already freed. This
+becomes the equivalent of a <em>use after free</em>, so here is where the
+concept of <em>lifetime</em> becomes important: none of the non-owning
+references of a uniquely owned heap object should outlive the object.</p>
+
+<p>Unfortunately in C++ this has to be handled through sensical design and
+is mostly left up to the developer. Rust on the other hand provides
+strong static analysis and lifetime annotations to ensure such issues do
+not occur. In fact, the default in Rust is to have uniquely owned
+objects which can be <q>borrowed</q> when needed and static analysis
+ensures no dangling references appear. In C++:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">Bar</span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Foo</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">bar</span><span class="p">.</span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="c1">// bar.foo is now a dangling pointer since Foo was freed</span>
+</pre></div>
+
+<p>The above example used a pointer for simplicity, since a <code>&amp;</code> reference
+(<code>Foo&amp;</code>) needs to be bound at construction time, but same applies for
+that type of reference: once an object gets freed, &amp; references and
+non-owning pointers to it are left dangling. On the other hand, this
+does not compile in Rust:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span> <span class="nc">Foo</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="k">struct</span> <span class="nc">Bar</span><span class="o">&lt;&#39;</span><span class="na">a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">foo</span>: <span class="kp">&amp;</span><span class="o">&#39;</span><span class="na">a</span> <span class="nc">Foo</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="o">..</span><span class="p">.</span><span class="w"></span>
+
+<span class="kd">let</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="p">{};</span><span class="w"></span>
+<span class="w">    </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Bar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">foo</span>: <span class="kp">&amp;</span><span class="nc">foo</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="c1">// compiler correctly shows `foo` dropped here while still borrowed</span>
+</pre></div>
+
+<p>In Rust, the compiler ensures dangling references (<q>borrowed</q> objects)
+do not exist once owning object goes out of scope.</p>
+
+<p>It seems that in most cases, the best approach to memory management is
+to use the latter model of ownership and lifetimes which comes with no
+runtime overhead and handle the dangling reference problem through
+static analysis. The advantages of this approach extend beyond the
+runtime cost of other automatic memory management techniques to a model
+which also works well in a multi-threaded environment, eg. if we only
+allow the owner of an object to modify it, we can eliminate certain data
+races. From a systems design perspective it is also an advantage to have
+a clear understanding of ownership throughout the system.</p>
+
+<h2>Summary</h2>
+
+<p>This post covered several memory management techniques, outlining their
+pros and cons:</p>
+
+<ul>
+<li>Manual - human error prone.</li>
+<li>Automatic using a tracing garbage collector - safe but comes with
+runtime overhead.</li>
+<li>Automatic using reference counting - smaller runtime cost than a
+tracing garbage collector but needs additional mechanisms to deal
+with reference cycles.</li>
+<li>Concepts of ownership and lifetime - no runtime overhead, but should
+be supplemented by static analysis to avoid dangling references.</li>
+</ul>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2016/12/03/notes-on-error-handling.html>Notes on Error Handling</a></span></div>
+<div id="next"><span><a href=../../.././2017/02/25/a-heterogeneous-event-store.html>A Heterogeneous Event Store</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

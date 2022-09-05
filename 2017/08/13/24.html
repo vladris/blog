@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>24 &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>August 13, 2017</span></header>
+<article>
+<h1>24</h1>
+
+<p>I recently learned about the <a href="https://en.wikipedia.org/wiki/24_Game">24
+game</a>. There are several variants
+of it, but the version I learned goes like this:</p>
+
+<blockquote>
+<p>Take out the face cards and jokers from a deck and deal four cards
+(aces or number cards). Aces can be used either as 1 or as 11. Using
+addition, subtraction, multiplication, and division, with any grouping
+of operations (paranthesis can be added anywhere), try to come up with
+an expression that uses all four cards once and equals 24. Division is
+fractional, so <code>5 / 2</code> is <code>2.5</code>.</p>
+
+<p>For example for <code>A 4 5 8</code> we have \((1 + 5) * (8 - 4)\).</p>
+</blockquote>
+
+<p>There is the problem of implementing an algorithm to find a solution
+given the cards as input.</p>
+
+<h2>Brute force</h2>
+
+<p>A simple solution is to try all permutations of cards, all possible
+operations, and all possible groupings.</p>
+
+<p>In the general case, there are 24 ways to arrange the cards -
+permutations of 4 which is <code>4!</code>. Each ace doubles this number as we need
+to consider the case in which we use it as 1 and the case in which we
+use it as 11.</p>
+
+<p>There are 64 ways to combine operations, since we have 4 operations in 3
+possitions, which means \(4^3\) total.</p>
+
+<p>We also have 5 possible groupings:</p>
+
+<p>\[(x_0 \odot x_1) \oplus (x_2 \otimes x_3)\]\[((x_0 \odot x_1) \oplus x_2) \otimes x_3\]\[(x_0 \odot (x_1 \oplus x_2)) \otimes x_3\]\[x_0 \odot ((x_1 \oplus x_2) \otimes x_3)\]\[x_0 \odot (x_1 \oplus (x_2 \otimes x_3))\]</p>
+
+<p>where \(\odot, \oplus, \otimes\) are placeholders for any operators (they
+could potentially be the same operator).</p>
+
+<p>A simple solver implementation looks like this:</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">product</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">argv</span>
+
+<span class="c1">## Transform arguments to numbers, replace &#39;A&#39; and &#39;a&#39; with [1, 11]</span>
+<span class="n">args</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="s1">&#39;aA&#39;</span> <span class="k">else</span>
+    <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">arg</span><span class="p">)]</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[])</span>
+
+<span class="c1">## For every permutation of 4 arguments</span>
+<span class="k">for</span> <span class="n">xs</span> <span class="ow">in</span> <span class="n">permutations</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+    <span class="c1"># If we have more 1s and 11s then aces ignore this permutation</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">11</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">continue</span>
+
+    <span class="c1"># For every possible combination of 3 operators</span>
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s1">&#39;+-*/&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="c1"># For every possible grouping</span>
+        <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">))&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> ((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="p">]:</span>
+
+            <span class="c1"># Place operands and operators in expression</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">ops</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># If expression evaluates to 24, we found a solution</span>
+                <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">24</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+                <span class="c1"># Ignore division by zero errors</span>
+                <span class="k">pass</span>
+
+<span class="c1">## If we get here we tried all combinations and couldn&#39;t</span>
+<span class="c1">## find any solution</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No solution&#39;</span><span class="p">)</span>
+</pre></div>
+
+<p>We have ten possible cards (ace and number cards), and taking
+combination with repetition of 4 cards, we have
+\(\frac{(n + r - 1)!}{r! * (n - 1)!}\) for \(n = 10, r = 4\), so a total of
+\(\frac{(10 + 4 - 1)!}{4! * (10 - 1)!}
+= 715\) possible games.</p>
+
+<p>Feeding all possible games to the code above, we can see that there are
+117 games which have no solution. The remaining 598 games are solvable.</p>
+
+<p>We can optimize the above solution further by observing that we only
+need three of the five groupings to cover all cases. Take, for example,
+\(x_0 \odot ((x_1 \oplus x_2) \otimes x_3)\). Now if \(\odot\) is a
+commutative operation (addition or multiplication), we can rewrite this
+to the equivalent \(((x_1 \oplus x_2) \otimes x_3) \odot x_0\), and since
+we any way take all permuations of arguments and operators, this ends up
+getting covered by the \(((x_0 \odot x_1) \oplus x_2) \otimes x_3\) case.
+For non-commutative operations, for example subtraction, notice that if
+we do have a solution \(x_0 - ((x_1 \oplus x_2) \otimes x_3) = 24\), since
+\(x_0\) is at most 11, it means we need to subtract a negative number from
+it in order to get 24. This implies that at least \(\oplus\) or \(\otimes\)
+is also a subtraction. If \(\otimes\) is a subtraction, we can rewrite the
+expression \(x_0 - ((x_1 \oplus x_2) - x_3)\) as \((x_0 + x_3) -
+(x_1 \oplus x_2)\). If \(\otimes\) is not a subtraction but \(\oplus\) is, we
+have \(x_0 - ((x_1 - x_2) \otimes x_3)\) which is equivalent with
+\(x_0 - (- (x_2 - x_1) \otimes x_3)\). If \(\otimes\) is addition, this
+becomes \(x_0 - (x_3 - (x_2 - x_1))\) = \((x_0 - x_3) + (x_2 - x_1)\). If
+\(\otimes\) is multiplication or division, this becomes \(x_0 - (-
+(x_2 - x_1) \otimes x_3)\) = \(x_0 + ((x_2 - x_1) \otimes x_3)\) =
+\(((x_2 - x_1) \otimes x_3) + x_0\).</p>
+
+<p>Similar rewrites can be done if \(\odot\) is division by observing that we
+would have to divide with a fractional number in order to get 24, so at
+least one of \(\oplus\) or \(\otimes\) is also a division. This means we
+only need the groupings</p>
+
+<p>\[(x_0 \odot x_1) \oplus (x_2 \otimes x_3)\]\[((x_0 \odot x_1) \oplus x_2) \otimes x_3\]\[(x_0 \odot (x_1 \oplus x_2)) \otimes x_3\]</p>
+
+<p>to find all possible solutions. Our solution becomes:</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">product</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">argv</span>
+
+<span class="n">args</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="s1">&#39;aA&#39;</span> <span class="k">else</span>
+    <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">arg</span><span class="p">)]</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[])</span>
+
+<span class="k">for</span> <span class="n">xs</span> <span class="ow">in</span> <span class="n">permutations</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">11</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">continue</span>
+
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s1">&#39;+-*/&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">]:</span>
+
+            <span class="n">exp</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">ops</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">24</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No solution&#39;</span><span class="p">)</span>
+</pre></div>
+
+<p>This means that for games without aces, we need to check 24 (\(4!\))
+permutations of cards, 64 (\(4^3\)) combinations of operators, and 3
+groupings. That is \(4! * 4^3 * 3 = 4608\) tests. For games with aces, we
+double this number for each ace to account for both the 1 and 11 cases.</p>
+
+<h2>Minimizing Number of Tests</h2>
+
+<p>A more interesting question is what is the minimum number of tests we
+need to perform in order to correctly find a solution for all solvable
+games.</p>
+
+<p>It is obvious that there are expressions which can never evaluate to 24
+for any game. For example \((x_0 - x_1) - x_2) - x_3\), since
+\(x_i \in \{1,
+2, ... 11\}\).</p>
+
+<p>It is also obvious that we perform a lot of redundant tests, since, for
+example, all of the below expressions are equivalent for all possible
+inputs:</p>
+
+<p>\[(x_0 + x_1) + (x_2 + x_3)\]\[((x_0 + x_1) + x_2) + x_3\]\[(x_0 + (x_1 + x_2)) + x_3\]\[(x_0 + x_1) + (x_3 + x_2)\]\[((x_0 + x_1) + x_3) + x_2\]\[(x_0 + (x_1 + x_3)) + x_2\]\[...\]</p>
+
+<p>and so on for all permutations of \(x_0, x_1, x_2, x_3\).</p>
+
+<p>Let&#39;s generate all possible permutations of cards, combinations of
+operators, and groupings as above:</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="n">operands</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="mi">4</span><span class="p">))</span> <span class="c1"># 24 of these</span>
+<span class="n">operators</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="s1">&#39;+-*/&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span> <span class="c1"># 64 of these</span>
+<span class="n">groupings</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="c1"># 3 of these</span>
+</pre></div>
+
+<p>Note that here we are looking at all possible games so operands are
+permutations of indexes from 0 to 3, not actual cards. We can also take
+all possible games as combinations of 4 numbers from 1 to 11. Here we
+generate 1 and 11 games for each ace, so we end up with 1001 possible
+games instead of 715:</p>
+<div class="highlight"><pre><span></span><span class="n">inputs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">combinations_with_replacement</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="mi">4</span><span class="p">))</span>
+<span class="c1">## 1001 of these</span>
+</pre></div>
+
+<p>We can now write a function that, for a given game, generates all
+possible expressions which evaluate to 24:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solutions_for</span><span class="p">(</span><span class="n">inp</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">xs</span> <span class="ow">in</span> <span class="n">operands</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">operators</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">groupings</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inp</span><span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="n">inp</span><span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">inp</span><span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                            <span class="n">ops</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">inp</span><span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="mi">3</span><span class="p">]]))</span> <span class="o">==</span> <span class="mi">24</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="sa">f</span><span class="s1">&#39;x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                            <span class="n">ops</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+</pre></div>
+
+<p>This is very similar with the initial solution, except that we don&#39;t
+have to worry about aces (we assume they are already converted to either
+1 or 11), and we use the permutations of indexes to determine the order
+of terms as input is going to always be in increasing order (as
+generated by <code>itertools.combinations_with_replacement</code>). So instead of
+placing <code>inp[0], op[0], inp[1], op[1], inp[2], op[2], inp[3]</code> in the
+expression to be evaluated as we did in the initial solution, since
+<code>inp</code> is fixed, we come up with permutations of operands from
+<code>operands</code>, so we are placing
+<code>inp[xs[0]], op[0], inp[xs[1]], op[1], inp[xs[2]], op[2], inp[xs[3]]</code> in
+the expression instead. We also return the expression replacing the
+operands with <code>x0, x1, x2, x3</code> since we don&#39;t care about their
+particular values, rather the expression we are using.</p>
+
+<p>For example calling:</p>
+<div class="highlight"><pre><span></span><span class="nb">list</span><span class="p">(</span><span class="n">solutions_for</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">]))</span>
+</pre></div>
+
+<p>yields</p>
+<div class="highlight"><pre><span></span>[&#39;((x0 * x2) - x3) * x1&#39;, &#39;(x1 * x2) - (x3 / x0)&#39;,
+ &#39;((x2 * x0) - x3) * x1&#39;, &#39;((x2 / x0) * x3) - x1&#39;,
+ &#39;(x2 / (x0 / x3)) - x1&#39;, &#39;(x2 * x1) - (x3 / x0)&#39;,
+ &#39;((x2 * x3) / x0) - x1&#39;, &#39;(x2 * (x3 / x0)) - x1&#39;,
+ &#39;((x3 / x0) * x2) - x1&#39;, &#39;(x3 / (x0 / x2)) - x1&#39;,
+ &#39;((x3 * x2) / x0) - x1&#39;, &#39;(x3 * (x2 / x0)) - x1&#39;]
+</pre></div>
+
+<p>These are all possible expression which evaluate to 24 for the game
+<code>2 4 7 8</code>.</p>
+
+<p>We can compute the list of all expressions which evaluate to 24 for
+every possible game:</p>
+<div class="highlight"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">solutions_for</span><span class="p">(</span><span class="n">inp</span><span class="p">))</span>
+
+    <span class="c1"># Only append the set of expressions to the list if</span>
+    <span class="c1"># non-empty (if game has at least one solution)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+
+<p>We can take the union of the sets in <code>results</code> and get the set of all
+expressions that evaluate to 24 for at least one game:</p>
+<div class="highlight"><pre><span></span><span class="n">expressions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+    <span class="n">expressions</span> <span class="o">=</span> <span class="n">expressions</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+
+<p>The size of this set is 1809. We are guaranteed that for any possible
+game, no other expression evaluates to 24 since we generated all
+possible solutions for all possible games. Which means we can test just
+these 1809 expression for any game and determine whether it is solvable
+or not, which is better than our original 4608 (or more for games with
+aces).</p>
+
+<p>Here we eliminated all expressions which never evaluate to 24, but we
+still have all the redundant tests in our set of expressions. It is also
+possible to have an expression \(E_0\) which solves all games some
+expression \(E_1\) solves, plus some other games. In which case we
+wouldn&#39;t ever need to test using \(E_1\) since \(E_0\) would still solve
+all games that \(E_1\) would solve.</p>
+
+<p>More formally, <code>expressions</code> is our universe \(\mathcal{U}\) of tests and
+<code>results</code> is a set of sets \(R = \{ R_0, R_1 ... R_n \}\) where
+\(R_i \subset \mathcal{U} \space \forall i \in \{ 0, 1 ... n \}\). We want
+to find the smallest set \(H \subset \mathcal{U}\) such that \(H \cap
+R_i \neq \varnothing \space \forall i \in \{ 0, 1 ... n \}\).</p>
+
+<p>The good news is that this is actually a well known problem called <strong>the
+hitting set problem</strong><sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>. The bad news is this problem is NP-hard. Even
+with clever pruning, trying out combinations of expressions to find the
+smallest \(H\) has factorial complexity and even for small sets it quickly
+reaches astronomical numbers.</p>
+
+<h2>Approximation</h2>
+
+<p>Since finding an optimal solution is too computationally expensive, we
+can at least attempt to find a <em>good enough</em> solution.</p>
+
+<p>The greedy algorithm which solves the hitting set problem works as
+follows: build up the solution by selecting at each step the element
+which hits the highest number of sets which were not hit so far.</p>
+<div class="highlight"><pre><span></span><span class="c1">## Start with an empty set</span>
+<span class="n">min_expressions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+<span class="c1">## While we have unhit sets</span>
+<span class="k">while</span> <span class="n">results</span><span class="p">:</span>
+    <span class="n">min_expression</span><span class="p">,</span> <span class="n">max_hitting</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span> <span class="mi">0</span>
+
+    <span class="c1"># For each expression in our universe</span>
+    <span class="k">for</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">expressions</span><span class="p">:</span>
+        <span class="n">hitting</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="mi">1</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">if</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">result</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">hitting</span> <span class="o">&gt;</span> <span class="n">max_hitting</span><span class="p">:</span>
+            <span class="n">min_expression</span><span class="p">,</span> <span class="n">max_hitting</span> <span class="o">=</span> <span class="n">expr</span><span class="p">,</span> <span class="n">hitting</span>
+
+    <span class="c1"># We found the expression hitting most unhit sets</span>
+    <span class="n">min_expressions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">min_expression</span><span class="p">)</span>
+
+    <span class="c1"># Remove hit sets from results</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">if</span>
+        <span class="n">min_expression</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">]</span>
+</pre></div>
+
+<p>Interestingly enough, since we are working with sets and hashing is
+randomized in Python, I got different results across different runs of
+this algorithm. For cases where there are multiple max hitting sets
+(sets intersecting the same number of other sets), we
+non-deterministically select one, since iteration over sets is based on
+the randomized key order. I got solutions ranging from 110 to 114
+expressions. This gives us an upper bound of 110 - we must perform at
+most 110 tests to find a solution for a game.</p>
+
+<p>We can use the above code to generate a set of expressions and dump it
+into a source file, together with the code to test input:</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">argv</span>
+
+<span class="n">expressions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;(x3 + x1) * (x2 - x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x3) - x0) / x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x3 + (x1 + x0)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 - x3) * (x1 - x2)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 * x0) + (x2 - x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x0) * x3) - x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x3 + (x1 + x2)) + x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 * x0) + (x3 - x1)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x0 / x1) * x2) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x3 - x2)) + x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x3 + x2) - x0) + x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * x1) * (x3 - x2)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 * x0) - (x2 + x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 / x1) * (x2 + x0)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 + x1) + x3) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 - x0) / (x1 / x2)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x3 + x1) * (x2 / x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * x3) + (x0 * x2)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x3 * x1) + x2) + x0&quot;</span><span class="p">,</span> <span class="s2">&quot;((x0 - x2) + x1) * x3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x3 / x0) + x2) * x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 + (x2 * x1)) - x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 * x3) - (x2 - x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x3 - x0)) - x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 + x1) * x3) / x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * x3) - (x1 + x2)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 + (x3 * x0)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * (x2 + x3)) - x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 * x3) - (x0 + x2)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 - (x2 / x1)) * x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x0 - (x1 / x2)) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 * x0) + (x2 - x1)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x3 / x0) + x1) + x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 + (x1 * x2)) + x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x0 + x2) * (x1 + x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * (x3 - x1)) + x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x0 + x3) * x1) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 * (x0 + x3)) / x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x2 - (x1 + x0)) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 * x2) - (x0 / x1)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x0 + x3) * x1) + x2&quot;</span><span class="p">,</span> <span class="s2">&quot;((x0 * x3) + x1) - x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x2 + (x3 - x1)) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 * (x0 + x1)) + x3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 + x3) * x0) + x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 - (x3 / x2)) * x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x0 + x2) - x3) * x1&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 / x2) + x0) * x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 / x0) + (x2 + x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 * x0) - x2) * x3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x0 + x1) + x2) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 * (x3 - x1)) - x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 * x1) - x0) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 - x1) * x2) + x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x3 / (x0 + x1)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 * x0) + x3) + x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x3 + x0) * (x2 - x1)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 - x0) * (x3 - x1)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x3 / x0) * x2) + x1&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x1) - x0) - x3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x0 + (x3 - x1)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * x2) / (x3 - x1)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x3 * x2) - x1) / x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 - (x0 / x3)) * x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x3 - x2) * (x0 + x1)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * x2) - (x3 + x1)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 - x0) * x3) + x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x3 - x0)) + x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 * (x0 + x3)) - x2&quot;</span><span class="p">,</span> <span class="s2">&quot;((x0 + x1) * x3) + x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x1 - x2) + x3) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 - x1) * x2) * x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 + x1) - x3) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 + (x3 / x2)) * x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x2 / (x0 / x1)) + x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 / (x3 - x0)) * x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x3 * x1) - (x0 * x2)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 + x0) * x2) * x3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 - (x2 / x3)) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 + (x3 * x0)) + x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 * x3) + x1) / x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 - x0) * (x2 + x1)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 * x3) + (x2 - x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 * (x2 - x0)) - x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x0 + (x1 - x3)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x3 - x2)) - x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x0 + (x2 * x3)) - x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 + x3) / (x0 / x1)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x0 * x3) / (x2 - x1)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 - (x3 / x0)) * x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x0 - (x1 - x2)) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 + x1) + (x2 * x0)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x3 - x1) - x0) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x2 - x0)) - x3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x2 + x0) * (x3 - x1)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 - x1) * x2) / x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x1 * x3) - x2) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 + x3) * x0) - x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x3 - x2) + x0) * x1&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x0) - x3) * x1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x2 * (x1 + x0)) - x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 + (x1 / x2)) * x3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 - x1) * x3) + x0&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 / x1) + x3) * x0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 * x0) - (x2 / x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 * x0) - x1) * x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;((x2 - x0) * x1) + x3&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 + x0) * x3) - x2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;(x1 * x0) / (x3 - x2)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 * (x1 - x0)) - x2&quot;</span>
+<span class="p">]</span>
+
+<span class="c1">## Since we no longer try all permutations of cards, we</span>
+<span class="c1">## need to split inputs containing aces by replacing aces</span>
+<span class="c1">## with both 1 and 11</span>
+<span class="k">def</span> <span class="nf">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s1">&#39;A&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">args</span><span class="p">]</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="p">)</span> <span class="o">+</span> <span class="n">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;11&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+
+<span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">get_input</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]):</span>
+    <span class="c1"># We also expect inputs to be in sorted order now</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">expressions</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="c1"># Replace x0 ... x3 with args[0] ... args[3]</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;x&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">24</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No solution&#39;</span><span class="p">)</span>
+</pre></div>
+
+<p>We can test this by ensuring that we still see 117 games without
+solution when we try to solve all 715 games, which is indeed the case.
+We reduced the number of tests we perform on a game from 4608 to 110.</p>
+
+<h2>Unique Expressions</h2>
+
+<p>There are a couple of other interesting facts we can determine from the
+set of all solutions for all games: the set of unique expressions and
+out of them, the subset of expressions which are absolutely required in
+order to solve all possible games.</p>
+
+<p>By <em>unique expression</em> I mean picking an expression and eliminating all
+other equivalent expressions from the set (for example keeping only
+\(((x_0 + x_1) + x_2) + x_3\) while dropping all other permutations and
+groupings of addition). We can easily do this by defining equivalent
+expressions as expressions which solve the exact same games. So if \(E_1\)
+solves some subset \(R_{E_1}\) of \(R\), an expression \(E_2\) is equivalent
+to it if the set \(R_{E_2}\) of games it solves is equal to \(R_{E_1}\). We
+can define equivalence as:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">equivalent</span><span class="p">(</span><span class="n">exp1</span><span class="p">,</span> <span class="n">exp2</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">exp1</span> <span class="ow">in</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">exp2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">exp1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">exp2</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+
+<p>With this function, we can go over our univese \(\mathcal{U}\) of
+expressions and eliminate all expressions which are the equivalent of
+another expression:</p>
+<div class="highlight"><pre><span></span><span class="n">expressions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">expressions</span><span class="p">)</span>
+<span class="n">i1</span><span class="p">,</span> <span class="n">i2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+<span class="k">while</span> <span class="n">i1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">expressions</span><span class="p">):</span>
+    <span class="n">i2</span> <span class="o">=</span> <span class="n">i1</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">i2</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">expressions</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">equivalent</span><span class="p">(</span><span class="n">expressions</span><span class="p">[</span><span class="n">i1</span><span class="p">],</span> <span class="n">expressions</span><span class="p">[</span><span class="n">i2</span><span class="p">]):</span>
+            <span class="n">expressions</span> <span class="o">=</span> <span class="n">expressions</span><span class="p">[:</span><span class="n">i2</span><span class="p">]</span> <span class="o">+</span> <span class="n">expressions</span><span class="p">[</span><span class="n">i2</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">i2</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">i1</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="n">expressions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">expressions</span><span class="p">)</span>
+</pre></div>
+
+<p>The resulting set of unique expressions has 273 elements. This means
+these 273 expressions are enough to solve all possible games and, more
+so, adding any other expression to this set would be redundant. This is
+a lower bound than our original 1809 expressions which solve games, but
+higher than our previously found bound of 110 expressions. Note that
+this data point is not useful in the greedy algorithm shown in the
+previous section, since once that algorithm picks an expression, it
+would automatically discard all other equivalent expressions, since it
+eliminates all games which are solved by the picked expression from the
+search space. This should put the problem in combinatorial perspective
+though, as we need to select from 273 candidates to find the smallest
+hitting set.</p>
+
+<p>Once we have eliminated equivalent expressions, we can update the set of
+game results accordingly, by intersecting each \(R_i\) with our new
+\(\mathcal{U}\):</p>
+<div class="highlight"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">expressions</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">result</span><span class="p">))</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+</pre></div>
+
+<p>Now we can search \(R\) for sets with a single element. This will give us
+expressions which must be part of our solution, otherwise eliminating
+them would cause a solvable game to appear as unsolvable:</p>
+<div class="highlight"><pre><span></span><span class="n">min_expressions</span><span class="p">,</span> <span class="n">games_with_unique_result</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">min_expressions</span> <span class="o">=</span> <span class="n">min_expressions</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">games_with_unique_result</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+
+<p>Turns out there are 62 expressions which (ignoring equivalences) provide
+unique solutions to games. They are:</p>
+<div class="highlight"><pre><span></span>{&#39;(x1 + x2) - (x0 - x3)&#39;, &#39;(x1 + x0) * (x2 * x3)&#39;,
+ &#39;((x1 + x0) - x2) * x3&#39;, &#39;((x3 + x2) * x0) + x1&#39;,
+ &#39;(x0 + x3) * (x2 - x1)&#39;, &#39;((x2 * x1) / x0) + x3&#39;,
+ &#39;((x3 - x1) * x2) - x0&#39;, &#39;(x1 - (x3 / x2)) * x0&#39;,
+ &#39;((x1 * x0) - x2) - x3&#39;, &#39;((x2 - x1) - x0) * x3&#39;,
+ &#39;((x1 * x0) - x3) + x2&#39;, &#39;(x2 + (x1 / x0)) + x3&#39;,
+ &#39;((x1 + x3) - x2) * x0&#39;, &#39;(x2 - (x3 - x0)) * x1&#39;,
+ &#39;(x2 + (x1 + x3)) + x0&#39;, &#39;(x1 * x0) - (x2 / x3)&#39;,
+ &#39;(x3 + (x2 * x1)) - x0&#39;, &#39;((x0 * x1) + x3) + x2&#39;,
+ &#39;(x2 + (x1 - x3)) * x0&#39;, &#39;((x0 * x1) - x2) * x3&#39;,
+ &#39;(x2 * x0) + (x1 + x3)&#39;, &#39;(x2 + (x3 * x0)) + x1&#39;,
+ &#39;((x0 * x3) - x1) + x2&#39;, &#39;(x0 + (x2 - x1)) * x3&#39;,
+ &#39;((x3 * x1) - x2) - x0&#39;, &#39;(x1 - x2) * (x0 - x3)&#39;,
+ &#39;((x3 - x0) - x1) * x2&#39;, &#39;(x1 * (x2 - x0)) - x3&#39;,
+ &#39;(x0 / (x3 - x2)) * x1&#39;, &#39;((x0 + x1) - x3) * x2&#39;,
+ &#39;((x3 - x1) + x0) * x2&#39;, &#39;((x1 + x0) * x3) + x2&#39;,
+ &#39;((x1 + x0) * x3) - x2&#39;, &#39;(x3 / x1) * (x2 + x0)&#39;,
+ &#39;((x3 - x1) * x0) + x2&#39;, &#39;(x3 * (x2 - x0)) + x1&#39;,
+ &#39;((x0 + x2) + x1) * x3&#39;, &#39;(x2 * (x0 + x1)) - x3&#39;,
+ &#39;(x2 * x1) / (x3 - x0)&#39;, &#39;(x3 + x0) + (x1 * x2)&#39;,
+ &#39;(x0 + (x3 * x2)) - x1&#39;, &#39;(x0 - x2) * (x1 - x3)&#39;,
+ &#39;((x2 + x3) * x1) / x0&#39;, &#39;(x2 / x0) * (x3 + x1)&#39;,
+ &#39;(x3 * (x1 - x0)) - x2&#39;, &#39;((x3 + x1) * x0) - x2&#39;,
+ &#39;((x0 + x3) * x1) - x2&#39;, &#39;((x3 + x2) * x0) - x1&#39;,
+ &#39;(x3 + x0) / (x1 / x2)&#39;, &#39;(x0 + x2) * (x3 - x1)&#39;,
+ &#39;(x2 * (x3 - x1)) + x0&#39;, &#39;((x0 * x3) - x2) - x1&#39;,
+ &#39;((x1 * x2) - x3) - x0&#39;, &#39;(x3 - (x1 - x2)) * x0&#39;,
+ &#39;(x2 * x3) / (x1 + x0)&#39;, &#39;(x3 - x2) * (x0 + x1)&#39;,
+ &#39;(x0 / (x3 - x1)) * x2&#39;, &#39;((x2 * x3) - x0) / x1&#39;,
+ &#39;(x2 * (x3 - x0)) / x1&#39;, &#39;((x1 + x0) * x2) + x3&#39;,
+ &#39;(x1 * (x2 - x0)) + x3&#39;, &#39;(x3 * (x2 - x1)) + x0&#39;}
+</pre></div>
+
+<p>This is a lower bound for our problem, since at the very least we need
+these expressions in order to correcly solve all possible games. We also
+computed the number of games with a unique solution, which is 122. The
+remaining games are either unsolvable or admit multiple solutions. Note
+we considered aces as 1s and aces as 11s as distinct games in the above
+analysis. We could search for equivalent games (number of 1s and 11s is
+the same) and see if we can eliminate some expressions from the list
+above. This is left as an exercise to the reader.</p>
+
+<h2>Summary</h2>
+
+<ul>
+<li>There are 715 distinct games in 24, with 117 of them unsolvable and
+the remaining 598 having at least one solution.</li>
+<li>A brute-force solution checks 4608 expressions (double for each ace)
+to determine that a game is unsolvable.</li>
+<li>Only 1809 expressions (out of the 4608) solve at least one game.</li>
+<li>Finding the minimum number of expressions we need to check in order
+to find whether a game has a solution is equivalent to the hitting
+set problem which is NP-hard.</li>
+<li>A greedy algorithm finds a set of 110 expressions which is enough to
+find a solution for any solvable game.</li>
+<li>Removing equivalent expressions, we are left with 273 expressions
+which all solve at least one different game than any other. Out of
+these, 62 expressions are unique solutions to 122 games, so they
+must necessarily be checked in order to find solutions for all
+possible games.</li>
+</ul>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>Wikipedia explains the <a href="https://en.wikipedia.org/wiki/Set_cover_problem">set cover
+problem</a> which is
+equivalent to the hitting set problem (one can be converted to the
+other).&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2017/07/20/idris-totality-dependent-types-proofs.html>Idris: Totality, Dependent Types, Proofs</a></span></div>
+<div id="next"><span><a href=../../.././2017/11/09/notes-on-unit-testing.html>Notes on Unit Testing</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

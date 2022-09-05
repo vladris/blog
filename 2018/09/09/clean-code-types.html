@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Clean Code: Types &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>September 09, 2018</span></header>
+<article>
+<h1>Clean Code: Types</h1>
+
+<p>I recently revived my Clean Code tech talk which I put together a couple
+of years ago and with which I started this blog: <a href="https://vladris.com/blog/2016/01/04/clean-code-part-1.html">Clean Code - Part
+1</a> and
+<a href="https://vladris.com/blog/2016/01/07/clean-code-part-2.html">Clean Code - Part
+2</a>. I took
+the opportunity to completely revamp the talk and ended up with 3 parts:
+<em>Algorithms</em>, <em>Types</em>, and <em>State</em>. The <em>Algorithms</em> is mostly covered
+by the <a href="https://vladris.com/blog/2018/02/11/fibonacci.html">Fibonacci</a>
+post, so in this post we will talk about <em>Types</em>.</p>
+
+<h2>Mars Climate Orbiter</h2>
+
+<p>The Mars Climate Orbiter crashed and disintegrated in the Mars
+atmosphere because a component developed by Lockheed provided momentum
+measured in pound-force seconds, while another component developed by
+NASA expected momentum as Newton seconds.</p>
+
+<p>We can image the component developed by NASA being something like this:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Will not disintegrate as long as momentum &gt;= 2 N s</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">trajectory_correction</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">momentum</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="cm">/* N s */</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">disintegrate</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* ... */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We can also imagine the Lockheed component calling into the above with:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="mf">1.5</span><span class="w"> </span><span class="cm">/* lbf s */</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>A pound-force second (lbfs) is about 4.448222 Newton seconds (Ns). So
+from Lockheed&#39;s perspective, passing in 1.5 lbfs to
+<code>trajectory_correction</code> should be just fine: 1.5 lbfs is about 6.672333
+Ns, way above the 2 Ns threshold.</p>
+
+<p>The problem is the interpretation of the data. The NASA component ends
+up comparing lbfs to Ns without conversion, misinterpreting the lbfs
+input as Ns. Since 1.5 is less than 2, the orbiter disintegrates. This
+is a known anti-pattern called <q>primitive obsession</q>.</p>
+
+<h2>Primitive Obsession</h2>
+
+<p>Primitive obsession happens when we use a primitive data type to
+represent a value in the problem&#39;s domain and causes situations like
+the above. Representing zip codes as numbers, telephone numbers as
+strings, Ns and lbfs as <code>double</code> are all examples of this.</p>
+
+<p>A more type safe solution would have defined a simple <code>Ns</code> type:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Ns</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="kt">bool</span><span class="w"> </span><span class="k">operator</span><span class="o">&lt;</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">value</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We can similarly define a simple <code>lbfs</code> type:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">lbfs</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="kt">bool</span><span class="w"> </span><span class="k">operator</span><span class="o">&lt;</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">lbfs</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">lbfs</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">value</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Now we can implement a type safe <code>trajectory_correction</code>:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Will not disintegrate as long as momentum &gt;= 2 N s</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">trajectory_correction</span><span class="p">(</span><span class="n">Ns</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">momentum</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">})</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">disintegrate</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* ... */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Calling this with <code>lbfs</code> as below fails to compile as the types are
+incompatible:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">lbfs</span><span class="p">{</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Note how the meaning of the values, which used to be specified in
+comments (<code>2 /* Ns */</code>, <code>/* lbfs */</code>) gets pulled into the type system
+and expressed in code (<code>Ns{ 2 }</code>, <code>lbfs{ 1.5 }</code>).</p>
+
+<p>We can, of course, provide casting from <code>lbfs</code> to <code>Ns</code> as an explicit
+operator:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">lbfs</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Ns</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">4.448222</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>Equipped with this, we can call <code>trajectory_correction</code> via a static
+cast:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">Ns</span><span class="o">&gt;</span><span class="p">(</span><span class="n">lbfs</span><span class="p">{</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">}));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This does the right thing of multiplying by the ratio. The cast can also
+be made implicit (by using the <code>implicit</code> keyword instead), in which
+case it is applied automatically. As a rule of thumb, it&#39;s best to
+follow the Zen of Python:</p>
+
+<blockquote>
+<p>Explicit is better than implicit</p>
+</blockquote>
+
+<p>The moral of the story is that nowadays we have very sophisticated type
+checkers but we do need to provide them enough information to catch this
+type of errors. That information comes from declaring types to represent
+our problem domain. <sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup></p>
+
+<h2>State Space</h2>
+
+<p>Bad things happen when our programs end up in a <em>bad state</em>. Types help
+us narrow down the possibility of such bad states. One way to think
+about this is to look at types as sets of possible values. For example
+<code>bool</code> is the set <code>{true, false}</code> where a variable of the type can be
+one of the two values. Similarly, <code>uint32_t</code> is the set
+<code>{0 ... 4294967295}</code>. Looking at types like this, we can define the
+<em>state space</em> of our program as the product of the types of all live
+variables at a given point in time.</p>
+
+<p>If we have a <code>bool</code> and an <code>uint32_t</code>, our state space is
+<code>{true, false} X {0 ... 4294967295}</code>. This simply means that the two
+variables can be in any of their possible states and since we have two
+of them, our program can be in any of their combined states.</p>
+
+<p>This gets more interesting when we look at functions that initialize
+values:</p>
+<div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">get_momentum</span><span class="p">(</span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">some_condition</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">momentum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>In the above example we take a <code>Ns</code> by reference and initialize it if
+some condition is met. The function returns <code>true</code> if the value was
+properly initialized. If the function cannot, for whatever reason, set
+the value, it returns <code>false</code>.</p>
+
+<p>Looking at this from the state space lens, our state space is the
+product <code>bool X Ns</code>. If the function returns <code>true</code>, then <code>momentum</code> was
+set and is in any one of the possible <code>Ns</code> values. The problem is that
+if the function returns <code>false</code>, then <code>momentum</code> was not set. It is
+still in any one of the possible <code>Ns</code> values, but it is not a valid
+value. Often times we have bugs where we accidentally propagate such
+invalid state:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Ns</span><span class="w"> </span><span class="n">momenum</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">get_momentum</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>What we should have done instead is:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Ns</span><span class="w"> </span><span class="n">momentum</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">get_momentum</span><span class="p">(</span><span class="n">momentum</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>There is a better way though, where this can be enforced:</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">Ns</span><span class="o">&gt;</span><span class="w"> </span><span class="n">get_momentum</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">some_condition</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">nullopt</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_optional</span><span class="p">(</span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Using an <code>optional</code>, this version of the function has a significantly
+smaller state space: instead of <code>bool X Ns</code>, we have <code>Ns + 1</code>. The
+function either returns a valid <code>Ns</code> value or <code>nullopt</code> to denote the
+absence of a value. Now it becomes impossible to have an invalid <code>Ns</code>
+that gets propagated throughout the system. We can also no longer
+<em>forget</em> to check the return value as an <code>optional&lt;Ns&gt;</code> is not
+implicitly convertible to an <code>Ns</code> - we need to explicitly unpack it:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">maybeMomentum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_momentum</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">maybeMomentum</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="o">*</span><span class="n">maybeMomentum</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>In general, we want our functions to return <strong>result or error</strong> not
+<strong>result and error</strong>. This way we eliminate the states in which we have
+an error but also an invalid result which might make its way in further
+computation.</p>
+
+<p>From this point of view, throwing exceptions is OK as this follows the
+same pattern: a function either returns a result <strong>or</strong> throws an
+exception.</p>
+
+<h2>RAII</h2>
+
+<p>RAII stands for <em>Resource Acquisition Is Initialization</em> but has more to
+do with releasing resources. The name originated from C++ but the
+pattern can be implemented in any language (see, for example, .NET&#39;s
+<code>IDisposable</code>). RAII ensures automatic cleanup of resources.</p>
+
+<p>What are resources? A few examples: heap memory, database connections,
+OS handles. In general, a resource is something we acquire from the
+outside world and we need to release when it is no longer needed. That
+means executing some form of free, delete, close etc. on the resource.</p>
+
+<p>Since these resources are external, they are not directly expressed into
+our type system. For example if we allocate some heap memory, we get a
+pointer on which we have to call <code>delete</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{};</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="cm">/* Use foo */</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>But what happens if we forget or something prevents us from calling
+<code>delete</code>?</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>In this case we no longer call <code>delete</code> and we leak the resource. In
+general, we don&#39;t want to perform such manual cleanup. For heap memory,
+we actually have <code>unique_ptr</code> to help us manage it:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>The <code>unique_ptr</code> is a stack object so whenever it goes out of scope
+(when the function throws or during stack unwinding if an exception was
+thrown) its destructor gets called. It&#39;s destructor implements the call
+to <code>delete</code>. This way, we no longer have to manually manage the memory
+resource - we hand it off to a wrapper which owns it and handles
+releasing it.</p>
+
+<p>Similar wrappers exist or can be created for any of the other resources
+(for example a Windows OS <code>HANDLE</code> can be wrapped in a type where its
+destructor would call <code>CloseHandle</code>.</p>
+
+<p>The key takeaway is never to do manual resource cleanup - either use an
+existing wrapper or, if none exists for your particular scenario,
+implement one.</p>
+
+<h2>Summary</h2>
+
+<p>This post started with a famous example of why typing is important, and
+covered three important aspects of leveraging types to write safer code:</p>
+
+<ul>
+<li>Declaring and using stronger types (as opposed to primitive
+obsession).</li>
+<li>Reducing state space, returning result or error instead of result
+and error.</li>
+<li>RAII and automatic resource management.</li>
+</ul>
+
+<p>Types are great tools for implementing safer, reusable code.</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>There is a great series of posts on Fluent C++ on <a href="https://www.fluentcpp.com/category/strong-types/">Strong
+Typing</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2018/07/16/implementing-a-variant-type-in-csharp.html>Implementing a Variant Type in C#</a></span></div>
+<div id="next"><span><a href=../../.././2018/10/13/arithmetic-overflow-and-underflow.html>Arithmetic Overflow and Underflow</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

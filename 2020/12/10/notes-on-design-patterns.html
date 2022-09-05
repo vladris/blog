@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Notes on Design Patterns &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>December 10, 2020</span></header>
+<article>
+<h1>Notes on Design Patterns</h1>
+
+<blockquote>
+<p><em>Patterns mean <q>I have run out of language.</q></em> --- Rich Hickey.</p>
+</blockquote>
+
+<p>Many junior developers want to improve their software design skills by
+studying design patterns. I was there too, of course. I believe there is
+a big misconception of what design patterns <em>are</em>, and I believe we are,
+indeed, over-indexing on them when we are thinking of software design.</p>
+
+<p>It is very easy to over-design things, and if blindly apply design
+patterns, we end up with code like the <a href="https://github.com/EnterpriseQualityCoding/FizzBuzzEnterpriseEdition">FizzBuzz Enterprise
+Edition</a>,
+which in real life translate into incomprehensible software that burns
+hundreds of developer-hours for even tiny changes.</p>
+
+<h2>A good design by any other name...</h2>
+
+<p>So what are design patterns? A common definition is:</p>
+
+<blockquote>
+<p>A software design pattern is a general, reusable solution to a
+commonly occurring problem within a given context in software design.</p>
+</blockquote>
+
+<p>A lot of design patterns criticism centers around how, using some
+non-object oriented language, you can express design patterns from the
+Gang of Four succinctly within the language syntax, without having to
+code extra scaffolding. This is why I believe there is a misconception
+around what design patterns really are. My take on design patterns is
+that they provide good solutions to software design problems, for
+dimensions like encapsulation, decoupling etc. These patterns are
+<strong>not</strong> their representation in any particular language.</p>
+
+<p>In some instances, a language can express the same idea more succinctly.
+That doesn&#39;t mean the pattern is useless. We are still modeling complex
+domains with code, and we still need to account for all aspects of good
+design so we don&#39;t end up with a jumbled mess. In other words, you can
+write bad code in any programming language.</p>
+
+<p>This is a recurring topic in my book <a href="https://www.manning.com/books/programming-with-types">Programming with
+Types</a>, where I
+show alternative implementations to the strategy pattern, the decorator
+pattern, and the visitor pattern. The first two have more succinct
+functional implementations, while the last one can be better
+encapsulated using a discriminated union type. Regardless of how we
+express the design, we are still solving the same problem. Which is why
+I believe over-indexing on learning design patterns as code recipes is a
+mistake.</p>
+
+<h2>Smelling software rot</h2>
+
+<p>As a young developer wanting to learn design patterns, I stumbled upon
+the <a href="https://www.goodreads.com/book/show/84983.Agile_Principles_Patterns_and_Practices_in_C_">Agile Principles, Patterns, and Practices in
+C#</a>
+book, probably because it contained <q>patterns</q> in the title. But this
+book is a real gem on good design, and I highly recommend it.</p>
+
+<p>Chapter 7 talks about design smells. Design smells are a sign that the
+software is rotting and might need refactoring. Here are a few examples
+from the book:</p>
+
+<ul>
+<li><strong>Rigidity</strong> - because of poorly-structured dependencies, a small
+change in one part of the code causes a cascade of subsequent
+changes in other parts of the code.</li>
+<li><strong>Viscosity</strong> - when modifying the code, it is easier to add a hack
+rather than to implement a desing-preserving change. In other words,
+it is easier to do the wrong thing than it is to do the right thing.</li>
+<li><strong>Needles Repetition</strong> - copy/pasted code, often with minor
+modifications, which makes minor updates very difficult to apply
+across the code base.</li>
+</ul>
+
+<p>There are a bunch more in the book and plenty more documented online.</p>
+
+<p>Developing a nose for design is, in my opinion, a lot more important
+than <em>knowing</em> patterns. And while you can read about common smells,
+nothing beats experience (much like reading descriptions of actual
+smells vs. using your nose).</p>
+
+<p>When I write code, sketching out a solution to some problem, I refactor
+it several times before I submit a pull request. It is an iterative
+process - I try something out, notice something off with the design,
+refactor to improve and simplify.</p>
+
+<p>Instead of bringing a set of prefabricated solutions and checking to see
+which one fits the problem best, we can focus on refactoring smells
+away. This avoids the FizzBuzz Enterprise Edition problem. The
+Enterprise Edition of FizzBuzz is full of patterns! But it is needlessly
+complex. Accidental complexity is one of the worst smells. I mentioned
+accidental complexity in the <a href="https://vladris.com/blog/2020/01/19/time-and-complexity.html">Time and
+Complexity</a>
+post and I will probably write more about it since I find this a
+fascinating topic.</p>
+
+<p>Smells tell us how a design is bad, but what makes a good design?</p>
+
+<h2>SOLID principles and beyond</h2>
+
+<p>There is a small set of design principles, known as the SOLID design
+principles which make for good code:</p>
+
+<ul>
+<li><strong>The single-responsibility principle</strong> - a class (or program unit)
+should be responsible for one thing, and have to change only when
+the requirements of that thing change.</li>
+<li><strong>The open/closed principle</strong> - code should be open for extension,
+closed for modification.</li>
+<li><strong>The Liskov substitution principle</strong> - replacing an instance of
+some type with an instance of a subtype should maintain program
+correctness.</li>
+<li><strong>The interface segregation principle</strong> - single-responsibility
+principle applied to interfaces.</li>
+<li><strong>The dependency-inversion principle</strong> - code should depend on
+abstractions, not concrete implementations.</li>
+</ul>
+
+<p>While a lot of the literature is centered around object-oriented
+programming, these principles transcend OOP. For example, an interface
+can be an <code>interface</code> definition, a function signature, a set of APIs
+exposed by a module etc. Similarly, subtyping does not imply
+inheritance - check out my
+<a href="https://vladris.com/blog/2019/12/27/variance.html">Variance</a> post which
+covers this in more depth.</p>
+
+<p>These SOLID principles are the subject of chapter 8 through 12 of the
+<em>Agile Principles, Patterns, and Practices in C# book</em>.</p>
+
+<p>Knowing these principles and having a nose for design smells, you can
+derive any design pattern from first principles. In some cases it&#39;s
+easier if you are aware of the pattern - you don&#39;t have to spend time
+solving an already-solved problem. But it doesn&#39;t work the other way
+around: You can&#39;t start with a set of patterns without understanding
+the underlying principles and without being able to tell when a design
+smells.</p>
+
+<p>Beyond these principles, exploring well-crafted software helps us
+develop a sense of good design. In the real-world, most codebases have
+good and bad parts. I won&#39;t go into the details of why in this article,
+but keep this in mind when working on your project. Which parts are
+designed well? Why? Which parts could benefit from a refactoring? Why?</p>
+
+<p>Learning design patterns is secondary to understanding good and bad
+design.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2020/11/27/changing-data-classification-through-processing.html>Changing Data Classification Through Processing</a></span></div>
+<div id="next"><span><a href=../../.././2020/12/29/recommendations.html>Recommendations</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Concepts and Modules &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>August 17, 2016</span></header>
+<article>
+<h1>Concepts and Modules</h1>
+
+<p>As a follow up to my previous post, I want to talk about two major new
+C++ features that keep not making it into the standard, namely
+<em>Concepts</em> and <em>Modules</em>. These would have a significant impact on the
+code examples I provided while discussing dependency injection, so
+here&#39;s a quick peek into the future:</p>
+
+<h2>Concepts</h2>
+
+<p>One way to think about concepts is that concepts are to templates what
+interfaces are to classes. Similarly to how interfaces specify a
+contract which implementing types must satisfy, concepts specify a
+contract which template argument types must satisfy. The main difference
+is that interfaces/classes enable runtime polymorphism while
+concepts/templates enable polymorphism at compile-time.</p>
+
+<p>Runtime polymorphism:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Our interface</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">IEngine</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">IEngine</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="c1">// One implementation</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">V6Engine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// Another implementation</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// A function that works against the interface</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">StartEngine</span><span class="p">(</span><span class="n">IEngine</span><span class="o">&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">StartEngines</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">V6Engine</span><span class="w"> </span><span class="n">v6engine</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">V8Engine</span><span class="w"> </span><span class="n">v8engine</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// calls Start() on V6Engine instance passed as IEngine</span>
+<span class="w">    </span><span class="n">StartEngine</span><span class="p">(</span><span class="n">v6engine</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// calls Start() on V8Engine instance passed as IEngine</span>
+<span class="w">    </span><span class="n">StartEngine</span><span class="p">(</span><span class="n">v8engine</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Here, we have a single <code>StartEngine</code> function which works against an
+interface. Calling <code>Start()</code> for that interface involves a virtual
+function call, which means that at runtime, given an object of a type
+implementing <code>IEngine</code>, the code needs to figure out which function of
+the implementing type to call. For <code>V6Engine</code>, <code>IEngine::Start()</code> is
+<code>V6Engine::Start();</code> for <code>V8Engine</code>, <code>IEngine::Start()</code> is
+<code>V8Engine::Start()</code>. Our classes have a vtable - a table containing this
+mapping, so a virtual call looks up the actual function to call in the
+vtable.</p>
+
+<p>This is the <q>classical</q> object-oriented way of dispatching calls. The
+advantage of this approach is that it works across binaries<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup> (we can
+export <code>StartEngine</code> from a shared library and pass in an external
+<code>IEngine</code> implementation to it), the disadvantage is the extra
+redirection - implementing classes must have a vtable and call
+resolution involves jumping through it.</p>
+
+<p>Compile-time polymorphism:</p>
+<div class="highlight"><pre><span></span><span class="c1">// One implementation</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">V6Engine</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// Another implementation</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// A generic function</span>
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TEngine</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="n">StartEngine</span><span class="p">(</span><span class="n">TEngine</span><span class="o">&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">StartEngines</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">V6Engine</span><span class="w"> </span><span class="n">v6engine</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">V8Engine</span><span class="w"> </span><span class="n">v8engine</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// calls Start() on V6Engine, this instantiates</span>
+<span class="w">    </span><span class="c1">// StartEngine&lt;V6Engine&gt;(V6Engine&amp; engine)</span>
+<span class="w">    </span><span class="n">StartEngine</span><span class="p">(</span><span class="n">v6engine</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// calls Start() on V8Engine, this instantiates</span>
+<span class="w">    </span><span class="c1">// StartEngine&lt;V8Engine&gt;(V8Engine&amp; engine)</span>
+<span class="w">    </span><span class="n">StartEngine</span><span class="p">(</span><span class="n">v8engine</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>A few differences to note here: we don&#39;t have an <code>IEngine</code> interface
+anymore and the two types we use, <code>V6Engine</code> and <code>V8Engine</code>, no longer
+have virtual functions. Calling <code>V6Engine::Start()</code> or
+<code>V8Engine::Start()</code> now no longer involves a virtual call. The two
+<code>StartEngine</code> calls are actually made to different functions now - at
+compile time, whenever the compiler encounters a call to <code>StartEngine</code>
+with a new type, it instantiates the template, meaning it creates a new
+function based on that template with the template type as the provided
+type. We actually end up with one function that can start a <code>V6Engine</code>
+and one that can start <code>V8Engine</code>, both produced from the same template.</p>
+
+<p>This is compile-time polymorphism, the advantage being that everything
+is determined during build - no virtual calls etc., the disadvantage
+being that the compiler needs to have a definition of the template
+available whenever it needs to create a new instance<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup>. In this case
+we can&#39;t encapsulate what happens inside <code>StartEngine</code> if we want
+others to be able to call the function.</p>
+
+<h3>With Concepts</h3>
+
+<p>The above works just fine, the problem being that, in general, if you
+have a templated function, it&#39;s not obvious what contracts do the types
+it expects need to satisfy. For example, our <code>StartEngine</code> expects that
+the given type has a <code>Start()</code> function it can call. This isn&#39;t obvious
+from the function declaration though. Also, compiler errors when
+templates cannot be instantiated are notoriously hard to decipher. The
+proposed solution to both of the above are concepts. Here is how an
+engine concept would look like:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TEngine</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">concept</span><span class="w"> </span><span class="nc">bool</span><span class="w"> </span><span class="n">Engine</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">requires</span><span class="p">(</span><span class="n">TEngine</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="n">engine</span><span class="p">.</span><span class="n">Start</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="n">engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This defines the <code>Engine</code> concept to require any type satisfying it to
+have a <code>Start()</code> function and a <code>Stop()</code> function. <code>StartEngine</code> would
+then be able to explicitly say what kind of types it expects:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="n">Engine</span><span class="w"> </span><span class="n">TEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">StartEngine</span><span class="p">(</span><span class="n">TEngine</span><span class="o">&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>It is now clear from the function declaration that <code>StartEngine</code> expects
+a type satisfying the <code>Engine</code> concept. We can look at the concept
+definition to see what we need to implement on our type. The compiler
+would also be able to issue much clearer errors when the type we pass in
+is missing one of the concept requirements.</p>
+
+<p>Unfortunately, while several proposals for concepts have been put
+forward in the past years, they weren&#39;t approved to be part of the
+C++17 standard. That being said, it&#39;s fairly certain that they will
+eventually make it into the standard.</p>
+
+<h2>Modules</h2>
+
+<p>Another noteworthy feature are modules: currently, the <code>#include</code>
+directive textually includes the given file into the source file being
+compiled. This has a lot of build-time overhead (same header files get
+compiled over and over as they are included in various source files) and
+forces us to be extra-careful in how we scope things: what goes in a
+header file vs. what goes in a source file etc.</p>
+
+<p>Modules aim to replace the header/source file split and provide a better
+way to group components and expose functionality. For example, here is a
+header/source file pair from my previous post:</p>
+<div class="highlight"><pre><span></span><span class="c1">// ICar.h</span>
+<span class="cp">##pragma once</span>
+<span class="cp">##include &quot;IEngine.h&quot;</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">ICar</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Drive</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">ICar</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">engine</span><span class="p">);</span><span class="w"></span>
+<span class="n">Car</span><span class="p">.</span><span class="n">cpp</span><span class="o">:</span><span class="w"></span>
+
+<span class="c1">// Car.cpp</span>
+<span class="cp">##include &quot;ICar.h&quot;</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">Car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
+<span class="w">         </span><span class="o">:</span><span class="w"> </span><span class="n">m_engine</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">         </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="w">         </span><span class="c1">// drive</span>
+<span class="w">         </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Stop</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Using modules, we would have:</p>
+<div class="highlight"><pre><span></span><span class="k">module</span><span class="w"> </span><span class="n">Car</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">import</span><span class="w"> </span><span class="n">Engine</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ICar</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Drive</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">ICar</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">Car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
+<span class="w">         </span><span class="o">:</span><span class="w"> </span><span class="n">m_engine</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">         </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="w">         </span><span class="c1">// drive</span>
+<span class="w">         </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Stop</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">export</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This is now a single file where we import the <code>Engine</code> module (instead
+of <code>#include</code>), we provide the interface and concrete implementation,
+the factory function, and we mark publicly-visible declarations with the
+<code>export</code> keyword.</p>
+
+<p>Like Concepts, Modules haven&#39;t made it into the C++17 standard, but
+MSVC has a working implementation as of VS2015 Update 1.</p>
+
+<h2>Dependency Injection in the Future</h2>
+
+<p>So putting the above together, here is how dependency injection in C++
+might look like in the not too far future:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Engine.m</span>
+<span class="k">module</span><span class="w"> </span><span class="n">Engine</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TEngine</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">concept</span><span class="w"> </span><span class="nc">bool</span><span class="w"> </span><span class="n">Engine</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">requires</span><span class="p">(</span><span class="n">TEngine</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="n">engine</span><span class="p">.</span><span class="n">Start</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="n">engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// V8Engine.m</span>
+<span class="k">module</span><span class="w"> </span><span class="n">V8Engine</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// start the engine }</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// stop the engine }</span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="c1">// Car.m</span>
+<span class="k">module</span><span class="w"> </span><span class="n">Car</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">import</span><span class="w"> </span><span class="n">Engine</span><span class="p">;</span><span class="w"></span>
+<span class="k">import</span><span class="w"> </span><span class="n">V8Engine</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="n">Engine</span><span class="w"> </span><span class="n">TEngine</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">requires</span><span class="w"> </span><span class="n">DefaultConstructible</span><span class="o">&lt;</span><span class="n">TEngine</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// drive</span>
+<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">TEngine</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="c1">// Explicit instantiation exported from this module so clients</span>
+<span class="c1">// won&#39;t have to re-instantiate the template for V8Engine type</span>
+<span class="k">export</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+
+<p>This can be used as follows:</p>
+<div class="highlight"><pre><span></span><span class="k">import</span><span class="w"> </span><span class="n">Car</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">Car</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">car</span><span class="p">;</span><span class="w"></span>
+<span class="n">car</span><span class="p">.</span><span class="n">Drive</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+
+<p>This would be the equivalent of Dependency Injection with Templates I
+mentioned in the previous post.</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>As long as binaries are compiled with the same compiler. Otherwise
+the code produced by different compilers might have different vtable
+layouts and different name mangling.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p>Other disadvantages are slower compile times and potential code
+bloat, as each template instantiation gets translated into a new
+function.&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2016/07/06/dependency-injection-in-c.html>Dependency Injection in C++</a></span></div>
+<div id="next"><span><a href=../../.././2016/10/09/composable-generators.html>Composable Generators</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

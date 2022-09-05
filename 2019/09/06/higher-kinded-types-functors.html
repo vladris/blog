@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Higher Kinded Types: Functors &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>September 06, 2019</span></header>
+<article>
+<h1>Higher Kinded Types: Functors</h1>
+
+<p>This blog post is an excerpt from my book, <a href="https://www.manning.com/books/programming-with-types">Programming with
+Types</a>. The code
+samples are in TypeScript. If you enjoy the article, you can use the
+discount code <strong>vlri40</strong> for a 40% discount on the book.</p>
+
+<h2>An Even More General Map</h2>
+
+<p>In the <a href="https://vladris.com/blog/2019/08/10/common-algorithms.html">previous
+post</a> we saw
+a generic <code>map()</code> implementation working on iterators. Iterators
+abstract data structure traversal, so <code>map()</code> can apply a function to
+elements in any data structure.</p>
+
+<p><img src="map1.png" alt="image"></p>
+
+<p>In the figure, <code>map()</code> takes an iterator over a sequence, in this case a
+list of circles, and a function which transforms a circle. <code>map()</code>
+applies the function to each element in the sequence, and produces a new
+sequence with the transformed elements.</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="o">*</span><span class="w"> </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">T</span><span class="p">,</span><span class="w"> </span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="nx">iter</span><span class="o">:</span><span class="w"> </span><span class="kt">Iterable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">iter</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">yield</span><span class="w"> </span><span class="nx">func</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This implementation works on iterators, but we should be able to apply a
+function of the form <code>(item: T) =&gt; U</code> to other types too. Let&#39;s take,
+as an example, an <code>Optional&lt;T&gt;</code> type:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Optional</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">assigned</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">value?</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">assigned</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">assigned</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">hasValue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">assigned</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">getValue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">assigned</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="ne">Error</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>It feels natural to be able to map a function <code>(value: T) =&gt; U</code> over an
+<code>Optional&lt;T&gt;</code>. If the optional contains a value of type <code>T</code>, mapping the
+function over it should return an <code>Optional&lt;U&gt;</code> containing the result of
+applying the function. On the other hand, if the optional doesn&#39;t
+contain a value, mapping would result in an empty <code>Optional&lt;U&gt;</code>.</p>
+
+<p><img src="map2.png" alt="image"></p>
+
+<p>Let&#39;s sketch out an implementation for this. We&#39;ll put this function
+in a namespace. Since TypeScript doesn&#39;t support function overloading,
+in order to have multiple functions with the same name, we need this so
+the compiler can determine which function we are calling. Here&#39;s the
+<code>Optional&lt;T&gt;</code> <code>map()</code> implementation:</p>
+<div class="highlight"><pre><span></span><span class="nx">namespace</span><span class="w"> </span><span class="nx">Optional</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">T</span><span class="p">,</span><span class="w"> </span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="nx">optional</span><span class="o">:</span><span class="w"> </span><span class="kt">Optional</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Optional</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">optional</span><span class="p">.</span><span class="nx">hasValue</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Optional</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="p">(</span><span class="nx">optional</span><span class="p">.</span><span class="nx">getValue</span><span class="p">()));</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Optional</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p><code>export</code> simply makes the function visible outside the namespace. If the
+optional has a value, we extract it, pass it to <code>func()</code>, and use its
+result to initialize an <code>Optional&lt;U&gt;</code>. If the optional is empty, we
+create a new empty <code>Optional&lt;U&gt;</code>.</p>
+
+<p>We can do something very similar with the TypeScript sum type <code>T</code> or
+<code>undefined</code>. The <code>Optional&lt;T&gt;</code> we just saw is a DIY version of such a
+type that works even in languages which don&#39;t support sum types
+natively, but TypeScript does. Let&#39;s see how we can map over a
+<q>native</q> optional type <code>T | undefined</code>.</p>
+
+<p>Mapping a function <code>(value: T) =&gt; U</code> over <code>T | undefined</code> should apply
+the function and return its result if we have a value of type <code>T</code>, or
+return <code>undefined</code> if we start with <code>undefined</code>:</p>
+<div class="highlight"><pre><span></span><span class="nx">namespace</span><span class="w"> </span><span class="nx">SumType</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">T</span><span class="p">,</span><span class="w"> </span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">U</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nx">func</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>These types can&#39;t be iterated over, but it still makes sense for a
+<code>map()</code> function to exist for them. Let&#39;s define another simple generic
+type, <code>Box&lt;T&gt;</code>. This type simply wraps a value of type <code>T</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Can we map a function <code>(value: T) =&gt; U</code> over this type? We can. As you
+might have guessed, <code>map()</code> for <code>Box&lt;T&gt;</code> would return a <code>Box&lt;U&gt;</code>: it
+will take the value <code>T</code> out of <code>Box&lt;T&gt;</code>, apply the function to it, and
+put the result back into a <code>Box&lt;U&gt;</code>.</p>
+
+<p><img src="map3.png" alt="image"></p>
+<div class="highlight"><pre><span></span><span class="nx">namespace</span><span class="w"> </span><span class="nx">Box</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">T</span><span class="p">,</span><span class="w"> </span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="nx">box</span><span class="o">:</span><span class="w"> </span><span class="kt">Box</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="p">(</span><span class="nx">box</span><span class="p">.</span><span class="nx">value</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>There are many generic types over which we can map functions. Why is
+this useful? It&#39;s useful because <code>map()</code>, just like iterators, provides
+another way to decouple types which store data from functions which
+operate on that data.</p>
+
+<h2>Processing Results or Propagating Errors</h2>
+
+<p>As a concrete example, let&#39;s take a couple of functions which process a
+numerical value. We&#39;ll implement a simple <code>square()</code>, a function which
+takes a number as an argument and returns its square. We&#39;ll also
+implement <code>stringify()</code>, a function which takes a number as an argument
+and returns its string representation:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">square</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mf">2</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">stringify</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">value</span><span class="p">.</span><span class="nx">toString</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Now let&#39;s say we have a function <code>readNumber()</code>, which reads a numeric
+value from a file. Since we are dealing with input, we might run into
+some problems: what if the file doesn&#39;t exist or can&#39;t be opened? In
+that case, <code>readNumber()</code> will return <code>undefined</code>. We won&#39;t look at the
+implementation of this function, the important thing for our example is
+its return type:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">readNumber</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* Implementation omitted */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>If we want to read a number and process it by applying <code>square()</code> to it
+first, then <code>stringify()</code>, we need to ensure we actually have a
+numerical value as opposed to <code>undefined</code>. A possible implementation is
+to convert from <code>number | undefined</code> to just <code>number</code> using <code>if</code>
+statements wherever needed:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">process</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">readNumber</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">stringify</span><span class="p">(</span><span class="nx">square</span><span class="p">(</span><span class="nx">value</span><span class="p">));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We have two functions that operate on numbers, but since our input can
+also be <code>undefined</code>, we need to explicitly handle that case. This is not
+particularly bad, but in general the less branching our code has, the
+less complex it is. It is easier to understand, to maintain, and there
+are less opportunities for bugs. Another way to look at this is that
+<code>process()</code> itself simply propagates <code>undefined</code>, it doesn&#39;t do
+anything useful with it. It would be better if we can keep <code>process()</code>
+responsible for processing, and let someone else handle error cases. How
+can we do this? With the <code>map()</code> we implemented for sum types:</p>
+<div class="highlight"><pre><span></span><span class="nx">namespace</span><span class="w"> </span><span class="nx">SumType</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">T</span><span class="p">,</span><span class="w"> </span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">U</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nx">func</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">process</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">readNumber</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">squaredValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SumType</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span><span class="w"> </span><span class="nx">square</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">SumType</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">squaredValue</span><span class="p">,</span><span class="w"> </span><span class="nx">stringify</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Instead of explicitly checking for <code>undefined</code>, we call <code>map()</code> to apply
+<code>square()</code> on the value. If it is <code>undefined</code>, <code>map()</code> will give us back
+<code>undefined</code>. Just like with <code>square()</code>, we <code>map()</code> our <code>stringify()</code>
+function on the <code>squaredValue</code>. If it is <code>undefined</code>, <code>map()</code> will
+return <code>undefined</code>.</p>
+
+<p>Now our <code>process()</code> implementation has no branching -- the
+responsibility of unpacking <code>number | undefined</code> into a <code>number</code> and
+checking for <code>undefined</code> is handled by <code>map()</code>. <code>map()</code> is generic and
+can be used across many other types (like <code>string | undefined</code>) and in
+many other processing functions.</p>
+
+<p>In our case, since <code>square()</code> is guaranteed to return a <code>number</code>, we can
+create a small lambda which chains <code>square()</code> and <code>stringify()</code>, and
+pass that to <code>map()</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">process</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">readNumber</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">SumType</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">stringify</span><span class="p">(</span><span class="nx">square</span><span class="p">(</span><span class="nx">value</span><span class="p">)));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This is a functional implementation of <code>process()</code>, in which the error
+propagation is delegated to <code>map()</code>. We&#39;ll talk more about error
+handling in a later blog post, when we will discuss monads. For now,
+let&#39;s look at another application of <code>map()</code>.</p>
+
+<h2>Mix-and-match Function Application</h2>
+
+<p>Without the <code>map()</code> family of functions, if we have a <code>square()</code>
+function which squares a <code>number</code>, we would have to implement some
+additional logic to get a <code>number</code> from a <code>number | undefined</code> sum type.
+Similarly, we would have to implement some additional logic to get a
+value from a <code>Box&lt;number&gt;</code>, and package it back in a <code>Box&lt;number&gt;</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">squareSumType</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">square</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">squareBox</span><span class="p">(</span><span class="nx">box</span><span class="o">:</span><span class="w"> </span><span class="kt">Box</span><span class="o">&lt;</span><span class="kt">number</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="kt">number</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Box</span><span class="p">(</span><span class="nx">square</span><span class="p">(</span><span class="nx">box</span><span class="p">.</span><span class="nx">value</span><span class="p">));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>So far this isn&#39;t too bad. But what if we want something similar with
+<code>stringify()</code>? We&#39;ll again end up writing two functions which look a
+lot like the previous ones:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">stringifySumType</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">stringify</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">stringifyBox</span><span class="p">(</span><span class="nx">box</span><span class="o">:</span><span class="w"> </span><span class="kt">Box</span><span class="o">&lt;</span><span class="kt">number</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="kt">string</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Box</span><span class="p">(</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">box</span><span class="p">.</span><span class="nx">value</span><span class="p">))</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This starts to look like duplicate code, which is never good. If we have
+<code>map()</code> functions available for <code>number | undefined</code> and <code>Box</code>, they
+provide the abstraction to remove the duplicate code. We can pass either
+<code>square()</code> or <code>stringify()</code> to either <code>SumType.map()</code> or to <code>Box.map()</code>,
+no additional code needed:</p>
+<div class="highlight"><pre><span></span><span class="kd">let</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1</span><span class="p">;</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="kt">Box</span><span class="o">&lt;</span><span class="kt">number</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Box</span><span class="p">(</span><span class="mf">42</span><span class="p">);</span><span class="w"></span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">SumType</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">stringify</span><span class="p">));</span><span class="w"></span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">Box</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">y</span><span class="p">,</span><span class="w"> </span><span class="nx">stringify</span><span class="p">));</span><span class="w"></span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">SumType</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">square</span><span class="p">));</span><span class="w"></span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">Box</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">y</span><span class="p">,</span><span class="w"> </span><span class="nx">square</span><span class="p">));</span><span class="w"></span>
+</pre></div>
+
+<p>Now let&#39;s define this family of <code>map()</code> functions.</p>
+
+<h2>Functors and Higher Kinded Types</h2>
+
+<p>What we just talked about in this section are <em>functors</em>.</p>
+
+<p>A functor is a generalization of functions that perform mapping
+operations. For any generic type like <code>Box&lt;T&gt;</code>, a <code>map()</code> operation
+which takes a <code>Box&lt;T&gt;</code> and a function from <code>T</code> to <code>U</code> and produces a
+<code>Box&lt;U&gt;</code> is a functor.</p>
+
+<p><img src="map4.png" alt="image"></p>
+
+<p>In the figure we have a generic type <code>H</code> which contains 0, 1, or more
+values of some type <code>T</code>, and a function from <code>T</code> to <code>U</code>. In this case
+<code>T</code> is an empty circle and <code>U</code> is a full circle. The <code>map()</code> functor
+unpacks the <code>T</code> or <code>T</code>s from the <code>H&lt;T&gt;</code> instance, applies the function,
+then places the result back into an <code>H&lt;U&gt;</code>.</p>
+
+<p>Functors are extremely powerful concepts, but most mainstream languages
+do not have a good way to express them. That&#39;s because the general
+definition of a functor relies on <em>higher kinded types</em>.</p>
+
+<p>A generic type is a type which has a type parameter, for example a
+generic type <code>T</code>, or a type like <code>Box&lt;T&gt;</code>, have a type parameter <code>T</code>. A
+higher kinded type, just like a higher-order function, represents a type
+parameter with another type parameter. For example, <code>T&lt;U&gt;</code> or
+<code>Box&lt;T&lt;U&gt;&gt;</code>, have a type parameter <code>T</code> which, in turn, has a type
+parameter <code>U</code>.</p>
+
+<p>Since we don&#39;t have a good way to express higher kinded types in
+TypeScript, C#, or Java, we can&#39;t define a construct using the type
+system to express a functor. Languages like Haskell and Idris, with more
+powerful type systems, make these definitions possible. In our case
+though, since we can&#39;t enforce this capability through the type system,
+we can think of it more as a pattern.</p>
+
+<p>We can say a functor is any type <code>H</code> with a type parameter <code>T</code> (<code>H&lt;T&gt;</code>)
+for which we have a function <code>map()</code> which takes an argument of type
+<code>H&lt;T&gt;</code>, and a function from <code>T</code> to <code>U</code>, and returns a value of type
+<code>H&lt;U&gt;</code>.</p>
+
+<p>Alternately, if we want to be more object-oriented, we can make <code>map()</code>
+a member function and say <code>H&lt;T&gt;</code> is a functor if it has a method <code>map()</code>
+which takes a function from <code>T</code> to <code>U</code> and returns a value of type
+<code>H&lt;U&gt;</code>.</p>
+
+<p>To see exactly where the type system is lacking, we can try to sketch
+out an interface for it. Let&#39;s call this interface <code>Functor</code> and have
+it declare <code>map()</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">interface</span><span class="w"> </span><span class="nx">Functor</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Functor</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We can update <code>Box&lt;T&gt;</code> to implement this interface:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">implements</span><span class="w"> </span><span class="nx">Functor</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Box</span><span class="p">(</span><span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This code compiles, the only problem is that it isn&#39;t specific enough.
+Calling <code>map()</code> on <code>Box&lt;T&gt;</code> returns an instance of type <code>Box&lt;U&gt;</code>. But if
+we work with <code>Functor</code> interfaces, we see that the <code>map()</code> declaration
+specifies it returns a <code>Functor&lt;U&gt;</code>, not a <code>Box&lt;U&gt;</code>. This isn&#39;t
+specific enough. We need a way to specify, when we declare the
+interface, exactly what the return type of <code>map()</code> will be (in this case
+<code>Box&lt;U&gt;</code>).</p>
+
+<p>We would like to be able to say <q>this interface will be implemented by
+a type <code>H</code> with a type argument <code>T</code></q>. The following code shows how this
+declaration would look like if TypeScript supported higher kinded types.
+It obviously doesn&#39;t compile:</p>
+<div class="highlight"><pre><span></span><span class="kd">interface</span><span class="w"> </span><span class="nx">Functor</span><span class="o">&lt;</span><span class="nx">H</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">H</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">implements</span><span class="w"> </span><span class="nx">Functor</span><span class="o">&lt;</span><span class="nx">Box</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Box</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Box</span><span class="p">(</span><span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Lacking this, let&#39;s just think of our <code>map()</code> implementations as a
+pattern for applying functions to generic types, or <q>values in some
+box</q>.</p>
+
+<h2>Functors for Functions</h2>
+
+<p>Note that we also have functors over functions. Given a function with
+any number of arguments that returns a value of type <code>T</code>, we can map a
+function which takes a <code>T</code> and produces a <code>U</code> over it, and end up with a
+function which takes the same inputs as the original function and
+returns a value of type <code>U</code>. <code>map()</code> in this case is simply function
+composition.</p>
+
+<p><img src="map5.png" alt="image"></p>
+
+<p>Mapping a function over another function composes the two functions. The
+result is a function which takes the same arguments as the original
+function and returns a value of the second function&#39;s return type. The
+two functions need to be compatible -- the second function must expect
+an argument of the same type as the one returned by the original
+function.</p>
+
+<p>As an example, let&#39;s take a function which takes two arguments of type
+<code>T</code>, and produces a value of type <code>T</code> and implement its corresponding
+<code>map()</code>. This will return a function which takes two arguments of type
+<code>T</code> and returns a value of type <code>U</code>:</p>
+<div class="highlight"><pre><span></span><span class="nx">namespace</span><span class="w"> </span><span class="nb">Function</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">map</span><span class="o">&lt;</span><span class="nx">T</span><span class="p">,</span><span class="w"> </span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="nx">f</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">arg1</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">arg2</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">T</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nx">func</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">arg1</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">arg2</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">U</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="nx">arg1</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">arg2</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">func</span><span class="p">(</span><span class="nx">f</span><span class="p">(</span><span class="nx">arg1</span><span class="p">,</span><span class="w"> </span><span class="nx">arg2</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p><code>map()</code> takes a function <code>(T, T) =&gt; T</code>, and a function <code>T =&gt; U</code> to map
+over it. It returns a lambda function <code>(T, T) =&gt; U</code>.</p>
+
+<p>Let&#39;s map <code>stringify()</code> over a function <code>add()</code>, which takes two
+numbers and returns their sum. The result is a function which takes two
+numbers and returns a string, the stringified result of adding the two
+numbers:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">add</span><span class="p">(</span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">y</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">stringify</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">value</span><span class="p">.</span><span class="nx">toString</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Function</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">add</span><span class="p">,</span><span class="w"> </span><span class="nx">stringify</span><span class="p">)(</span><span class="mf">40</span><span class="p">,</span><span class="w"> </span><span class="mf">2</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<h2>Summary</h2>
+
+<ul>
+<li><code>map()</code> generalizes beyond iterators, to other generic types.</li>
+<li>Functors encapsulate data <q>unboxing</q>, with applications in
+composition and error propagation.</li>
+<li>With higher kinded types, we can express constructs like functors
+using generics which themselves have type parameters.</li>
+</ul>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2019/08/10/common-algorithms.html>Common Algorithms</a></span></div>
+<div id="next"><span><a href=../../.././2019/09/07/higher-kinded-types-monads.html>Higher Kinded Types: Monads</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

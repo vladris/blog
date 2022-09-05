@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Shipping a Feature &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>August 12, 2021</span></header>
+<article>
+<h1>Shipping a Feature</h1>
+
+<p>I recently did a small presentation for my team talking about what it
+takes to ship a feature to customers in a product like Office. This
+includes much more than getting the functionality implemented and
+tested. In fact, figuring out the design and implementing it accounts
+for about 20% of the work (from prototype to implementation, including
+tests). The remaining 80% is taking the feature from <em>functional</em> to
+<em>shippable</em>. In this post, I&#39;ll go over some of these non-functional
+aspects of shipping code to customers.</p>
+
+<p>Most of the aspects I will talk about rely heavily on telemetry. This is
+a consequence of today&#39;s connected world. Software is shipped over the
+internet every month or every week (or every day), as opposed to every
+year or every other year. Connectivity also enables us to get signals on
+how the software is performing and adjust accordingly.</p>
+
+<h2>Reliability</h2>
+
+<p>Reliability can make or break a feature. It is the bedrock of quality.
+If the feature is unreliable and causes crashes or data corruption,
+nobody will use it. The most egregious of reliability issues is data
+loss - for example, if a user writes a paragraph and the application
+crashes before this paragraph gets saved anywhere, forcing the user to
+re-type it causes a huge loss of trust.</p>
+
+<p>In terms of software engineering, beyond comprehensive testing, we need
+to have telemetry in place to report errors. There are several ways to
+quantify reliability. For example, a couple of common measures are the
+<em>ICE</em> and <em>ACE</em> scores.</p>
+
+<p><em>ICE</em> stands for <em>Ideal Customer Experience</em>. This measures the
+reliability of a scenario including all errors encountered during a
+user&#39;s session. 100% means no session encountered any errors.</p>
+
+<p><em>ACE</em> stands for <em>Adjusted Customer Experience</em>. This is similar to ICE,
+except it only measures unexpected errors. In a complex system, some
+errors are expected, and the software can recover from them without
+impacting the user experience. For example, a background call fails but
+succeeds on retry.</p>
+
+<p>Both measures are important - one measures the overall reliability of
+the system, the other measures the user experience impact.</p>
+
+<p>100% ICE and ACE scores are ideal, but hard to achieve in a complex
+system. That said, shipping a feature should include setting a target
+ICE and ACE score (for example 99%), making sure telemetry is there to
+provide the signal, and working towards that goal as the feature gets
+exposed to more and more users (more on exposure below).</p>
+
+<h2>Performance</h2>
+
+<p>Performance is another fundamental aspect of any feature. Of course, the
+first rule of performance tuning is to measure. Shipping a feature
+includes instrumentation to measure various scenarios like time to load,
+time to render etc. Customers run the code on different types of
+hardware, and it is important to understand what the actual user
+experience is (in the 95th percentile).</p>
+
+<p>Like reliability, we should set some goals, look at telemetry, and keep
+improving. Important to note that this is not a one-time thing, as
+software gets updated and functionality is added, performance can easily
+degrade. Performance numbers should show up on a dashboard and should be
+reviewed periodically.</p>
+
+<h2>Security</h2>
+
+<p>Microsoft created the <a href="https://www.microsoft.com/en-us/securityengineering/sdl/">Security Development
+Lifecycle</a> for
+building better, safer, software internally. In 2008, this was shared
+with the rest of the world and it continues evolving. I won&#39;t cover all
+security best practices as it would take way more than a blog post, but
+I will touch on a few points:</p>
+
+<ul>
+<li><p><a href="https://www.microsoft.com/en-us/securityengineering/sdl/threatmodeling">Threat
+modeling</a>
+- non-trivial features should have a threat model - a data flow
+diagram which captures the various entities in the system and the
+trust boundaries. The Microsoft Threat Modeling Tool can analyze a
+threat model and list out potential attacks and suggested
+mitigations.</p></li>
+<li><p>Adhering to standards and best practices - for example always
+connecting over HTTPS instead of HTTP, using cryptographically
+strong algorithms and so on.</p></li>
+<li><p>Leveraging available tools to ensure a feature is secure. For
+example, running static code analysis to identify potential attack
+vectors and <a href="https://en.wikipedia.org/wiki/Fuzzing">fuzzing</a> inputs.</p></li>
+</ul>
+
+<p>The bar for security should be very high, and a feature should never
+roll out to customers before ensuring it is secure.</p>
+
+<h2>Privacy</h2>
+
+<p>Customer privacy is extremely important. If our feature handles any
+customer data (data about the customer) or customer-owned data (data
+generated by the customer), we need to be very careful how we process
+it, store it, and who can access it. I talked extensively about data
+handling in my previous blog post, <a href="https://vladris.com/blog/2020/11/27/changing-data-classification-through-processing.html">Changing Data Classification Through
+Processing</a>.</p>
+
+<h2>Compliance</h2>
+
+<p>Compliance ensures we don&#39;t open ourselves up to liability. An example
+of this is third party notices for open-source libraries - many
+open-source licenses require you to mention you are using the library.
+Another example is GDPR compliance - EU citizens can request to view all
+the data a company has on them, or request to be <q>forgotten</q> (have
+their data removed from the system).</p>
+
+<p>Compliance also means our software adheres to various standards some
+customers might require. An example of this is data sovereignty:
+countries like Germany and China require data to be stored in data
+centers within their country. Another example is ensuring our software
+meets the requirements for certain certifications like SOC2, without
+which certain organizations wouldn&#39;t be able to use it.</p>
+
+<p>Our feature needs to be compliant before shipping it to customers.</p>
+
+<h2>Accessibility</h2>
+
+<p>The Microsoft mission statement reads as follows:</p>
+
+<blockquote>
+<p><em>Our mission is to empower every person and every organization on the
+planet to achieve more.</em></p>
+</blockquote>
+
+<p>Making our software accessible to people with disabilities is very
+important. Here are a few aspects we need to consider when shipping
+features users interact with:</p>
+
+<ul>
+<li>Contrast ratio - the contrast between foreground colors and
+background colors needs to be good enough so everything is legible
+for people with vision impairment.</li>
+<li>High contrast - operating systems provide high-contrast modes for
+the visually impaired. Features need to be tested in high-contrast
+mode to ensure they are still usable.</li>
+<li>Screen reader support - UI elements need to be annotated so screen
+reader software can describe them correctly.</li>
+<li>Keyboarding - some users navigate exclusively using keyboard
+shortcuts, so a feature needs to implement common keyboard shortcuts.</li>
+<li>Focus - a feature needs to properly handle focus switching. This
+includes tab order, making sure focus doesn&#39;t get trapped on a
+single control or subset of the controls etc.</li>
+<li>Touch - touchscreen devices without keyboard usually have larger
+touch targets. We need to make sure our feature works well on
+touchscreens too.</li>
+</ul>
+
+<h2>World readiness</h2>
+
+<p>World readiness means our feature can ship in markets across the world,
+and usually entails two different aspects: <em>globalization</em> and
+<em>localization</em>.</p>
+
+<p>Globalization means our feature works in different cultures, with
+different (OS-level) culture settings, without requiring additional,
+culture-specific changes. An example is the date format. In US, the date
+format is <code>mm-dd-yyyy</code>, while in Europe it is <code>dd-mm-yyyy</code>. Japan uses
+<code>yyyy-mm-dd</code>. When displaying dates, we should format them using the
+current culture&#39;s format, not assume and hardcode any specific format.</p>
+
+<p>Another important aspect of globalization is to ensure the symbols used
+as icons make sense for everyone. For example, using a starry wizard hat
+to represent a setup wizard works in Western cultures but might not make
+sense all around the world.</p>
+
+<p>Localization deals with translating UI strings into all the languages in
+which the feature ships. From a developer perspective, UI layout is
+important here: in some languages, words are on average longer than in
+English, so text might overflow its boundaries when translated. For
+example, <q>Add job</q> in English becomes <q>Auftrag hinzufügen</q> in
+German.</p>
+
+<p>We also have right-to-left languages like Arabic and Hebrew. We need to
+ensure our layout works as expected in such languages.</p>
+
+<h2>Feature gating</h2>
+
+<p>In a mature product like Office, making changes feels very much like
+rebuilding an airplane in flight: we can add and modify features, but
+breaking anything is catastrophic. One best practice of shipping
+features in such conditions is using feature gates. A feature gate is a
+toggle that determines whether a code path should be exercised or not.
+This allows us to release a build containing a half-developed feature.
+If it is not quite ready to see the light of day, the feature gate is
+closed, and the code never runs in production.</p>
+
+<p>Once the feature is ready, we can toggle the feature gate and start
+running the code. In case we notice any issues, we can flip the feature
+gate back off and mitigate customer impact while the issue gets
+resolved.</p>
+
+<p>Once the feature is mature and has been exercised by customers for a
+while, we can go back and clean up the feature gate.</p>
+
+<h2>Flighting</h2>
+
+<p>Feature gates are a simple on/off switch. Flighting changes is a more
+mature version of progressive exposure. We usually have a set of rings
+through which we release. For example, we could have a dogfood ring, for
+the team to try out the code themselves, before shipping further; we
+could have a beta tester ring, for customers who sign up to get preview
+features; finally, we could have a production ring, containing all other
+customers.</p>
+
+<p>We should be able to progress a feature through these different rings,
+and within the rings, only expose a percentage of customers to the
+feature.</p>
+
+<p>Flighting infrastructure needs to exist for this. From a feature
+development perspective, we need a roll out plan defining what telemetry
+signals we want to see to be comfortable increasing exposure of our
+feature.</p>
+
+<h2>Experimentation</h2>
+
+<p>Finally, we need a way to measure whether a feature is successful or not
+and determine whether iterating on it improves things or makes them
+worse. First, we need to define what success means - what metrics are
+most important for our product. Once we have these, we can run an A/B
+test when introducing a new feature or iterating on an existing feature.
+We have a control group seeing the old behavior and a treatment group
+seeing the new behavior. We can then look at the key metrics we defined
+and see how they look for both control and treatment. Did the new code
+move the needle?</p>
+
+<h2>Summary</h2>
+
+<p>Shipping a feature takes a lot of work beyond the initial functional
+implementation. In this post we looked at some of these various aspects:</p>
+
+<ul>
+<li>Reliability</li>
+<li>Performance</li>
+<li>Security</li>
+<li>Privacy</li>
+<li>Compliance</li>
+<li>Accessibility</li>
+<li>World readiness</li>
+<li>Feature gating</li>
+<li>Flighting</li>
+<li>Experimentation</li>
+</ul>
+
+<p>All of these need to be taken into account when we ship code to our
+customers.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2021/06/21/data-engineering-on-azure-rtm.html>Data Engineering on Azure RTM</a></span></div>
+<div id="next"><span><a href=../../.././2021/09/10/machine-learning-on-azure-part-1.html>Machine Learning on Azure - Part 1</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

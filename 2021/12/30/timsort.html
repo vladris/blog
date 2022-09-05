@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Timsort &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>December 30, 2021</span></header>
+<article>
+<h1>Timsort</h1>
+
+<p>I wrote before about the inherent complexity of the real world and how
+software that behaves well in the real world must necessarily take on
+some complexity (<a href="https://vladris.com/blog/2020/01/19/time-and-complexity.html">Time and
+Complexity</a>).
+A lot of the software engineering best practices try to reduce or
+eliminate the <em>accidental complexity</em> of large systems (making things
+more complicated than they should be). But we don&#39;t live in a perfect
+world, so modeling it using software requires some <em>inherent complexity</em>
+in the software, to reflect reality. One of the algorithms which
+perfectly illustrates this is the Timsort sorting algorithm.</p>
+
+<p>Timsort is an algorithm developed by Tim Peters in 2002 to replace
+Python&#39;s previous sorting algorithm. It has since been adopted
+inJava&#39;s OpenJDK, the V8 JavaScript engine, and the Swift and Rust
+languages. This is a testament that Timsort is a performant sort.</p>
+
+<p>Timsort is a <em>stable sorting algorithm</em>, which means it will never
+changes the relative order of equal elements. This is an important
+property in certain situations. This is not important when sorting
+numbers, but becomes important when sorting objects with custom
+comparisons.</p>
+
+<p>But in 2002 we already had plenty of well known sorting algorithms which
+were quite efficient. How did Timsort manage to outperform these?</p>
+
+<h2>Merging Runs</h2>
+
+<p>The key insight of Timsort is that in the real world, many lists of
+elements that require sorting contain subsequences of elements that are
+already sorted. These are called <em>runs</em> and tend to appear naturally.
+For example, in the list <code>[5, 2, 3, 4, 9, 1, 6, 8, 10, 7]</code> we have two
+runs: <code>[2, 3, 4]</code> and <code>[1, 6, 8, 10]</code>.</p>
+
+<p>If we know runs will show up more often than not in our input, how can
+we best leverage this to our advantage, and avoid extraneous comparisons
+and data movement?</p>
+
+<p>Timsort starts by finding the minimum <q>accepted</q> run length for a
+given input. This doesn&#39;t have anything to do with the content of the
+input, rather it is a function of the size of the input. More on this
+later.</p>
+
+<p>Then we do a single pass over the array and identify consecutive runs.
+If the next <em>minimum accepted run length</em> elements are not already
+sorted (they don&#39;t form a run), we sort them using insertion sort (so
+they do end up as a run). We push these runs on a stack, then we then
+merge pairs of them until we end up with a single run, which is our
+sorted list.</p>
+
+<h2>A Simple Implementation</h2>
+
+<p>Let&#39;s start with a simple sketch implementation. We&#39;ll use Python
+since it is expressive and it makes it easier to focus on the algorithm
+rather than syntax around it.</p>
+<div class="highlight"><pre><span></span><span class="n">MIN_MERGE</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="k">def</span> <span class="nf">sort</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span> 
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span> 
+    <span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">nRemaining</span> <span class="o">=</span> <span class="n">hi</span>
+    <span class="n">minRun</span> <span class="o">=</span> <span class="n">MIN_MERGE</span>
+
+    <span class="k">while</span> <span class="n">nRemaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">runLen</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nRemaining</span><span class="p">,</span> <span class="n">minRun</span><span class="p">)</span>
+        <span class="n">insertionSort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">runLen</span><span class="p">)</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lo</span><span class="p">,</span> <span class="n">runLen</span><span class="p">))</span>
+
+        <span class="n">lo</span> <span class="o">+=</span> <span class="n">runLen</span>
+        <span class="n">nRemaining</span> <span class="o">-=</span> <span class="n">runLen</span>
+
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">base2</span><span class="p">,</span> <span class="n">len2</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">merge</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">base1</span><span class="p">,</span> <span class="n">base2</span><span class="p">,</span> <span class="n">base2</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">+</span> <span class="n">len2</span><span class="p">))</span>
+</pre></div>
+
+<p>First, we initialize a few variables:</p>
+<div class="highlight"><pre><span></span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span> 
+<span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">nRemaining</span> <span class="o">=</span> <span class="n">hi</span>
+<span class="n">minRun</span> <span class="o">=</span> <span class="n">MIN_MERGE</span>
+</pre></div>
+
+<p><code>MIN_MERGE</code> represents the minimum number of elements we want to merge,
+and is a constant. We&#39;ll talk more about this once we look at some
+optimizations later on.</p>
+
+<p><code>lo</code> and <code>hi</code> represent the range in the array we will operate on. Note
+ranges are always half-open (<code>arr[lo]</code> included, <code>arr[hi]</code> excluded,
+potentially out of bounds). <code>stack</code> is the run stack, <code>nRemaining</code> is
+the number of elements we still need to process. <code>minRun</code> is the minimum
+run length. For this first iteration, we&#39;ll just use <code>MIN_MERGE</code>.</p>
+
+<p>Next, we traverse the array and come up with our runs:</p>
+<div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">nRemaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">runLen</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nRemaining</span><span class="p">,</span> <span class="n">minRun</span><span class="p">)</span>
+        <span class="n">insertionSort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">runLen</span><span class="p">)</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lo</span><span class="p">,</span> <span class="n">runLen</span><span class="p">))</span>
+
+        <span class="n">lo</span> <span class="o">+=</span> <span class="n">runLen</span>
+        <span class="n">nRemaining</span> <span class="o">-=</span> <span class="n">runLen</span>
+</pre></div>
+
+<p>Our run in this case will be the minimum between <code>minRun</code> and the
+remaining elements of the array (so for the final run, we don&#39;t go out
+of bounds). We sort the run using <code>insertionSort</code>, then we push the run
+start index and length onto the stack. We advance <code>lo</code> by the length of
+the run and we similarly decrement <code>nRemaining</code>, the number of elements
+still to be processed.</p>
+
+<p>Next, we merge the runs:</p>
+<div class="highlight"><pre><span></span><span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">base2</span><span class="p">,</span> <span class="n">len2</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">merge</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">base1</span><span class="p">,</span> <span class="n">base2</span><span class="p">,</span> <span class="n">base2</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+    <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">+</span> <span class="n">len2</span><span class="p">))</span>
+</pre></div>
+
+<p>We pop 2 runs from the top of the stack, merge them, and push the new
+run back onto the stack. With this basic implementation, a stack is
+technically not really needed, but I&#39;m trying to preserve the general
+shape of the optimized solution.</p>
+
+<p>We called a couple of helper functions: <code>insertionSort</code> and <code>merge</code>.
+Here is <code>insertionSort</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">insertionSort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span> 
+    <span class="n">i</span> <span class="o">=</span> <span class="n">lo</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">hi</span><span class="p">:</span>
+        <span class="n">elem</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">while</span> <span class="n">elem</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">and</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="n">arr</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">arr</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">elem</span><span class="p">)</span>
+
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+
+<p><a href="https://en.wikipedia.org/wiki/Insertion_sort">Insertion sort</a> traverses
+the array from the lower bound + 1 to the higher bound and maintains the
+invariant that all elements preceding <code>i</code> are sorted. So for any element
+<code>arr[i]</code>, we find a spot <code>j</code> in the range <code>[lo, i)</code> where this element
+should fit. We then insert it there and shift the remaining elements in
+<code>[j + 1, i)</code> one spot to the right. Note this algorithm is quite
+inefficient on large data sets, but performs well on small inputs.</p>
+
+<p>Our merge algorithm is:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">mid</span><span class="p">]</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span> <span class="ow">and</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">hi</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">]</span>
+</pre></div>
+
+<p>We are merging the consecutive (sorted) ranges <code>[lo, mid)</code> and
+<code>[mid, hi)</code>. One way to do this (which our implementation uses), is to
+copy <code>[lo, mid)</code> to a temporary buffer <code>t</code>. We then traverse the
+<code>[mid, hi)</code> range with <code>j</code> and the buffer with <code>k</code>. We pick the smallest
+of <code>t[k]</code> and <code>arr[j]</code> to insert at <code>arr[i]</code> (incrementing the
+corresponding index), then we increment <code>i</code>. At some point, either <code>j</code>
+or <code>k</code> reaches the end. If <code>j</code> makes it to the end first, it means we
+still have some elements in <code>t</code> we need to copy over. If <code>k</code> makes it to
+the end first, we don&#39;t need to do anything: the remaining elements in
+<code>[j, hi)</code> are where they are supposed to be.</p>
+
+<p>We now have a full implementation of a very simple Timsort. If we run it
+on the <code>[5, 2, 3, 4, 9, 1, 6, 8, 10, 7]</code> input, the following steps take
+place:</p>
+
+<ul>
+<li>We pick up the first run, <code>[5, 2, 3, 4]</code> and sort it using
+<code>insertionSort</code>. This becomes <code>[2, 3, 4, 5]</code>. We push its start
+index and length on the stack (<code>(0, 4)</code>).</li>
+<li>We next take <code>[9, 1, 6, 8]</code>, sort it to <code>[1, 6, 8, 9]</code>, and push
+<code>(4, 4)</code> on the stack.</li>
+<li>Finally, we only have <code>[10, 7]</code>. We sort this short run to <code>[7, 10]</code>
+and push <code>(6, 2)</code> on the stack.</li>
+</ul>
+
+<p>Note all our sorting happens in-place, so by now the whole input became
+<code>[2, 3, 4, 5, 1, 6, 8, 9, 7, 10]</code>. We then proceed to merge runs from
+the top of the stack:</p>
+
+<ul>
+<li>First, we merge <code>[1, 6, 8, 9]</code> with <code>[7, 10</code>, which yields
+<code>[1, 6, 7, 8, 9, 10]</code>. We pop the two runs from the stack and push
+<code>(4, 6)</code>, the index and length of this new run.</li>
+<li>Next, we merge <code>[2, 3, 4, 5]</code> with <code>[1, 6, 7, 8, 9, 10]</code>, and update
+the stack accordingly. At this point, we only have 1 run on the
+stack (<code>[0, 10)</code>). We are done.</li>
+</ul>
+
+<h2>Some Optimizations</h2>
+
+<p>So far, we haven&#39;t relied that much on the fact that our input might be
+naturally partially sorted. Instead of simply calling <code>insertionSort</code> on
+<code>minRun</code> elements, we can actually check whether elements are already
+ordered. If they are, we don&#39;t need to do anything with them. Even
+better, if the run of elements is longer than <code>minRun</code>, we keep going.</p>
+
+<p>Elements might also come naturally sorted in descending order, while we
+are sorting in ascending order. No problem: we can take a range of
+elements coming in descending order and reverse it to produce a run in
+ascending order. Let&#39;s call this function <code>countRunAndMakeAscending</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">countRunAndMakeAscending</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+    <span class="n">runHi</span> <span class="o">=</span> <span class="n">lo</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">runHi</span> <span class="o">==</span> <span class="n">hi</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">arr</span><span class="p">[</span><span class="n">lo</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">runHi</span><span class="p">]:</span> <span class="c1"># Descending run</span>
+        <span class="k">while</span> <span class="n">runHi</span> <span class="o">&lt;</span> <span class="n">hi</span> <span class="ow">and</span> <span class="n">arr</span><span class="p">[</span><span class="n">runHi</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">runHi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">runHi</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">reverseRange</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">runHi</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># Ascending run</span>
+        <span class="k">while</span> <span class="n">runHi</span> <span class="o">&lt;</span> <span class="n">hi</span> <span class="ow">and</span> <span class="n">arr</span><span class="p">[</span><span class="n">runHi</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">arr</span><span class="p">[</span><span class="n">runHi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">runHi</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">runHi</span> <span class="o">-</span> <span class="n">lo</span>
+</pre></div>
+
+<p>We return the length of the run starting from <code>lo</code>, going to at most
+<code>hi - 1</code>. If we have a natural descending run, we reverse the range
+before returning. Here is <code>reverseRange</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">reverseRange</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+    <span class="n">hi</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">lo</span> <span class="o">&lt;</span> <span class="n">hi</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">lo</span><span class="p">],</span> <span class="n">arr</span><span class="p">[</span><span class="n">hi</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">hi</span><span class="p">],</span> <span class="n">arr</span><span class="p">[</span><span class="n">lo</span><span class="p">]</span>
+        <span class="n">lo</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">hi</span> <span class="o">-=</span> <span class="mi">1</span>
+</pre></div>
+
+<p>We can&#39;t get rid of sorting though: we might have worst-case scenario
+cases with very small runs, in which case we still need a range of at
+least <code>minRun</code> size. Based on the result of <code>countRunAndMarkAscending</code>,
+if it is smaller than <code>minRun</code>, we will <q>force</q> a few more elements
+into the run and sort it. Our new implementation looks like this:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sort</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span> 
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span> 
+    <span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">nRemaining</span> <span class="o">=</span> <span class="n">hi</span>
+    <span class="n">minRun</span> <span class="o">=</span> <span class="n">MIN_MERGE</span>
+
+    <span class="k">while</span> <span class="n">nRemaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">runLen</span> <span class="o">=</span> <span class="n">countRunAndMakeAscending</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">runLen</span> <span class="o">&lt;</span> <span class="n">minRun</span><span class="p">:</span>
+            <span class="n">force</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nRemaining</span><span class="p">,</span> <span class="n">minRun</span><span class="p">)</span>
+            <span class="n">insertionSort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">force</span><span class="p">)</span>
+            <span class="n">runLen</span> <span class="o">=</span> <span class="n">force</span>
+
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lo</span><span class="p">,</span> <span class="n">runLen</span><span class="p">))</span>
+
+        <span class="n">lo</span> <span class="o">+=</span> <span class="n">runLen</span>
+        <span class="n">nRemaining</span> <span class="o">-=</span> <span class="n">runLen</span>
+
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">base2</span><span class="p">,</span> <span class="n">len2</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">merge</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">base1</span><span class="p">,</span> <span class="n">base2</span><span class="p">,</span> <span class="n">base2</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">+</span> <span class="n">len2</span><span class="p">))</span>
+</pre></div>
+
+<p>Highlighting the changed part:</p>
+<div class="highlight"><pre><span></span><span class="n">runLen</span> <span class="o">=</span> <span class="n">countRunAndMakeAscending</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">runLen</span> <span class="o">&lt;</span> <span class="n">minRun</span><span class="p">:</span>
+    <span class="n">force</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nRemaining</span><span class="p">,</span> <span class="n">minRun</span><span class="p">)</span>
+    <span class="n">insertionSort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">force</span><span class="p">)</span>
+    <span class="n">runLen</span> <span class="o">=</span> <span class="n">force</span>
+</pre></div>
+
+<p>Instead of simply taking the next <code>minRun</code> elements, we try to find a
+run. If the run we find is smaller than <code>minRun</code>, we force it to be
+<code>minRun</code> by insertion-sorting into it more elements. If it is larger
+than or equal to <code>minRun</code> on the other hand, we don&#39;t have to do any
+sorting.</p>
+
+<p>It gets better: now we know after calling <code>countRunAndMakeAscending</code>
+that the range <code>[lo, lo + runLen)</code> is already sorted. We can hint this
+to our sorting function and have it start sorting only from
+<code>lo + runLen</code>. We can update <code>insertionSort</code> to take a hint of where to
+start from:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">insertionSort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span> 
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">while</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">hi</span><span class="p">:</span>
+        <span class="n">elem</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">start</span><span class="p">]</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">start</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">while</span> <span class="n">elem</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">and</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="n">arr</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="n">arr</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">elem</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+
+<p>This version is very similar to our previous one. Instead of using a
+local <code>i</code> variable to iterate over the range <code>[lo + 1, hi)</code>, we just use
+<code>start</code>. If <code>start</code> is <code>lo</code>, we increment it before the loop (just like
+we used to initialize <code>i</code> to <code>lo + 1</code>).</p>
+
+<p>We can now pass this hint in from our main function:</p>
+<div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">nRemaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">runLen</span> <span class="o">=</span> <span class="n">countRunAndMakeAscending</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">runLen</span> <span class="o">&lt;</span> <span class="n">minRun</span><span class="p">:</span>
+        <span class="n">force</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nRemaining</span><span class="p">,</span> <span class="n">minRun</span><span class="p">)</span>
+        <span class="n">insertionSort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">force</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">runLen</span><span class="p">)</span>
+        <span class="n">runLen</span> <span class="o">=</span> <span class="n">force</span>
+</pre></div>
+
+<p>At this point, we&#39;re starting to get a lot of value from naturally
+sorted runs: we either don&#39;t do any sorting, or just sort at most
+<code>minRun - runLen</code> elements into the range.</p>
+
+<p>A further optimization for sorting: we can replace insertion sort with
+binary sort. Binary sort works much like insertion sort, but instead of
+checking where element <code>i</code> fits into <code>[lo, i)</code> by comparing it with
+<code>i - 1</code>, then <code>i - 2</code> and so on, it relies on the fact that <code>[lo, i)</code> is
+already sorted and performs a binary search to find the right spot. Here
+is an implementation, which also takes a <code>start</code> hint:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">binarySort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">while</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">hi</span><span class="p">:</span>
+        <span class="n">pivot</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">start</span><span class="p">]</span>
+        <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">lo</span><span class="p">,</span> <span class="n">start</span>
+
+        <span class="k">while</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="n">right</span><span class="p">:</span>
+            <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">left</span> <span class="o">+</span> <span class="n">right</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+            <span class="k">if</span> <span class="n">pivot</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">mid</span><span class="p">]:</span>
+                <span class="n">right</span> <span class="o">=</span> <span class="n">mid</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">left</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="n">arr</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="n">arr</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">pivot</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+
+<p>Our main function now looks like this:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sort</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span> 
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span> 
+    <span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">nRemaining</span> <span class="o">=</span> <span class="n">hi</span>
+    <span class="n">minRun</span> <span class="o">=</span> <span class="n">MIN_MERGE</span>
+
+    <span class="k">while</span> <span class="n">nRemaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">runLen</span> <span class="o">=</span> <span class="n">countRunAndMakeAscending</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">runLen</span> <span class="o">&lt;</span> <span class="n">minRun</span><span class="p">:</span>
+            <span class="n">force</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nRemaining</span><span class="p">,</span> <span class="n">minRun</span><span class="p">)</span>
+            <span class="n">binarySort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">force</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">runLen</span><span class="p">)</span>
+            <span class="n">runLen</span> <span class="o">=</span> <span class="n">force</span>
+
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lo</span><span class="p">,</span> <span class="n">runLen</span><span class="p">))</span>
+
+        <span class="n">lo</span> <span class="o">+=</span> <span class="n">runLen</span>
+        <span class="n">nRemaining</span> <span class="o">-=</span> <span class="n">runLen</span>
+
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">base2</span><span class="p">,</span> <span class="n">len2</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">merge</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">base1</span><span class="p">,</span> <span class="n">base2</span><span class="p">,</span> <span class="n">base2</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">+</span> <span class="n">len2</span><span class="p">))</span>
+</pre></div>
+
+<h2>Balanced Merges</h2>
+
+<p>Another key optimization of Timsort is trying as much as possible to
+merge runs of balanced sizes. The closer the size, the better average
+performance as a combination of additional space required and number of
+operations.</p>
+
+<p>So far we just pushed everything onto a stack, then merged the top 2
+elements of the stack until we ended up with a single run. We actually
+want to do something a bit different: we want our stack to maintain a
+couple of invariants:</p>
+
+<ol>
+<li> <code>stack[i - 1][1] &gt; stack[i][1] + stack[i + 1][1]</code> - the length of a
+run needs to be larger than the sum of the lengths of the following
+runs.</li>
+<li> <code>stack[i][1] &gt; stack[i + 1][1]</code> - the length of a run needs to be
+larger than the following run.</li>
+</ol>
+
+<p>When pushing a new index and run length tuple onto the stack, we check
+if the invariant still holds. If it doesn&#39;t, we merge <code>stack[i]</code> with
+the smallest of <code>stack[i - 1]</code>, <code>stack[i + 1]</code> and recheck. We continue
+merging until the invariants are re-established. Let&#39;s call this
+function <code>mergeCollapse</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mergeCollapse</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">):</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="ow">or</span> \
+        <span class="p">(</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">break</span>
+
+        <span class="n">mergeAt</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+
+<p>We start from the top of the stack - 2. If <code>n &gt; 0</code> and the invariant
+doesn&#39;t hold for <code>stack[n - 1]</code>, <code>stack[n]</code>, and <code>stack[n + 1]</code> or if
+<code>n &gt; 1</code> and the invariant doesn&#39;t hold for <code>stack[n - 2]</code>,
+<code>stack[n - 1]</code> and <code>stack[n]</code>, we need to merge. We decide whether we
+want to merge <code>stack[n]</code> with <code>stack[n + 1]</code> or <code>stack[n - 1]</code> with
+<code>stack[n]</code> depending on which one is smallest (if <code>stack[n - 1]</code> is
+smaller, then we decrement <code>n</code> to trigger the merge at <code>n - 1</code>.</p>
+
+<p>If the invariant holds, we check for the other invariant:
+<code>stack[n][1] &gt; stack[n + 1][1]</code>. If this second invariant holds, we&#39;re
+done and we can break out of the loop (we do the same if we ran out of
+elements). If not, we trigger a merge by calling <code>mergeAt</code> and repeat
+until we either merge everything or the invariant is reestablished.</p>
+
+<p>We start by checking only the top few elements of the stack, since we
+expect the rest of the stack to hold the invariants. We only call this
+function when we push a new run on the stack, in which case we need to
+ensure we merge as needed.</p>
+
+<p>Let&#39;s take a look at <code>mergeAt</code>. This function simply merges the runs at
+positions <code>n</code> and <code>n + 1</code> on the stack:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mergeAt</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span>
+
+    <span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">base2</span><span class="p">,</span> <span class="n">len2</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">stack</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">stack</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="n">merge</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">base1</span><span class="p">,</span> <span class="n">base2</span><span class="p">,</span> <span class="n">base2</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+</pre></div>
+
+<p>Remember we only ever merge either the second from top and top runs or
+the third from top and second from top runs. So <code>i</code> should be either
+<code>len(stack) - 2</code> or <code>len(stack) - 3</code>. We get the first element and run
+length for the two runs and update the stack: <code>stack[i]</code> starts at the
+same position but will now have the length of both unmerged runs. If we
+are merging <code>stack[-3]</code> with <code>stack[-2]</code>, we need to copy <code>stack[-1]</code>
+(top of the stack) to <code>stack[-2]</code> (second to top). Finally, we pop the
+top of the stack. At this point, the stack is updated. We call <code>merge</code>
+on the two runs to update <code>arr</code> too.</p>
+
+<p>We can now maintain a healthy balance for merges. Remember, the whole
+reason for this is to aim to always merge runs similar in size.</p>
+
+<p>Of course, once we are done pushing everything on the stack, we still
+need to force merging to finish our sort. We&#39;ll do this with
+<code>mergeForceCollapse</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mergeForceCollapse</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">):</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">stack</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="n">mergeAt</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+
+<p>This function again merges the second from the top run with the smallest
+of third from the top or top. It continues until all runs are merged
+into one. Our updates <code>sort</code> looks like this:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sort</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span> 
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span> 
+    <span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">nRemaining</span> <span class="o">=</span> <span class="n">hi</span>
+    <span class="n">minRun</span> <span class="o">=</span> <span class="n">MIN_MERGE</span>
+
+    <span class="k">while</span> <span class="n">nRemaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">runLen</span> <span class="o">=</span> <span class="n">countRunAndMakeAscending</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">runLen</span> <span class="o">&lt;</span> <span class="n">minRun</span><span class="p">:</span>
+            <span class="n">force</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nRemaining</span><span class="p">,</span> <span class="n">minRun</span><span class="p">)</span>
+            <span class="n">binarySort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">force</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">runLen</span><span class="p">)</span>
+            <span class="n">runLen</span> <span class="o">=</span> <span class="n">force</span>
+
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lo</span><span class="p">,</span> <span class="n">runLen</span><span class="p">))</span>
+        <span class="n">mergeCollapse</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">)</span>
+
+        <span class="n">lo</span> <span class="o">+=</span> <span class="n">runLen</span>
+        <span class="n">nRemaining</span> <span class="o">-=</span> <span class="n">runLen</span>
+
+    <span class="n">mergeForceCollapse</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">)</span>
+</pre></div>
+
+<p>Instead of pushing everything onto the stack and merging everything at
+the end, we now call <code>mergeCollapse</code> after each push to keep the runs
+balanced. At the end, we call <code>mergeForceCollapse</code> to force-merge the
+stack.</p>
+
+<h2>Run Lengths</h2>
+
+<p>We used a constant minimum run length so far, but mentioned earlier that
+it is in fact determined as a function of the size of the input. We will
+determine this with <code>minRunLength</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">minRunLength</span><span class="p">(</span><span class="n">n</span><span class="p">):</span> 
+    <span class="n">r</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="n">MIN_MERGE</span><span class="p">:</span> 
+        <span class="n">r</span> <span class="o">|=</span> <span class="n">n</span> <span class="o">&amp;</span> <span class="mi">1</span>
+        <span class="n">n</span> <span class="o">&gt;&gt;=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">n</span> <span class="o">+</span> <span class="n">r</span>
+</pre></div>
+
+<p>This function takes the length of the input and does the following:</p>
+
+<ul>
+<li>If <code>n</code> is smaller than <code>MIN_MERGE</code>, returns <code>n</code> - the input size is
+too small to use complicated optimizations on.</li>
+<li>If <code>n</code> is a power of 2, the algorithm will return <code>MIN_MERGE / 2</code>.
+Note: <code>MIN_MERGE</code> is also a power of 2. In our initial sketch we set
+it to 4, but in practice this is usually 32 or 64.</li>
+<li>Otherwise return a number <code>k</code> between <code>MIN_MERGE / 2</code> and
+<code>MIN_MERGE</code> so that <code>n / k</code> is close to but strictly less than a
+power of 2.</li>
+</ul>
+
+<p>It does this by shifting <code>n</code> one bit to the right until it is less than
+<code>MIN_MERGE</code>. In case any shifted bit is 1, it means <code>n</code> is not a power
+of 2. In that case, we set <code>r</code> to 1 and return <code>n + 1</code>.</p>
+
+<p>The reason we do all of this work is to again strive to keep merges
+balanced. If we get an input like 2048 and our MIN_MERGE is 64, we get
+back 32. That means that, if we don&#39;t have any great runs in our input,
+we end up with 64 runs, each of length 32. We saw in the previous
+section how we balance the stack. Consider we&#39;re pushing these runs
+onto the stack:</p>
+
+<ul>
+<li>We push the run <code>(0, 32)</code> on the stack (first 32 elements).</li>
+<li>We push the run <code>(32, 32)</code> on the stack (next 32 elements).</li>
+<li>This triggers a merge since the run <code>(0, 32)</code> is not greater than
+the run <code>(32, 32)</code>. The stack becomes <code>(0, 64)</code>.</li>
+<li>We push the run <code>(64, 32)</code> on the stack (next 32 elements).</li>
+<li>We push the run <code>(96, 32)</code> on the stack (next 32 elements).</li>
+<li>This again triggers a merge, since the length of the run
+<code>(0, 64)</code> (64) is not greater than the length of the next two runs,
+both of which are 32. The run <code>(64, 32)</code> gets merged with the
+smaller run, <code>(96, 32)</code>. The stack becomes <code>[(0, 64), (64, 64)]</code>.</li>
+<li>The second invariant no longer holds: the first run is not longer
+than then next one. Another merged is triggered and the stack
+becomes <code>[(0, 128)]</code>.</li>
+</ul>
+
+<p>This goes on in the same fashion, and all merges end up being perfectly
+balanced. This works great for powers of 2.</p>
+
+<p>Now let&#39;s consider another case: what if the input is 2112? If we would
+still use 32 as our minimum run length, we would get 66 runs of length
+32. The first 64 will trigger perfectly balanced merges as before, but
+then we end up with the stack <code>[(0, 2048), (2048, 32), (2080, 32)]</code>.
+This collapses to <code>[(0, 2048), (2048, 64)]</code>, triggering a completely
+unbalanced merge (2048 on one side and 64 on the other).</p>
+
+<p>To keep things balanced, if our input is not a power of 2, we pick a
+minimum run length that is close to but strictly less than a power of 2.
+Let&#39;s update our <code>MIN_MERGE</code> to be 32, and update our <code>sort</code> to call
+<code>minRunLength</code> instead of automatically setting it to <code>MIN_MERGE</code>.
+We&#39;ll throw in another quick optimization: if the whole input is
+smaller than <code>MIN_MERGE</code>, don&#39;t even bother with the whole thing: find
+a starting run then binary sort the rest, without any merging.</p>
+<div class="highlight"><pre><span></span><span class="n">MIN_MERGE</span> <span class="o">=</span> <span class="mi">32</span>
+
+<span class="k">def</span> <span class="nf">sort</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">nRemaining</span> <span class="o">=</span> <span class="n">hi</span>
+    <span class="k">if</span> <span class="n">nRemaining</span> <span class="o">&lt;</span> <span class="n">MIN_MERGE</span><span class="p">:</span>
+        <span class="n">initRunLen</span> <span class="o">=</span> <span class="n">countRunAndMakeAscending</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+        <span class="n">binarySort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">initRunLen</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="n">minRun</span> <span class="o">=</span> <span class="n">minRunLength</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span>
+    <span class="k">while</span> <span class="n">nRemaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">runLen</span> <span class="o">=</span> <span class="n">countRunAndMakeAscending</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">runLen</span> <span class="o">&lt;</span> <span class="n">minRun</span><span class="p">:</span>
+            <span class="n">force</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nRemaining</span><span class="p">,</span> <span class="n">minRun</span><span class="p">)</span>
+            <span class="n">binarySort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">force</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">runLen</span><span class="p">)</span>
+            <span class="n">runLen</span> <span class="o">=</span> <span class="n">force</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lo</span><span class="p">,</span> <span class="n">runLen</span><span class="p">))</span>
+        <span class="n">mergeCollapse</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">)</span>
+        <span class="n">lo</span> <span class="o">+=</span> <span class="n">runLen</span>
+        <span class="n">nRemaining</span> <span class="o">-=</span> <span class="n">runLen</span>
+    <span class="n">mergeForceCollapse</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">)</span>
+</pre></div>
+
+<h2>Optimized Merging</h2>
+
+<p>We can optimize merging further. Our initial implementation of <code>merge</code>
+simply copied the first run into a buffer, then performed the merge. We
+can do better than that.</p>
+
+<p>What if the second run is smaller? Maybe we&#39;d prefer always merging the
+smaller run into the larger one. Let&#39;s look at an optimized version of
+merge. First, we&#39;ll replace <code>merge</code> with two functions, <code>mergeLo</code> and
+<code>mergeHi</code>. <code>mergeLo</code> will copy elements from the first run into the
+temporary buffer, while <code>mergeHi</code> will copy elements from the second
+run. Our original <code>merge</code> becomes <code>mergeLo</code>, and we can add a <code>mergeHi</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mergeHi</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">mid</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">hi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">mid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">mid</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">i</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+</pre></div>
+
+<p>This is very similar with <code>merge</code>, except it copies the second (<code>mid</code> to
+<code>hi</code>) run into a temporary buffer and traverses the runs and the buffer
+from end to start.</p>
+
+<p>When we trigger the merge, another optimization we can do is check
+elements from the first run and see if they are smaller than the first
+element in the second run. While they are smaller, we can simply ignore
+them when merging - they are already in position. We do this by taking
+the first element of the second run and seeing where it would fit in the
+first run.</p>
+
+<p>Similarly, elements from the end of the second run which are greater
+than the last element in the first run are already in place. We don&#39;t
+need to touch them. We take the last element of the first run and check
+where it would fit in the first run.</p>
+
+<p>We can use binary search for this. Note that we need two version in
+order to maintain the stable property of the sort: a <code>searchLeft</code>, which
+returns the first index where a new element should be inserted, and a
+<code>searchRight</code>, which returns the last index. For example, if we have a
+run like <code>[1, 2, 5, 5, 5, 5, 7, 8]</code> and we are looking for where to
+insert another <code>5</code>, it really depends where it comes from. If it comes
+from the run before this one, we need the left-most spot (before the
+first <code>5</code> in the run). On the other hand, if it comes from the run after
+this one, we need to place it after the last <code>5</code>. That ensures that the
+relative order of elements is preserved. Here is an implementation for
+<code>searchLeft</code> and <code>searchRight</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">searchLeft</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="nb">len</span><span class="p">):</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">base</span><span class="p">,</span> <span class="n">base</span> <span class="o">+</span> <span class="nb">len</span>
+    <span class="k">while</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="n">right</span><span class="p">:</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="p">(</span><span class="n">right</span> <span class="o">-</span> <span class="n">left</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">mid</span><span class="p">]:</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">right</span> <span class="o">=</span> <span class="n">mid</span>
+
+    <span class="k">return</span> <span class="n">left</span> <span class="o">-</span> <span class="n">base</span>
+
+<span class="k">def</span> <span class="nf">searchRight</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="nb">len</span><span class="p">):</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">base</span><span class="p">,</span> <span class="nb">len</span>
+
+    <span class="k">while</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="n">right</span><span class="p">:</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="p">(</span><span class="n">right</span> <span class="o">-</span> <span class="n">left</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">mid</span><span class="p">]:</span>
+            <span class="n">right</span> <span class="o">=</span> <span class="n">mid</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">left</span> <span class="o">-</span> <span class="n">base</span>
+</pre></div>
+
+<p>Both functions return the offset from <code>base</code> where <code>key</code> should be
+inserted.</p>
+
+<p>We can now update our <code>mergeAt</code> function with the new capabilities:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mergeAt</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">stack</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">base2</span><span class="p">,</span> <span class="n">len2</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">stack</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">base1</span><span class="p">,</span> <span class="n">len1</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">stack</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="n">k</span> <span class="o">=</span> <span class="n">searchRight</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="n">base2</span><span class="p">],</span> <span class="n">arr</span><span class="p">,</span> <span class="n">base1</span><span class="p">,</span> <span class="n">len1</span><span class="p">)</span>
+    <span class="n">base1</span> <span class="o">+=</span> <span class="n">k</span>
+    <span class="n">len1</span> <span class="o">-=</span> <span class="n">k</span>
+    <span class="k">if</span> <span class="n">len1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">len2</span> <span class="o">=</span> <span class="n">searchLeft</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="n">base1</span> <span class="o">+</span> <span class="n">len1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">arr</span><span class="p">,</span> <span class="n">base2</span><span class="p">,</span> <span class="n">len2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">len2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">len1</span> <span class="o">&gt;</span> <span class="n">len2</span><span class="p">:</span>
+        <span class="n">mergeLo</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">base1</span><span class="p">,</span> <span class="n">base2</span><span class="p">,</span> <span class="n">base2</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mergeHi</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">base1</span><span class="p">,</span> <span class="n">base2</span><span class="p">,</span> <span class="n">base2</span> <span class="o">+</span> <span class="n">len2</span><span class="p">)</span>
+</pre></div>
+
+<p>The first part stays the same: we get <code>base1</code>, <code>len1</code>, <code>base2</code>, and
+<code>len2</code> and update the stack. Next, instead of merging right away, we
+first search for where the first element of the second run would go into
+the first run. We know the elements in <code>[base1, k)</code> won&#39;t move, so we
+can remove them from the merge by moving <code>base1</code> to the right <code>k</code>
+elements (we also need to update <code>len1</code>). Similarly, we search for where
+the last element of the first run (<code>arr[base1 + len1 - 1]</code>) would fit
+into the second run. We know all elements beyond that are already in
+place, so we update <code>len2</code> to be this offset.</p>
+
+<p>In case either of the searches exhausts a run, we simply return.
+Otherwise, depending on which run is longer, we call <code>mergeLo</code> or
+<code>mergeHi</code>.</p>
+
+<h2>Galloping</h2>
+
+<p>But wait, there&#39;s more! Binary search always performs <code>log(len + 1)</code>
+comparisons where <code>len</code> is the length of the array we are searching for
+regardless of where our element belongs. Galloping attempts to find the
+spot faster.</p>
+
+<p>Galloping starts by comparing the element we are searching for in array
+<code>A</code> with <code>A[0]</code>, <code>A[1]</code>, <code>A[3]</code>, ... <code>A[i^2 - 1]</code>. With these
+comparisons, we will end up finding a range between some
+<code>A[(k - 1)^2 - 1]</code> and <code>A[k^2 - 1]</code> that would contain the element we
+are searching for. We then run a binary search only within that
+interval.</p>
+
+<p>There are some tradeoffs here: on large datasets or purely random data,
+binary search performs better. But on inputs which contain natural runs,
+galloping tends to find things faster. Galloping also performs better
+when we expect to find the interval early on. Let&#39;s look at an
+implementation of <code>gallopLeft</code> as an alternative to <code>searchLeft</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">gallopLeft</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="nb">len</span><span class="p">,</span> <span class="n">hint</span><span class="p">):</span>
+    <span class="n">lastOfs</span><span class="p">,</span> <span class="n">ofs</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span><span class="p">]:</span>
+        <span class="n">maxOfs</span> <span class="o">=</span> <span class="nb">len</span> <span class="o">-</span> <span class="n">hint</span>
+        <span class="k">while</span> <span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">maxOfs</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span> <span class="o">+</span> <span class="n">ofs</span><span class="p">]:</span>
+            <span class="n">lastOfs</span> <span class="o">=</span> <span class="n">ofs</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">ofs</span> <span class="o">&gt;</span> <span class="n">maxOfs</span><span class="p">:</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="n">maxOfs</span>
+
+        <span class="n">lastOfs</span> <span class="o">+=</span> <span class="n">hint</span>
+        <span class="n">ofs</span> <span class="o">+=</span> <span class="n">hint</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># key &lt;= arr[base + hint]</span>
+        <span class="n">maxOfs</span> <span class="o">=</span> <span class="n">hint</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">maxOfs</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">&lt;=</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">ofs</span><span class="p">]:</span>
+            <span class="n">lastOfs</span> <span class="o">=</span> <span class="n">ofs</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">ofs</span> <span class="o">&gt;</span> <span class="n">maxOfs</span><span class="p">:</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="n">maxOfs</span>
+
+        <span class="n">lastOfs</span><span class="p">,</span> <span class="n">ofs</span> <span class="o">=</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">ofs</span><span class="p">,</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">lastOfs</span>
+
+    <span class="c1"># arr[base + lastOfs] &lt; key &lt;= arr[base + ofs]</span>
+    <span class="n">lastOfs</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">lastOfs</span> <span class="o">&lt;</span> <span class="n">ofs</span><span class="p">:</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="n">lastOfs</span> <span class="o">+</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">-</span> <span class="n">lastOfs</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">mid</span><span class="p">]:</span>
+            <span class="n">lastOfs</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="n">mid</span>
+    <span class="k">return</span> <span class="n">ofs</span>
+</pre></div>
+
+<p>We start by initializing 2 offsets: <code>lastOfs</code> and <code>ofs</code> to represent the
+offsets between which we expect to find our key. Note the function also
+takes a hint, so callers can provide a tentative starting place.</p>
+
+<p>Let&#39;s go over the parts of this function:</p>
+<div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">key</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span><span class="p">]:</span>
+    <span class="n">maxOfs</span> <span class="o">=</span> <span class="nb">len</span> <span class="o">-</span> <span class="n">hint</span>
+    <span class="k">while</span> <span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">maxOfs</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span> <span class="o">+</span> <span class="n">ofs</span><span class="p">]:</span>
+        <span class="n">lastOfs</span> <span class="o">=</span> <span class="n">ofs</span>
+        <span class="n">ofs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">ofs</span> <span class="o">&gt;</span> <span class="n">maxOfs</span><span class="p">:</span>
+        <span class="n">ofs</span> <span class="o">=</span> <span class="n">maxOfs</span>
+
+    <span class="n">lastOfs</span> <span class="o">+=</span> <span class="n">hint</span>
+    <span class="n">ofs</span> <span class="o">+=</span> <span class="n">hint</span>
+</pre></div>
+
+<p>We first find the two offsets. If the key we are searching for is
+greater than (right of) our starting element (<code>arr[base + hint]</code>), then
+our maximum possible offset is <code>len - hint</code>. While <code>ofs</code> is hasn&#39;t
+overflowed and the key is still larger than <code>arr[base + hint + ofs]</code>, we
+keep updating <code>ofs</code> to be the next power of 2 minus 1. We keep track of
+the previous offset in <code>lastOfs</code>. Once we&#39;re done, we add <code>hint</code> to
+both offsets (we do that because we add <code>hint</code> to all indices in our
+loop, but not to <code>ofs</code> since we keep it a power of 2 minus 1). If
+<code>key &gt; arr[base + hint]</code> is not true, in other words, our key is left of
+our starting element:</p>
+<div class="highlight"><pre><span></span><span class="k">else</span><span class="p">:</span> <span class="c1"># key &lt;= arr[base + hint]</span>
+    <span class="n">maxOfs</span> <span class="o">=</span> <span class="n">hint</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">maxOfs</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">&lt;=</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">ofs</span><span class="p">]:</span>
+        <span class="n">lastOfs</span> <span class="o">=</span> <span class="n">ofs</span>
+        <span class="n">ofs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">ofs</span> <span class="o">&gt;</span> <span class="n">maxOfs</span><span class="p">:</span>
+        <span class="n">ofs</span> <span class="o">=</span> <span class="n">maxOfs</span>
+
+    <span class="n">lastOfs</span><span class="p">,</span> <span class="n">ofs</span> <span class="o">=</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">ofs</span><span class="p">,</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">lastOfs</span>
+</pre></div>
+
+<p>In this case, our maximum possible offset is <code>hint + 1</code>. We gallop
+again, but now we are looking at elements left of our starting point,
+<code>arr[base + hint - ofs]</code> where <code>ofs</code> keeps increasing. Once we find the
+range, we update our offsets: <code>lastOfs</code> becomes <code>hint - ofs</code> and <code>ofs</code>
+becomes <code>hint - lastOfs</code>. The <code>hint -</code> part is again because that is
+what we actually used as indices. The swap is because we were moving
+left, and we need <code>lastOfs</code> to be the one on the left, <code>ofs</code> the one on
+the right.</p>
+
+<p>We now identified the range within which we&#39;ll find our key, between
+<code>arr[base + lastOfs]</code> and <code>arr[base + ofs]</code>. The last part of the
+function is just a binary search within this interval.</p>
+
+<p>The <code>gallopRight</code> function is very similar to <code>gallopLeft</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">gallopRight</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="nb">len</span><span class="p">,</span> <span class="n">hint</span><span class="p">):</span>
+    <span class="n">ofs</span><span class="p">,</span> <span class="n">lastOfs</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span><span class="p">]:</span>
+        <span class="n">maxOfs</span> <span class="o">=</span> <span class="n">hint</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">maxOfs</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">ofs</span><span class="p">]:</span>
+            <span class="n">lastOfs</span> <span class="o">=</span> <span class="n">ofs</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">ofs</span> <span class="o">&gt;</span> <span class="n">maxOfs</span><span class="p">:</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="n">maxOfs</span>
+        <span class="n">lastOfs</span><span class="p">,</span> <span class="n">ofs</span> <span class="o">=</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">ofs</span><span class="p">,</span> <span class="n">hint</span> <span class="o">-</span> <span class="n">lastOfs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">maxOfs</span> <span class="o">=</span> <span class="nb">len</span> <span class="o">-</span> <span class="n">hint</span>
+        <span class="k">while</span> <span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">maxOfs</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">hint</span> <span class="o">+</span> <span class="n">ofs</span><span class="p">]:</span>
+            <span class="n">lastOfs</span> <span class="o">=</span> <span class="n">ofs</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">ofs</span> <span class="o">&gt;</span> <span class="n">maxOfs</span><span class="p">:</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="n">maxOfs</span>
+
+        <span class="n">lastOfs</span> <span class="o">+=</span> <span class="n">hint</span><span class="p">;</span>
+        <span class="n">ofs</span> <span class="o">+=</span> <span class="n">hint</span><span class="p">;</span>
+
+    <span class="n">lastOfs</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">lastOfs</span> <span class="o">&lt;</span> <span class="n">ofs</span><span class="p">:</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="n">lastOfs</span> <span class="o">+</span> <span class="p">((</span><span class="n">ofs</span> <span class="o">-</span> <span class="n">lastOfs</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">mid</span><span class="p">]:</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="n">mid</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lastOfs</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">ofs</span>
+</pre></div>
+
+<p>We won&#39;t cover this in details: the difference is here, like with
+<code>searchRight</code>, we want to find the rightmost index where key belongs
+instead of the leftmost one, so the algorithm changes accordingly.</p>
+
+<p>The very neat thing about galloping is that its use isn&#39;t limited to
+only when we set up the merge. We can also gallop while merging. Let&#39;s
+go over <code>mergeLo</code> example, since <code>mergeHi</code> is a mirror of this.</p>
+
+<p>In <code>mergeLo</code>, we first copy all elements from the first run to a buffer,
+then we iterate over the array and at each position we copy either an
+element from the buffer or one from the second run, depending on which
+one is smaller. While we do this, we can keep track of how many times
+the buffer or the second run <q>won</q>. If one of these wins consistently,
+we can assume it will keep winning for a while longer.</p>
+
+<p>For example, if we merge <code>[5, 6, 7, 8, 9]</code> with <code>[0, 1, 2, 3, 4]</code>, we
+initialize the buffer with <code>[5, 6, 7, 8, 9]</code>, but for the next 5
+comparisons, the second run wins (<code>0 &lt; 5</code>, <code>1 &lt; 5</code> ...). Now imagine
+much longer runs. Instead of comparing all elements one by one, we
+switch to a galloping mode:</p>
+
+<p>We find the last spot where the next element of the second run would fit
+into the buffer, and immediately copy the preceding elements of the
+buffer into the array. For example, if our buffer is
+<code>[12, 13, 14, 15, 17]</code> and the element we are considering from the
+second run is <code>[16]</code>, we know we can copy <code>[12, 13, 14, 15]</code> into the
+array. Similarly, we find the first spot the next element in the buffer
+would fit into the remaining second run, and copy elements before that
+from the second run to their position. The galloping mode aims to reduce
+the number of comparisons and bulk copy data when possible (using a
+<code>memcpy</code> equivalent where available). While galloping, we still keep
+track of how many elements we were able to skip comparing individually.
+If this falls below the galloping threshold, we switch back to
+<q>regular</q> mode. Here is an updated <code>mergeLo</code> implementation:</p>
+<div class="highlight"><pre><span></span><span class="n">MIN_GALLOP</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">minGallop</span> <span class="o">=</span> <span class="n">MIN_GALLOP</span>
+
+<span class="k">def</span> <span class="nf">mergeLo</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">mid</span><span class="p">]</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">global</span> <span class="n">minGallop</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
+        <span class="n">count1</span><span class="p">,</span> <span class="n">count2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">count1</span> <span class="o">|</span> <span class="n">count2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">minGallop</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="n">count1</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">count2</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">count1</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">count2</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span> <span class="ow">or</span> <span class="n">j</span> <span class="o">==</span> <span class="n">hi</span><span class="p">:</span>
+                <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="k">while</span> <span class="n">count1</span> <span class="o">&gt;=</span> <span class="n">MIN_GALLOP</span> <span class="ow">or</span> <span class="n">count2</span> <span class="o">&gt;=</span> <span class="n">MIN_GALLOP</span><span class="p">:</span>
+            <span class="n">count1</span> <span class="o">=</span> <span class="n">gallopRight</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span> <span class="o">-</span> <span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">count1</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">count1</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">k</span> <span class="o">+</span> <span class="n">count1</span><span class="p">]</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="n">count1</span>
+                <span class="n">k</span> <span class="o">+=</span> <span class="n">count1</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">:</span>
+                    <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">hi</span><span class="p">:</span>
+                <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+            <span class="n">count2</span> <span class="o">=</span> <span class="n">gallopLeft</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">arr</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">count2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">count2</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="n">j</span> <span class="o">+</span> <span class="n">count2</span><span class="p">]</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="n">count2</span>
+                <span class="n">j</span> <span class="o">+=</span> <span class="n">count2</span>
+                <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">hi</span><span class="p">:</span>
+                    <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">:</span>
+                <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+            <span class="n">minGallop</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">minGallop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">minGallop</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">minGallop</span> <span class="o">+=</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">]</span>
+</pre></div>
+
+<p>We introduced a new <code>MIN_GALLOP</code> constant which is the threshold after
+we want to start galloping. We also maintain a <code>minGallop</code> variable
+across merges.</p>
+
+<p>We have a couple of nested <code>while</code> loops, but the idea is pretty
+straightforward. The first nested <code>while</code> does the normal merge but now
+keeps track of how many times in the row did we end up picking an
+element from the buffer:</p>
+<div class="highlight"><pre><span></span><span class="n">count1</span><span class="p">,</span> <span class="n">count2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+<span class="k">while</span> <span class="p">(</span><span class="n">count1</span> <span class="o">|</span> <span class="n">count2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">minGallop</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">count1</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">count2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">count1</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">count2</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span> <span class="ow">or</span> <span class="n">j</span> <span class="o">==</span> <span class="n">hi</span><span class="p">:</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">break</span>
+
+<span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+    <span class="k">break</span>
+</pre></div>
+
+<p>Whenever we increment one counter, we set the other to 0, so at any
+point, at most one of them is different than 0. We can exit the while
+loop in two ways: either one of the counters reaches the gallop
+threshold, or we run out of elements in one of the arrays.</p>
+
+<p>If we ran out of elements we are done, so we break out of the outer
+loop. Otherwise we are in gallop mode:</p>
+<div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">count1</span> <span class="o">&gt;=</span> <span class="n">MIN_GALLOP</span> <span class="ow">or</span> <span class="n">count2</span> <span class="o">&gt;=</span> <span class="n">MIN_GALLOP</span><span class="p">:</span>
+    <span class="n">count1</span> <span class="o">=</span> <span class="n">gallopRight</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span> <span class="o">-</span> <span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">count1</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">count1</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">k</span> <span class="o">+</span> <span class="n">count1</span><span class="p">]</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="n">count1</span>
+        <span class="n">k</span> <span class="o">+=</span> <span class="n">count1</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">:</span>
+            <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">break</span>
+
+    <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">hi</span><span class="p">:</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">break</span>
+
+    <span class="n">count2</span> <span class="o">=</span> <span class="n">gallopLeft</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">arr</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">count2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">count2</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="n">j</span> <span class="o">+</span> <span class="n">count2</span><span class="p">]</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="n">count2</span>
+        <span class="n">j</span> <span class="o">+=</span> <span class="n">count2</span>
+        <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">hi</span><span class="p">:</span>
+            <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">break</span>
+
+    <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">break</span>
+
+    <span class="n">minGallop</span> <span class="o">-=</span> <span class="mi">1</span>
+
+<span class="k">if</span> <span class="n">minGallop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">minGallop</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">minGallop</span> <span class="o">+=</span> <span class="mi">2</span>
+</pre></div>
+
+<p>We first try to find where the next element in the second run would fit
+into the buffer. That becomes our <code>count1</code>. If we get an offset greater
+than 0, we can bulk copy the previous elements from the buffer
+(<code>[k, k + count1)</code>) to the range <code>[i, i + count1)</code> and increment both
+<code>k</code> and <code>i</code> by <code>count1</code>. Once we&#39;re done, we know for sure we need to
+copy the next element from the second run (<code>a[j]</code>), so we do that.</p>
+
+<p>We then do the opposite: gallop left to find where the next element from
+the buffer would fit into the second run. That becomes our <code>count2</code> and
+if it is greater than 0, we bulk copy elements from the second run. Once
+we&#39;re done, we again now that the next element to copy is at <code>t[k]</code>, so
+we do that.</p>
+
+<p>This loop repeats while either <code>count1</code> or <code>count2</code> is greater than
+<code>MIN_GALLOP</code>. If galloping works, we also update <code>minGallop</code> to favor
+future galloping. Each time we iterate, we decrement <code>minGallop</code>. Once
+we&#39;re out of the loop, if it is due to both <code>count1</code> and <code>count2</code> being
+smaller than <code>MIN_GALLOP</code>, we again adjust <code>minGallop</code> - first, if it
+became negative, we make it 0. We then add 2 to penalize galloping
+because our last iteration didn&#39;t meet <code>MIN_GALLOP</code>. As a reminder,
+<code>minGallop</code> is used as the threshold in the first loop. These tweaks to
+<code>minGallop</code> aim to optimize, depending on the data, when to enter gallop
+mode and when to keep merging in normal mode.</p>
+
+<p><code>minGallop</code> state should be maintained across multiple merges, and only
+reset when we start a new sort - so we would make
+<code>minGallop = MIN_GALLOP</code> in our main <code>sort</code> function, but otherwise rely
+on the same value we are updating in <code>minGallop</code> for subsequent calls of
+<code>mergeLo</code> and <code>mergeHi</code>. We made <code>minGallop</code> a global to keep the code
+(relatively) simpler. To avoid globals, we should either put all
+functions in a class and have minGallop be a member, or pass it through
+as an argument through all functions that need it.</p>
+
+<p>Finally, we copy the remaining elements in the buffer, if any:</p>
+<div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">:</span>
+    <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">mid</span> <span class="o">-</span> <span class="n">lo</span><span class="p">]</span>
+</pre></div>
+
+<p>We also have the mirrored <code>mergeHi</code> version:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mergeHi</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">mid</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">hi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">mid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">mid</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">global</span> <span class="n">minGallop</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
+        <span class="n">count1</span><span class="p">,</span> <span class="n">count2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">count1</span> <span class="o">|</span> <span class="n">count2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">minGallop</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="n">count1</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">count2</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">count1</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">count2</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">i</span> <span class="o">-=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">j</span> <span class="o">==</span> <span class="n">lo</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="k">while</span> <span class="n">count1</span> <span class="o">&gt;=</span> <span class="n">MIN_GALLOP</span> <span class="ow">or</span> <span class="n">count2</span> <span class="o">&gt;=</span> <span class="n">MIN_GALLOP</span><span class="p">:</span>
+            <span class="n">count1</span> <span class="o">=</span> <span class="n">j</span> <span class="o">-</span> <span class="n">lo</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">gallopRight</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">arr</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">j</span> <span class="o">-</span> <span class="n">lo</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">count1</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="n">count1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="n">count1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">i</span> <span class="o">-=</span> <span class="n">count1</span>
+                <span class="n">j</span> <span class="o">-=</span> <span class="n">count1</span>
+                <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">lo</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">i</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+            <span class="n">count2</span> <span class="o">=</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">gallopLeft</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">count2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">arr</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="n">count2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="n">count2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">i</span> <span class="o">-=</span> <span class="n">count2</span>
+                <span class="n">k</span> <span class="o">-=</span> <span class="n">count2</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">i</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">lo</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+            <span class="n">minGallop</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">minGallop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">minGallop</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">minGallop</span> <span class="o">+=</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+</pre></div>
+
+<p>This is very similar to the previous one, so I won&#39;t break it into
+pieces and explain, just note that since we are starting from the end of
+the range and we go backwards, we use closed ranges: <code>i</code>, <code>j</code>, and <code>k</code>
+always point to the last element of the range, not the one past the
+last.</p>
+
+<h2>Summary</h2>
+
+<p>This is a very efficient sorting algorithm which relies on observed
+properties of datasets in the real world. Quick recap:</p>
+
+<ul>
+<li>Depending on the size of the input, we determine a good size for
+runs, so we can get balanced merges.</li>
+<li>We traverse the array and identify runs. If the run is descending,
+we reverse it. If we don&#39;t get enough elements in a run to
+hopefully get balanced merges, we extend the run by adding more
+elements and sorting them using binary sort.</li>
+<li>We push runs on a stack which maintains a couple of invariants to,
+again, keep merges balanced: the second to top run of the stack must
+be longer than the top run and the third to top run must be longer
+than the sum of the second and top runs.</li>
+<li>If an invariant is violated, we start merging until we reestablish
+it. We merge the second from the top run with the shortest of third
+from top or top (again aiming for balanced overall merging). Merges
+always merge consecutive runs.</li>
+<li>Merge is optimized such that we first identify elements at the
+beginning of the first run and the end of the second run which are
+already in place, and we skip them.</li>
+<li>Next, depending on which of the runs is larger, we merge either from
+left or from right.</li>
+<li>Merge happens in two modes: we compare and merge normally, until we
+see one of the two runs we&#39;re merging consistently gets picked.
+Once we pass a certain threshold, we switch to galloping mode.</li>
+<li>Galloping aims to provide better performance than binary sort on
+smaller datasets, where we expect to find the position we&#39;re
+searching for earlier rather than later in the search. Galloping
+tries to find a <code>k</code> such that the position we looking for is within
+<code>A[(k - 1)^2]</code> and <code>A[k^2]</code>, then performs a binary search in the
+interval.</li>
+<li>Merging in galloping mode tries to find a range of elements in the
+run that tends to win. This range can be bulk-copied in the merge
+portion of the array more efficiently and skipping extra
+comparisons.</li>
+<li>If galloping becomes less effective, merge switches back to normal
+mode.</li>
+<li>Another heuristic keeps track of how well galloping mode performs
+and either encourages or discourages entering galloping mode again.
+This is persisted across multiple merges in a single sort.</li>
+</ul>
+
+<h2>Thoughts</h2>
+
+<p>Is this sorting algorithm <em>beautiful</em>? Maybe not from a purely
+syntactical/readability perspective. Compare it with the recursive
+quicksort implementation in Haskell:</p>
+<div class="highlight"><pre><span></span><span class="nf">quicksort</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="p">(</span><span class="kt">Ord</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=&gt;</span><span class="w"> </span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="w">  </span>
+<span class="nf">quicksort</span><span class="w"> </span><span class="kt">[]</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">[]</span><span class="w">  </span>
+<span class="nf">quicksort</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="kt">:</span><span class="n">xs</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w">   </span>
+<span class="w">    </span><span class="kr">let</span><span class="w"> </span><span class="n">smallerSorted</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">quicksort</span><span class="w"> </span><span class="p">[</span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">xs</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">x</span><span class="p">]</span><span class="w">  </span>
+<span class="w">        </span><span class="n">biggerSorted</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">quicksort</span><span class="w"> </span><span class="p">[</span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">xs</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="p">]</span><span class="w">  </span>
+<span class="w">    </span><span class="kr">in</span><span class="w">  </span><span class="n">smallerSorted</span><span class="w"> </span><span class="o">++</span><span class="w"> </span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="w"> </span><span class="o">++</span><span class="w"> </span><span class="n">biggerSorted</span><span class="w"></span>
+</pre></div>
+
+<p>Timsort is not a succinct algorithm. There are special cases,
+optimizations for left to right and right to left cases, galloping,
+which tries to beat binary search in some situations, multi-mode merges
+and so on.</p>
+
+<p>That said, everything in it has one purpose: sort real world data
+efficiently. I find it beautiful for the amount of research that went
+into it, the major insight that real world data is usually partially
+sorted, and for how it adapts to various patterns in the data to improve
+efficiency.</p>
+
+<p>Most real world software looks more like Timsort than the Haskell
+quicksort above. And while there is, unfortunately, way too much
+accidental complexity in the world of software, there is a limit to how
+much we can simplify before we can no longer model reality, or operate
+efficiently. And, ultimately, that is what matters.</p>
+
+<h2>References</h2>
+
+<p>The final version of the code in this blog post is in <a href="https://gist.github.com/vladris/13bf84513e76b75a60b0eb761207541e">this GitHub
+gist</a>
+(be advised: implementation might be buggy).</p>
+
+<p>Tim Peters has a very detailed explanation of the algorithm and all
+optimizations in the Python codebase as
+<a href="https://hg.python.org/cpython/file/tip/Objects/listsort.txt">listsort.txt</a>.
+I do recommend reading this as it talks about all the research and
+benchmarks that went into developing Timsort.</p>
+
+<p>The C implementation of Timsort in the Python codebase is
+<a href="https://hg.python.org/cpython/file/tip/Objects/listobject.c">listobject.c</a>.</p>
+
+<p>The Python implementation relies on a lot of Python runtime constructs,
+so it might be harder to read. My implementation is derived from the
+OpenJDK implementation which I found very readable. That one is <a href="https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/util/TimSort.java">here on
+GitHub</a>.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2021/12/11/mental-poker.html>Mental Poker</a></span></div>
+<div id="next"><span><a href=../../.././2022/02/12/computability-part-1-a-short-history.html>Computability Part 1: A Short History</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

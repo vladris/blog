@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Computability Part 3: Tag Systems &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>May 20, 2022</span></header>
+<article>
+<h1>Computability Part 3: Tag Systems</h1>
+
+<p>In the <a href="https://vladris.com/blog/2022/04/03/computability-part-2-turing-machines.html">previous
+post</a>
+we talked about universal Turing machines and looked at some very small
+machines that are still capable of computing anything that can be
+computed (the Turing-completeness property). In this post, we&#39;ll look
+at another model for computation: tag systems.</p>
+
+<blockquote>
+<p>A tag system operates on a string of symbols by reading the symbol
+from the head of the string, deleting a constant number of symbols
+from the head of the string, and appending one or more symbols to the
+tail of the string based on the symbol read from the head.</p>
+</blockquote>
+
+<p>Formally:</p>
+
+<blockquote>
+<p>A tag system is a triplet \(\langle m, A, P \rangle\).</p>
+
+<ul>
+<li>\(m\) is a positive integer, called the <em>deletion number</em>, which
+specifies how many symbols are deleted from the head during each
+iteration.</li>
+<li>\(A\) is a finite alphabet of symbols, including a special <em>halting
+symbol</em>.</li>
+<li>\(P\) is a set of <em>production rules</em> which map each symbol in \(A\) to
+a string of symbols or <em>words</em> from \(A\) (to be appended to the end
+of the string).</li>
+</ul>
+</blockquote>
+
+<p>Tag systems were specified by Emil Leon Post in 1943, 7 years after
+Turing Machines. We usually refer to tag systems as <em>m-tag systems</em>
+where \(m\) is the deletion number from the definition above.</p>
+
+<p>At each step, \(x\) is read from the head of the string, \(m\) symbols are
+deleted, and \(P(x)\) is appended to the end of the string. The tag system
+halts when \(x\) is the halting symbol.</p>
+
+<p>An alternative definition that doesn&#39;t require a halting symbol
+considers as halting all words that are smaller than \(m\). In this case,
+the tag system halts when the string shrinks sufficiently. Yet another
+alternative considers as halting the empty string. In this case, the tag
+system halts when the string becomes empty.</p>
+
+<p>Let&#39;s look at a Python implementation for a tag system:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">tag_system</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+    <span class="c1"># Repeat until the string is empty or we see the halting symbol</span>
+    <span class="k">while</span> <span class="n">string</span> <span class="ow">and</span> <span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">productions</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="n">m</span><span class="p">:]</span> <span class="o">+</span> <span class="n">productions</span><span class="p">[</span><span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">yield</span> <span class="n">string</span>
+</pre></div>
+
+<p>As an example, let&#39;s take the tag system with
+\(m = 2, A = \langle a, b, H \rangle\), and the production rules</p>
+
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Word</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>a</td>
+<td>aab</td>
+</tr>
+<tr>
+<td>b</td>
+<td>H</td>
+</tr>
+</tbody>
+</table>
+
+<p>Starting with the string <code>aa</code>, the steps are:</p>
+<div class="highlight"><pre><span></span>aa              // Erase 2 symbols from head, a -&gt; aab
+  aab           // Erase 2 symbols from head, a -&gt; aab
+    baab        // Erase 2 symbols from head, b -&gt; H
+      abH       // Erase 2 symbols from head, a -&gt; aab
+        Haab    // Halt
+</pre></div>
+
+<p>Using our <code>tag_system()</code> function implemented above:</p>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;aab&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;aa&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">tag_system</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</pre></div>
+
+<p>Tag systems are simple, even simpler than Turing machines. Remember we
+defined a Turing machine as a 7-tuple while tag systems are represented
+by triplets. Turing machines have states, and depending on the state, a
+machine takes different actions. Tag systems technically have a single
+state: when a symbol is read from the head of the string, the same thing
+will always happen: \(m\) symbols are deleted from the head and the
+corresponding production rule determines what word to append to the tail
+of the string. Even so, tag systems are Turing-complete.</p>
+
+<h2>Turing completeness</h2>
+
+<p>For \(m \gt 1\), m-tag systems are Turing complete. For any Turing
+machine, there is an m-tag system that can emulate that Turing machine.
+John Cocke and Marvin Minsky showed in 1964 how a 2-tag system can
+emulate a universal Turing machine<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>. That means that such a super
+simple system is also capable of universal computation!</p>
+
+<p>But it gets even simpler.</p>
+
+<h2>Cyclic tag systems</h2>
+
+<p>A cyclic tag system is a modification of tag systems where:</p>
+
+<ul>
+<li>\(m = 1\): only one symbol is deleted from the head of the string.</li>
+<li>The alphabet consists of only <code>0</code> and <code>1</code>.</li>
+<li>Instead of production rules, we use a finite list of words (on the
+alphabet consisting of only <code>0</code> and <code>1</code>) called <em>productions</em>.</li>
+</ul>
+
+<p>Instead of production rules, we cycle through the list of productions.
+We start from the head of the list of productions. At each step, if the
+symbol at the head of the string is <code>1</code>, we append the production to the
+end of the string. If the symbol at the head of the string is <code>0</code>, we
+don&#39;t append anything. We then move to the next production in the list
+for the next step. Once we exhaust the list of productions, we loop
+around to the head (this inspired the <em>cyclic</em> name).</p>
+
+<p>Here is a Python implementation for a cyclic tag system:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+    <span class="c1"># Keeps track of current production</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Repeat until the string is empty</span>
+    <span class="k">while</span> <span class="n">string</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="n">productions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Update current production</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">productions</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">yield</span> <span class="n">string</span>
+</pre></div>
+
+<p>For example, we will use the production rules <code>11</code>, <code>01</code>, <code>00</code>. With an
+initial string <code>1</code>, the steps are:</p>
+<div class="highlight"><pre><span></span>1               // Append production 11
+ 11             // Append production 01
+  101           // Append production 00
+   0100         // Current production 11 (won&#39;t append since head is 0)
+    100         // Append production 01
+     0001       // Current production 00 (won&#39;t append since head is 0)
+      001       // Current production 11 (won&#39;t append since head is 0)
+       01       // Current production 01 (won&#39;t append since head is 0)
+        1       // Append production 00
+         00     // Current production 11 (won&#39;t append since head is 0)
+          0     // Current production 01 (won&#39;t append since head is 0)
+                // Halts
+</pre></div>
+
+<p>Using our Python implementation:</p>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="s1">&#39;00&#39;</span><span class="p">]</span>
+
+<span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</pre></div>
+
+<p>Cyclic tag systems are simpler than tag systems since \(m\) is fixed to
+<code>1</code>, the alphabet is fixed to <code>0</code> and <code>1</code>, and productions are a
+represented as a cyclic list rather than a map of symbols to words. Even
+so, a cyclic tag system can emulate any m-tag system.</p>
+
+<h2>Emulating tag systems with cyclic tag systems</h2>
+
+<p>An m-tag system with \(n\) symbols \(\lbrace a_1, a_2, ... a_n \rbrace\) and
+their corresponding production rules \(\lbrace P_1, P_2, ... P_n \rbrace\)
+can be translated to a cyclic tag system with \(m * n\) productions where
+the first \(n\) productions \(\lbrace P&#39;_1, P&#39;_2, ... P&#39;_n \rbrace\) are
+encodings of their respective \(P\)-productions in the m-tag system and
+the rest are empty strings.</p>
+
+<p>Productions in the m-tag system are words over the alphabet \(A\). We
+encode each symobl in \(A\) as a binary string of length \(n\), with a <code>1</code>
+in the \(k\)-th position for \(a_k\). For example, for \(n = 3\) and the
+alphabet \(A = \lbrace a_1, a_2, a_3 \rbrace\), we encode \(a_1\) as <code>100</code>,
+\(a_2\) as <code>010</code>, \(a_3\) as <code>001</code>. Since a production \(P_k\) is a sequence
+of symbols, we can similarly translate it into an encoded representation
+\(P&#39;_k\) using symbols <code>0</code> and <code>1</code>.</p>
+
+<p>Our first example was the 2-tag system with the alphabet
+\(A = \langle a, b, H \rangle\), and the production rules</p>
+
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Word</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>a</td>
+<td>aab</td>
+</tr>
+<tr>
+<td>b</td>
+<td>H</td>
+</tr>
+<tr>
+<td>H</td>
+<td>H</td>
+</tr>
+</tbody>
+</table>
+
+<p>Here we added the production rule <code>H -&gt; H</code> for completeness, so we have
+exactly \(n\) production rules.</p>
+
+<p>Translating this into a cyclic tag system, \(a, b, H\) become <code>100</code>,
+<code>010</code>, and <code>001</code> respectively. The production rules translate as:</p>
+
+<blockquote>
+<p><code>a -&gt; aab</code> becomes <code>100100010</code></p>
+
+<p><code>b -&gt; H</code> becomes <code>001</code></p>
+
+<p><code>H -&gt; H</code> becomes <code>001</code></p>
+</blockquote>
+
+<p>The full list of production for the cyclic tag system is
+<code>100100010, 001, 001, -, -, -</code> where <code>-</code> is the empty string.</p>
+
+<p>The initial string <code>aa</code> becomes <code>100100</code>, so our emulation is:</p>
+<div class="highlight"><pre><span></span>100100                      // * Emulated production rule a -&gt; aab
+ 00100100100010             // P = 001 (but head is 0)
+  0100100100010             // P = 001 (but head is 0)
+   100100100010             // P = empty string
+    00100100010             // P = empty string, head is 0
+     0100100010             // P = empty string, head is 0
+      100100010             // * Emulated production rule a -&gt; aab
+       00100010100100010    // P = 001 (but head is 0)
+        0100010100100010    // P = 001 (but head is 0)
+         100010100100010    // P = empty string
+          00010100100010    // P = empty string, head is 0
+           0010100100010    // P = empty string, head is 0
+            010100100010    // P = 100100010 (but is 0)
+             10100100010    // * Emulated production rule b -&gt; H
+              0100100010001 // P = 001 (but head is 0)
+               100100010001 // P = empty string
+                ...
+</pre></div>
+
+<p>Using our Python implementation:</p>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;100100010&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+
+<span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;100100&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</pre></div>
+
+<p>Note in this case the cyclic tag system won&#39;t halt when the emulated
+m-tag system halts, since that would be an emulated halt. But we can
+stop it by checking whether the first 3 symbols represent the encoding
+of <code>H</code>. We do this every sixth step, since we have a 2-tag system with 3
+symbols, which means we emulate 1 step of the tag system with 6 steps of
+the cyclic tag system.</p>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;100100010&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+
+<span class="n">i</span><span class="p">,</span> <span class="n">string</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;100100&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">6</span>
+
+    <span class="c1"># Break if halting symbol is at the head of the string</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">string</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;001&#39;</span><span class="p">:</span>
+        <span class="k">break</span>
+</pre></div>
+
+<p>Or, an updated example that prints every sixth step and translates from
+the cyclic tag system encoding to the original symbols:</p>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;100100010&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+
+<span class="n">symbols</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;100&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;010&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;001&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">symbols</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="mi">3</span><span class="p">)])</span>
+
+<span class="n">i</span><span class="p">,</span> <span class="n">string</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;100100&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">translate</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">6</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">translate</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">string</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;001&#39;</span><span class="p">:</span>
+            <span class="k">break</span>
+</pre></div>
+
+<p>Running this code should be the emulated equivalent of our first example
+in this post.</p>
+
+<p>Since m-tag systems (with \(m \gt 1\)) are Turing-complete and cyclic tag
+systems can emulate any m-tag system, it follows that cyclic tag systems
+are also Turing complete. We can compute anything that is computable
+with the alphabet <code>0</code>, <code>1</code>, and a list of words over this alphabet!</p>
+
+<p>In the next post, we will continue our exploration of simple systems
+capable of universal computation with cellular automata.</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>See <a href="https://dl.acm.org/doi/pdf/10.1145/321203.321206">Universality of Tag Systems With P =
+2</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2022/04/03/computability-part-2-turing-machines.html>Computability Part 2: Turing Machines</a></span></div>
+<div id="next"><span><a href=../../.././2022/06/11/computability-part-4-conway-s-game-of-life.html>Computability Part 4: Conway&#x27;s Game of Life</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

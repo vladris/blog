@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>A Switchless State Machine &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>July 16, 2019</span></header>
+<article>
+<h1>A Switchless State Machine</h1>
+
+<p>This blog post is an excerpt from my book, <a href="https://www.manning.com/books/programming-with-types">Programming with
+Types</a>. The code
+samples are in TypeScript.</p>
+
+<h2>Early Programming with Types</h2>
+
+<p>While working on an early draft of the book, I wrote a small script to
+help me keep the source code in sync with the text. The draft was
+written in the popular Markdown format. I kept the source code in
+separate TypeScript files so I could compile them and ensure that, even
+if I update the code samples, they still work.</p>
+
+<p>I needed a way to ensure that the Markdown text always contains the
+latest code samples. The code samples always appear between a line
+containing <code>```ts</code> and a line containing <code>```</code>. When generating
+HTML from the Markdown source, <code>```ts</code> is interpreted as the beginning
+of a TypeScript code block, which gets rendered using TypeScript syntax
+highlighting, while <code>```</code> marks the end of that code block. The contents
+of these code blocks had to be inlined from actual TypeScript source files
+which I could compile and validate outside of the text.</p>
+
+<p><img src="manuscript.png" alt="image"></p>
+
+<p>The figure shows two TypeScript (.ts) files containing code samples which
+should be inlined in the Markdown document between <code>```ts</code> and
+<code>```</code> markers. The <code>&lt;!-- ... --&gt;</code> comments annotate the code samples for
+my script.</p>
+
+<p>To determine which code sample goes where, I relied on a small trick: Markdown
+allows raw HTML in the document text. I annotated each code sample with an
+HTML comment, for example <code>&lt;!-- sample1 --&gt;</code>. HTML comments do not get
+rendered, so when converting Markdown to HTML, these became invisible. On the
+other hand, my script could use these to determine which code sample to inline
+where.</p>
+
+<p>Once all code samples were loaded from disk, I had to process each Markdown
+document of the draft and produce an updated version as follows:</p>
+
+<ul>
+<li>In text processing mode, simply copy each line of the input text to the
+output document as-is. Once a marker is encountered (<code>&lt;!-- sample --&gt;</code>),
+grab the corresponding code sample and switch to marker processing mode.</li>
+<li>In marker processing mode, again copy each line of the input text to the
+output document until we encounter a code block marker (<code>```ts</code>).
+Once the code marker is encountered, output the latest version of the code
+sample as loaded from the TypeScript file and switch to code processing mode.</li>
+<li>In code processing mode, we already ensured the latest version of the code is
+in the output document, so we can skip over the potentially outdated version
+in the code block. That means we skip each line until we encounter the end of
+code block marker (<code>```</code>). Then we switch back to text processing
+mode.</li>
+</ul>
+
+<p>With each run, the existing code samples in the document preceded by a
+<code>&lt;!-- ... --&gt;</code> marker get updated to the latest version of the TypeScript files
+on disk. Other code blocks that aren&#39;t preceded by <code>&lt;!-- ... --&gt;</code> don&#39;t get
+updated as they are processed in text processing mode.</p>
+
+<p>As an example, let&#39;s take a <code>helloWorld.ts</code>code sample:</p>
+<div class="highlight"><pre><span></span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Hello world!&quot;</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>We want to embed this in <code>Chapter1.md</code> and make sure it&#39;s kept up to date.</p>
+<div class="highlight"><pre><span></span><span class="gh"># Chapter 1</span>
+
+Printing &quot;Hello world!&quot;.
+&lt;!-- helloWorld --&gt;
+<span class="sb">```ts</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Hello&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="sb">```</span>
+</pre></div>
+
+<p>This is not quite up to date, the string here is <code>&quot;Hello&quot;</code>, not matching
+<code>helloWorld.ts</code>.</p>
+
+<p>This document gets processed line by line as follows:</p>
+
+<ol>
+<li>In text processing mode,<code>&quot;# Chapter 1&quot;</code> is copied to the output as-is.</li>
+<li><code>&quot;&quot;</code> (blank line) is copied to the output as-is.</li>
+<li><code>&quot;Printing &quot;Hello world!&quot;.&quot;</code> is copied to the output as-is.</li>
+<li><code>&quot;&lt;!-- helloWorld --&gt;&quot;</code> is copied to the output as-is. This is a marker
+though, so we keep track of the code sample to be inlined (helloWorld.ts)
+and switch to marker processing mode.</li>
+<li><code>&quot;```ts&quot;</code> is copied to the output as-is. This is a code block marker,
+so immediately after copying it to the output we also output the contents
+of <code>helloWorld.ts</code>. We also switch to code processing mode.</li>
+<li><code>&quot;console.log(&quot;Hello&quot;);&quot;</code> is skipped. We don&#39;t copy lines in code
+processing mode, as we are replacing them with the latest in the
+code sample file.</li>
+<li><code>```</code> is an end of code block marker. We insert it then switch
+back to text processing mode.</li>
+</ol>
+
+<h2>State Machines</h2>
+
+<p>The behavior of our text processing script is best modelled as a state
+machine. A state machine has a set of states and a set of transitions
+between pairs of states. The machine starts in a given state, also known
+as the <em>start state</em>, then if certain conditions are met, it can
+transition to another state.</p>
+
+<p>This is exactly what our text processor does, with its three processing
+modes. Input lines are processed a certain way when in <em>text processing
+mode</em>. When some condition is met (a <code>&lt;!-- sample --&gt;</code> marker is
+encountered), our processor transitions to the marker processing mode.
+Again, when some other condition is met (<code>```ts</code> code block marker
+encountered), it transitions to <em>code processing mode</em>. When the end of the
+code block marker is encountered (<code>```</code>), it transitions back to
+<em>text processing mode</em>.</p>
+
+<p><img src="state-machine.png" alt="image"></p>
+
+<p>The figure shows a text processing state machine with the three states (text
+processing, marker processing, code processing) and transitions between the
+states based on input. Text processing is the initial state or start state.</p>
+
+<p>Now that we modeled the solution, let&#39;s look at how we would implement it. One
+way to implement a state machine is by defining the set of states as an
+enumeration, keeping track of the current state, and get the desired behavior
+with a <code>switch</code> statement that covers all possible states. In our case, we can
+define a <code>TextProcessingMode</code> enum.</p>
+
+<p>Our<code>TextProcessor</code> class will keep track of the current state in a <code>mode</code>
+property, and implement the switch statement in a <code>processLine()</code> method.
+Depending on the state, this method will in turn invoke one of the three
+processing methods, <code>processTextLine()</code>, <code>processMarkerLine()</code>, or
+<code>processCodeLine()</code>. These functions will implement the text processing then,
+when appropriate, transition to another state by updating the current state.</p>
+
+<p>Processing a Markdown document consisting of multiple lines of text means
+processing each line in turn using our state machine then returning the final
+result to the caller:</p>
+<div class="highlight"><pre><span></span><span class="kd">enum</span><span class="w"> </span><span class="nx">TextProcessingMode</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">Text</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nx">Marker</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nx">Code</span><span class="p">,</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">TextProcessor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">mode</span><span class="o">:</span><span class="w"> </span><span class="kt">TextProcessingMode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">TextProcessingMode</span><span class="p">.</span><span class="nx">Text</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">codeSample</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">processText</span><span class="p">(</span><span class="nx">lines</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">TextProcessingMode</span><span class="p">.</span><span class="nx">Text</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">line</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">lines</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">processLine</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">processLine</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">mode</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="nx">TextProcessingMode.Text</span><span class="o">:</span><span class="w"></span>
+<span class="w">                </span><span class="kt">this.processTextLine</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="nx">TextProcessingMode.Marker</span><span class="o">:</span><span class="w"></span>
+<span class="w">                </span><span class="kt">this.processMarkerLine</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="nx">TextProcessingMode.Code</span><span class="o">:</span><span class="w"></span>
+<span class="w">                </span><span class="kt">this.processCodeLine</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">processTextLine</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;&lt;!--&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">loadCodeSample</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">TextProcessingMode</span><span class="p">.</span><span class="nx">Marker</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">processMarkerLine</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;```ts&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">codeSample</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">TextProcessingMode</span><span class="p">.</span><span class="nx">Code</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">processCodeLine</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">TextProcessingMode</span><span class="p">.</span><span class="nx">Text</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">loadCodeSample</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="cm">/* Load sample based on marker, store in this.codeSample  */</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We omitted the code to actually load a sample from an external file as
+it isn&#39;t particularly relevant to our state machine discussion. This
+implementation works but it can be simplified if we use a pluggable
+function.</p>
+
+<p>Note that all our text processing functions have the same signature:
+they take a line of text as a <code>string</code> argument and return <code>void</code>. What
+if, instead of having <code>processLine()</code> implement a big switch statement
+and forward to the appropriate function, we make <code>processLine()</code> <em>be</em>
+one of those functions?</p>
+
+<p>Instead of implementing <code>processLine()</code> as a method, we can define it as
+a property of the class with type <code>(line: string) =&gt; void</code> and
+initialize it with <code>processTextLine()</code>. Then, in each of the three text
+processing methods, instead of setting <code>mode</code> to a different enum value,
+we set <code>processLine()</code> to a different method. In fact, we no longer need
+to externally keep track of our state. We don&#39;t even need an enum:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">TextProcessor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">processLine</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">processTextLine</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">codeSample</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">processText</span><span class="p">(</span><span class="nx">lines</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">processLine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">processTextLine</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">line</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">lines</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">processLine</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">processTextLine</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;&lt;!--&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">loadCodeSample</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">processLine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">processMarkerLine</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">processMarkerLine</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;```ts&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">codeSample</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">processLine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">processCodeLine</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">processCodeLine</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">processLine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">processTextLine</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w">        </span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">loadCodeSample</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="cm">/* Load sample based on marker, store in this.codeSample  */</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>The second implementation gets rid of the <code>TextProcessingMode</code> enum, the
+<code>mode</code> property, and the switch statement which forwarded processing to
+the appropriate method. Instead of handling forwarding, <code>processLine()</code>
+now <em>is</em> the appropriate processing method.</p>
+
+<p>This implementation removes the need to keep track of states separately
+and keep that in sync with the processing logic. If we ever wanted to
+introduce a new state, the old implementation would&#39;ve forced us to
+update the code in several places. Besides implementing the new
+processing logic and state transitions, we would&#39;ve had to update the
+enum and add another case to the switch statement. Our alternative
+implementation removes the need for that: a state is represented purely
+by a function.</p>
+
+<h2>State Machines with Sum Types</h2>
+
+<p>One caveat to this is that, for state machines with many states,
+capturing states and even transitions explicitly might make the code
+easier to understand. Even so, instead of using enums and switch
+statements, another possible implementation is to represent each state
+as a separate type and the whole state machine as a sum type of the
+possible states. This allows us to break it apart into type-safe
+components. Below is an example of how we would implement the above
+state machine using a sum type. The code is a bit more verbose, so if
+possible, we should try the implementation we discussed so far, but this
+is another alternative to a switch-based state machine.</p>
+
+<p>Using a sum type, each state is represented by a different type, so we
+have a <code>TextLineProcessor</code>, a <code>MarkerLineProcessor</code>, and a
+<code>CodeLineProcessor</code>. Each of them keeps track of the processed lines so
+far in a result member and provides a <code>process()</code> method to handle a
+line of text:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">TextLineProcessor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[])</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">process</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">TextLineProcessor</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">MarkerLineProcessor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;&lt;!--&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">MarkerLineProcessor</span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">loadCodeSample</span><span class="p">(</span><span class="nx">line</span><span class="p">));</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">loadCodeSample</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="cm">/* Load sample based on marker, store in this.codeSample */</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">MarkerLineProcessor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span><span class="w"></span>
+<span class="w">    </span><span class="nx">codeSample</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[],</span><span class="w"> </span><span class="nx">codeSample</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[])</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">codeSample</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">codeSample</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">process</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">MarkerLineProcessor</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">CodeLineProcessor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;```ts&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">codeSample</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CodeLineProcessor</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">CodeLineProcessor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[])</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">process</span><span class="p">(</span><span class="nx">line</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">CodeLineProcessor</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">TextLineProcessor</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">line</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TextLineProcessor</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">processText</span><span class="p">(</span><span class="nx">lines</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">processor</span><span class="o">:</span><span class="w"> </span><span class="kt">TextLineProcessor</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">MarkerLineProcessor</span><span class="w"></span>
+<span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="nx">CodeLineProcessor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TextLineProcessor</span><span class="p">([]);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">line</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">lines</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">processor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">processor</span><span class="p">.</span><span class="nx">process</span><span class="p">(</span><span class="nx">line</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">processor</span><span class="p">.</span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>All our processors return a processor instance. Either <code>this</code>, if there
+is no state change, or a new processor as state changes. The
+<code>processText()</code> runs the state machine by calling <code>process()</code> on each
+line of text and updating processor as state changes by reassigning it
+to the result of the method call.</p>
+
+<p>Now the set of states is explicitly spelled out in the signature of the
+processor variable, which can be a <code>TextLineProcessor</code> or a
+<code>MarkerLineProcessor</code>, or a <code>CodeLineProcessor</code>.</p>
+
+<p>The possible transitions are captured in the signatures of the
+<code>process()</code> methods - for example <code>TextLineProcessor.process()</code> returns
+<code>TextLineProcessor | MarkerLineProcessor</code>, meaning it can either stay in
+the same state (<code>TextLineProcessor</code>) or transition to the
+<code>MarkerLineProcessor</code> state. These state classes can have more
+properties and members if needed. This implementation is slightly longer
+than the one relying on functions, so if we don&#39;t need the extra
+features, we are better off using the simpler solution.</p>
+
+<h2>State Machine Implementation Recap</h2>
+
+<p>Let&#39;s quickly review the alternative implementations discussed.</p>
+
+<ul>
+<li>The <q>classical</q> implementation of a state machine uses an enum to
+define all the possible states, a variable of that enum type to keep
+track of the current state, and a big switch statement to determine
+which processing should be performed based on the current state.
+State transitions are implemented by updating the current state
+variable. The drawback of this implementation is that states are
+completely removed from the processing we want to run during each
+state, so the compiler can&#39;t prevent mistakes when we run the wrong
+processing while in a given state. For example, nothing stops us
+from calling <code>processCodeLine()</code> even when we&#39;re in
+<code>TextProcessingCode.Text</code>. We also have to maintain state and
+transitions as a separate enum, with the risk of running out of sync
+(for example we might add a new value to the enum but forget to add
+a case for it in the switch statement).</li>
+<li>The functional implementation represents each processing state as a
+function and relies on a function property to track the current
+state. State transitions are implemented by assigning the function
+property to another state. This is a lightweight implementation
+which should work for many cases. The drawbacks are sometimes we
+need to associate more information with each state, and sometimes we
+might want to be explicit when declaring what the possible states
+and transitions are.</li>
+<li>The sum type implementation represents each processing state as a
+class and relies on a variable representing the sum type of all the
+possible states to keep track of the current state. State
+transitions are implemented by re-assigning the variable to another
+state. This allows us to add additional properties and members to
+each state and keep them grouped together. The drawback is that the
+code is more verbose than the functional alternative.</li>
+</ul>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2019/04/28/programming-with-types.html>Programming with Types</a></span></div>
+<div id="next"><span><a href=../../.././2019/08/10/common-algorithms.html>Common Algorithms</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

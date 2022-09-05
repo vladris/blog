@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Computability Part 2: Turing Machines &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>April 03, 2022</span></header>
+<article>
+<h1>Computability Part 2: Turing Machines</h1>
+
+<p>In the <a href="https://vladris.com/blog/2022/02/12/computability-part-1-a-short-history.html">previous
+post</a>,
+we looked at a history of what would become computer science. In this
+post, we&#39;ll focus on Turing machines and Turing completeness.</p>
+
+<p>The informal definition we gave to a Turing machine in the previous post
+is:</p>
+
+<blockquote>
+<p>An abstract computer consisting of an infinite tape of cells, a head
+that can read from a cell, write to a cell, and move left or right
+over the tape, and a set of rules which direct the head based on the
+read symbol and the current state of the machine.</p>
+</blockquote>
+
+<p>Formally:</p>
+
+<blockquote>
+<p>A Turing machine is a 7-tuple
+\(M = \langle Q, q_0, F, \Gamma, b, \Sigma, \delta \rangle\).</p>
+
+<ul>
+<li>\(Q \ne \varnothing\) is a finite set of <em>states</em>. These are all the
+states the machine can be in.</li>
+<li>\(q_0 \in Q\) is the <em>initial state</em>. This is the state the machine
+starts in.</li>
+<li>\(F \subseteq Q\) is the set of <em>final states</em>. When the machine
+reaches one of the final states, it <em>halts</em> - it stops execution.</li>
+<li>\(\Gamma \ne \varnothing\) is a finite set of <em>tape symbols</em>. These
+are all the symbols that can appear on the tape.</li>
+<li>\(b \in \Gamma\) is the <em>blank symbol</em>, one of the possible <em>tape
+symbols</em>. The only symbol allowed to occur on the tape infinitely
+often at any step.</li>
+<li>\(\Sigma \subseteq \Gamma \setminus \lbrace b \rbrace\) is the set
+of <em>input symbols</em> allowed to appear in the initial tape contents
+(not written by the machine during execution). These symbols can
+be the whole alphabet (except the blank symbol), or a subset of
+the alphabet.</li>
+<li>\(\delta: (Q \setminus F) \times \Gamma \to Q \times \Gamma \times \lbrace L, R \rbrace\)
+is a function called the <em>transition function</em>. This functions
+takes as input the current machine state and the symbol on the
+tape. It outputs the new machine state, the symbol to overwrite
+the current tape symbol, and the head movement (either left or
+right). Note the function domain excludes the final states - once
+the machine reaches a state in \(F\), it halts so no more
+transitions happen.</li>
+</ul>
+</blockquote>
+
+<p>Alternately, the transition function can be defined as a partial
+function
+\(\delta: Q \times \Gamma \hookrightarrow Q \times \Gamma \times \lbrace L, R \rbrace\),
+where the machine halts if the function is undefined for the given
+combination of machine state and tape symbol. In some compact Turing
+machines (like we&#39;ll see below), \(F\) is empty. There is not <em>final
+state</em>, rather we halt when encountering a certain combination of
+machine state and tape symbol for which no transition is defined.</p>
+
+<p>Note this definition allows for some very uninteresting machines: a
+machine that only has an initial and a final state
+(\(Q = \lbrace q_0, f \rbrace\)) and, for any input symbol in \(\Gamma\),
+the transition function moves the machine into the final state. This is
+a Turing machine, but it can&#39;t really compute much. Something more is
+needed.</p>
+
+<h2>Universal Turing machines</h2>
+
+<p>A <em>universal Turing machine</em> is a Turing machine that can simulate
+another, arbitrary, Turing machine on arbitrary input. That is, it can
+read the description of a Turing machine and that machine&#39;s input as
+its own input, then simulate the execution of that machine.</p>
+
+<p>With this definition, a universal Turing machine can compute anything
+any other Turing machine can compute (anything that is computable).</p>
+
+<p>Marvin Minsky discovered a universal Turing machine that requires only 7
+states and 2 symbols. Yurii Rogozhin discovered a machine with only 4
+states and 6 symbols. Let&#39;s call the states
+\(Q = \lbrace A, B, C, D \rbrace\) and the symbols
+\(\Gamma = \lbrace 0, 1, 2, 3, 4, 5 \rbrace\).</p>
+
+<p><strong>(4, 6) Turing Machine</strong></p>
+
+<table>
+<thead>
+<tr>
+<th style="text-align: center"></th>
+<th style="text-align: center">A</th>
+<th style="text-align: center">B</th>
+<th style="text-align: center">C</th>
+<th style="text-align: center">D</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td style="text-align: center">0</td>
+<td style="text-align: center">3,L,A</td>
+<td style="text-align: center">4,R,B</td>
+<td style="text-align: center">0,R,C</td>
+<td style="text-align: center">4,R,D</td>
+</tr>
+<tr>
+<td style="text-align: center">1</td>
+<td style="text-align: center">2,R,A</td>
+<td style="text-align: center">2,L,C</td>
+<td style="text-align: center">3,R,D</td>
+<td style="text-align: center">5,L,B</td>
+</tr>
+<tr>
+<td style="text-align: center">2</td>
+<td style="text-align: center">1,L,A</td>
+<td style="text-align: center">3,R,B</td>
+<td style="text-align: center">1,R,C</td>
+<td style="text-align: center">3,R,D</td>
+</tr>
+<tr>
+<td style="text-align: center">3</td>
+<td style="text-align: center">4,R,A</td>
+<td style="text-align: center">2,L,B</td>
+<td style="text-align: center">HALT</td>
+<td style="text-align: center">HALT</td>
+</tr>
+<tr>
+<td style="text-align: center">4</td>
+<td style="text-align: center">3,L,A</td>
+<td style="text-align: center">0,L,B</td>
+<td style="text-align: center">5,R,A</td>
+<td style="text-align: center">5,L,B</td>
+</tr>
+<tr>
+<td style="text-align: center">5</td>
+<td style="text-align: center">4,R,D</td>
+<td style="text-align: center">1,R,B</td>
+<td style="text-align: center">0,R,A</td>
+<td style="text-align: center">1,R,D</td>
+</tr>
+</tbody>
+</table>
+
+<p>The above table describes the transition function of the Turing machine.
+For example, if the machine is in state <code>A</code> and the read tape symbol is
+<code>5</code>, we can look up the <code>A</code> column and <code>5</code> row to find the transition
+<code>4,R,D</code>. This means <q>print <code>4</code> on the tape (overwriting the current
+symbol), move the head right (<code>R</code>), machine is now in state <code>D</code></q>.</p>
+
+<p>We&#39;re using the partial transition function definition, so instead of
+defining one or more explicit final states (\(F\)), we don&#39;t define a
+transition when the tape symbol is <code>3</code> and the machine is in state <code>C</code>
+or state <code>D</code>.</p>
+
+<h2>Implementation</h2>
+
+<p>Let&#39;s look at a Python implementation of Turing machines. First, let&#39;s
+implement the tape we will be using. Theoretically this is an infinite
+tape. To simulate this in software, we will use a list and whenever we
+move the head left or right beyond the list, we extend the list with an
+additional blank symbol:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Tape</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tape</span><span class="p">,</span> <span class="n">head</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># Initial tape should have at least one symbol</span>
+        <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tape</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Tape head should be a valid index</span>
+        <span class="k">assert</span><span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">head</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">tape</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tape</span> <span class="o">=</span> <span class="n">tape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">head</span>
+
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbol</span>
+
+    <span class="k">def</span> <span class="nf">move_left</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># If attempting to move left out of bounds, extend tape left</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">move_right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># If attempting to move right out of bounds, extend tape right</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+<p>We&#39;ll implement a machine that takes a tape, a transition table, and an
+initial state, and runs until it halts:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">machine</span><span class="p">(</span><span class="n">tape</span><span class="p">,</span> <span class="n">transitions</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">symbol</span> <span class="o">=</span> <span class="n">tape</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="c1"># If no transition is defined for the current state and symbol, halt</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">transitions</span><span class="p">[</span><span class="n">state</span><span class="p">][</span><span class="n">symbol</span><span class="p">]:</span>
+            <span class="k">break</span>
+
+        <span class="n">new_symbol</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">new_state</span> <span class="o">=</span> <span class="n">transitions</span><span class="p">[</span><span class="n">state</span><span class="p">][</span><span class="n">symbol</span><span class="p">]</span>
+
+        <span class="n">tape</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">new_symbol</span><span class="p">)</span>
+        <span class="n">tape</span><span class="o">.</span><span class="n">move_left</span><span class="p">()</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;L&#39;</span> <span class="k">else</span> <span class="n">tape</span><span class="o">.</span><span class="n">move_right</span><span class="p">()</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">new_state</span>
+</pre></div>
+
+<p>To stich this together, we need a transition table and initial tape
+state. We&#39;ll use the Rogozhin (4, 6) machine:</p>
+<div class="highlight"><pre><span></span><span class="c1">## Machine states</span>
+<span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span>
+
+<span class="c1">## Left and right</span>
+<span class="n">L</span><span class="p">,</span> <span class="n">R</span> <span class="o">=</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span>
+
+<span class="c1">## Rogozhin 4-state, 6-symbol Turing machine</span>
+<span class="n">transition</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">A</span><span class="p">:</span> <span class="p">[(</span><span class="mi">3</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">D</span><span class="p">)],</span>
+    <span class="n">B</span><span class="p">:</span> <span class="p">[(</span><span class="mi">4</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">B</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">C</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">B</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">B</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">B</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">B</span><span class="p">)],</span>
+    <span class="n">C</span><span class="p">:</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">C</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">D</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">C</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">A</span><span class="p">)],</span>
+    <span class="n">D</span><span class="p">:</span> <span class="p">[(</span><span class="mi">4</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">D</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">B</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">D</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">B</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">D</span><span class="p">)],</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This machine is a universal Turing machine, meaning it can simulate any
+other turing machine, thus is capable of universal computation (can
+compute anything that is computable).</p>
+
+<h2>Turing-completeness</h2>
+
+<blockquote>
+<p>A Turing-complete system is any system capable of simulating any
+Turing machine.</p>
+</blockquote>
+
+<p>Turing-completeness is a way of expressing the computational power of a
+given system. A Turing-complete system is capable of universal
+computation. The small Rogozhin (4, 6) machine, since it is a universal
+Turing machine, is Turing-complete.</p>
+
+<p>More so, the fact that we can simulate this machine in the Python
+programming language proves that the Python language itself is
+Turing-complete.</p>
+
+<h2>Esoteric Turing-complete systems</h2>
+
+<p>If we weaken some of the constraints for Turing machines, there are even
+smaller <em>weak</em> universal Turing machines. For example, if we allow the
+tape to contain an infinitely repeated sequence of symbols, or we don&#39;t
+require the machine to ever halt.</p>
+
+<p>The smallest weak Turing machine is a Turing machine consisting of 2
+states and 3 symbols. Let&#39;s call the states \(Q = \lbrace A, B \rbrace\)
+and the symbols \(\Gamma = \lbrace 0, 1, 2 \rbrace\).</p>
+
+<p><strong>(2, 3) Turing Machine</strong></p>
+
+<table>
+<thead>
+<tr>
+<th style="text-align: center"></th>
+<th style="text-align: center">A</th>
+<th style="text-align: center">B</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td style="text-align: center">0</td>
+<td style="text-align: center">1,R,B</td>
+<td style="text-align: center">2,L,A</td>
+</tr>
+<tr>
+<td style="text-align: center">1</td>
+<td style="text-align: center">2,L,A</td>
+<td style="text-align: center">2,R,B</td>
+</tr>
+<tr>
+<td style="text-align: center">2</td>
+<td style="text-align: center">1,L,A</td>
+<td style="text-align: center">0,R,A</td>
+</tr>
+</tbody>
+</table>
+
+<p>Stephen Wolfram in <a href="https://www.goodreads.com/book/show/238558.A_New_Kind_of_Science">A New Kind of
+Science</a>
+(a book we&#39;ll get back to in a future post) described a 2-state
+5-symbol universal Turing machine and conjectured the 2-state 3-symbol
+machine is also universal. The universality of the 2-state 3-symbol
+machine was proved in 2007.</p>
+
+<p>In terms of Turing-complete programming languages, a somewhat famous
+esoteric programming langue is
+<a href="https://en.wikipedia.org/wiki/Brainfuck">Brainfuck</a>. Brainfuck uses a
+byte array (tape), a data pointer (index in the array), and 8 symbols:
+<code>&gt;</code>, <code>&lt;</code>, <code>+</code>, <code>-</code>, <code>.</code>, <code>,</code>, <code>[</code>, <code>]</code>. The symbols are interpreted as:</p>
+
+<ul>
+<li><code>&gt;</code>: Increment the data pointer (move head right).</li>
+<li><code>&lt;</code>: Decrement the data pointer (move head left).</li>
+<li><code>+</code>: Increment array value at data pointer.</li>
+<li><code>-</code>: Decrement array value at data pointer.</li>
+<li><code>.</code>: Output value at data pointer.</li>
+<li><code>,</code>: Read 1 byte of input and store at data pointer.</li>
+<li><code>[</code>: If the byte at data pointer is 0, jump right to the matching
+<code>]</code>, else increment data pointer</li>
+<li><code>]</code>: If the byte at data pointer is not 0, jump left to the matching
+<code>[</code>, else decrement data pointer</li>
+</ul>
+
+<p>This simple language is very much modeled after a Turing machine. Here
+is <q>Hell World!</q> in Brainfuck:</p>
+<div class="highlight"><pre><span></span>++++++++[&gt;++++[&gt;++&gt;+++&gt;+++&gt;+&lt;&lt;&lt;&lt;-]&gt;+&gt;+&gt;-&gt;&gt;+[&lt;]&lt;-]&gt;&gt;.&gt;
+---.+++++++..+++.&gt;&gt;.&lt;-.&lt;.+++.------.--------.&gt;&gt;+.&gt;++.
+</pre></div>
+
+<p>Since the language definition is so simple, it is very easy to write a
+Brainfuck interpreter:</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">def</span> <span class="nf">bf</span><span class="p">(</span><span class="n">program</span><span class="p">):</span>
+    <span class="c1"># Data array, data pointer, and code pointer</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">dp</span><span class="p">,</span> <span class="n">cp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="n">cp</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">):</span>
+        <span class="k">match</span> <span class="n">program</span><span class="p">[</span><span class="n">cp</span><span class="p">]:</span>
+            <span class="k">case</span> <span class="s1">&#39;&lt;&#39;</span><span class="p">:</span>
+                <span class="n">dp</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">case</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">:</span>
+                <span class="n">dp</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">dp</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s1">&#39;+&#39;</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">dp</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">case</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">dp</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">case</span> <span class="s1">&#39;.&#39;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">dp</span><span class="p">]),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s1">&#39;,&#39;</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">dp</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">case</span> <span class="s1">&#39;[&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="n">dp</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">opened</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="k">while</span> <span class="n">opened</span><span class="p">:</span>
+                        <span class="n">cp</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="k">if</span> <span class="n">program</span><span class="p">[</span><span class="n">cp</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;]&#39;</span><span class="p">:</span>
+                            <span class="n">opened</span> <span class="o">-=</span> <span class="mi">1</span>
+                        <span class="k">elif</span> <span class="n">program</span><span class="p">[</span><span class="n">cp</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;[&#39;</span><span class="p">:</span>
+                            <span class="n">opened</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">case</span> <span class="s1">&#39;]&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="n">dp</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">opened</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="k">while</span> <span class="n">opened</span><span class="p">:</span>
+                        <span class="n">cp</span> <span class="o">-=</span> <span class="mi">1</span>
+                        <span class="k">if</span> <span class="n">program</span><span class="p">[</span><span class="n">cp</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;[&#39;</span><span class="p">:</span>
+                            <span class="n">opened</span> <span class="o">-=</span> <span class="mi">1</span>
+                        <span class="k">elif</span> <span class="n">program</span><span class="p">[</span><span class="n">cp</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;]&#39;</span><span class="p">:</span>
+                            <span class="n">opened</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">cp</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+
+<p>Also note that any programming language that can implement a Brainfuck
+interpreter is Turing-complete (since Brainfuck is Turing-complete).</p>
+
+<p>There&#39;s also some surprising proofs of unintentional
+Turing-completeness. For example, C++ template metaprogramming was
+proved to be Turing-complete (not the C++ language itself, which is
+obviously Turing-complete, just the template part alone). Magic: The
+Gathering <a href="https://arxiv.org/abs/1904.09828">is also Turing-complete</a>.
+Turing-completeness comes in many forms. In the next posts, we&#39;ll look
+at some other models of universal computation: tag systems and cellular
+automata.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2022/02/12/computability-part-1-a-short-history.html>Computability Part 1: A Short History</a></span></div>
+<div id="next"><span><a href=../../.././2022/05/20/computability-part-3-tag-systems.html>Computability Part 3: Tag Systems</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

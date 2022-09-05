@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Programming with Types RTM &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>October 16, 2019</span></header>
+<article>
+<h1>Programming with Types RTM</h1>
+
+<p><a href="https://www.manning.com/books/programming-with-types">Programming with
+Types</a> is going to
+the printer today and should be available as a print books in a couple
+of weeks. I figured I&#39;ll write a blog post about writing the book for
+the occasion. I wrote in a <a href="https://vladris.com/blog/2019/04/28/programming-with-types.html">previous
+post</a>
+how the book came to be, but didn&#39;t really cover the implementation
+details.</p>
+
+<h2>Prototype</h2>
+
+<p>I started writing the book before even thinking about publishing. The
+best way I can put it is I felt I had a book in me. I learned a lot of
+material during the past few years and I wanted to synthesize it in book
+form, hopefully useful to others. I created a repository on GitHub,
+outlined the topics I wanted to cover, and for a few weeks I spent a few
+minutes every morning over coffee filling in some of the sections. As a
+fun fact, the original title of the book was <em>Practical Types</em>. This was
+August 2018.</p>
+
+<h2>Pitch</h2>
+
+<p>In September, when I realized I am indeed writing a book, I figured I
+should pitch it to publishers. No harm in trying. I reached out to
+O&#39;Reilly and Manning. O&#39;Reilly promptly dismissed my proposal. Manning
+put me in touch with a publisher and we scheduled a couple of calls to
+discuss some of the details.</p>
+
+<p>I got some invaluable feedback even from those initial calls -
+suggestions on how to improve the table of contents, how to make the
+book more accessible to readers, how to split topics up into chapters
+based on the difficulty of the topic and so on. After those initial
+calls, I was fortunate to get a contract.</p>
+
+<h2>Contract</h2>
+
+<p>The most important part of the contract is the manuscript delivery.
+There are 3 key milestones, each 4 months apart. The milestones were:</p>
+
+<ul>
+<li>Deliver a third of the manuscript no later than February 2019.</li>
+<li>Deliver two thirds of the manuscript no later than June 2019.</li>
+<li>Deliver the complete draft of the manuscript no later than October
+2019.</li>
+</ul>
+
+<p>I got paid an advance delivered in two batches: the first half upon
+delivery of the first third of the manuscript, the second half upon
+delivery of the complete draft. I will also be getting a percentage of
+sales of the book. The way advances work, the book needs to sell enough
+to cover the advance before I will receive any more royalties. I will
+pause here to say that I don&#39;t expect to get rich off of this book.
+Another fun fact I learned is that most books don&#39;t even recover the
+advance, so if you ever want to write a book simply for the money, you
+might want to reconsider.</p>
+
+<h2>Training</h2>
+
+<p>After the paperwork was signed, I was assigned a developmental editor
+and the first thing we did was a new author training where I was
+introduced to the Manning method of writing books. Since Manning has
+been publishing high quality technical books for many years, they have a
+set of best practices authors are encouraged to follow. These include
+things like starting with a concrete example then generalizing to the
+abstract, using figures to better explain things, tracking the
+prerequisites of each chapter and making sure there is a smooth
+progression and so on. These trainings were delivered by my editor over
+a few Skype calls.</p>
+
+<h2>Feedback Loop</h2>
+
+<p>Throughout the writing stage, I worked closely with two editors. After
+completing a draft of each chapter, I would upload it and get the
+initial round of feedback from them. The developmental editor would make
+sure my writing is up to par and the text makes sense; the technical
+developmental editor would keep me honest for the technical aspects of
+the book, and make sure I didn&#39;t mess anything up there.</p>
+
+<p>With each milestone (1/3, 2/3, 3/3 of the book), Manning also conducted
+an external review with around 20 other volunteers who would go over the
+manuscript and provide feedback. When the external feedback came in, we
+analyzed it for trends to identify areas of improvement - for example,
+if multiple people were saying a particular section is hard to grok, it
+was clear it needed improvement.</p>
+
+<p>As the book was nearing completion, I also got a reviewer for the code
+samples. He made sure all the code makes sense, compiles, and the GitHub
+version matches the book version.</p>
+
+<p>Writing a book is definitely a team effort. Without all the great
+feedback I received it would&#39;ve been a pretty crappy book. Many thanks
+to Michael Stephens, Elesha Hyde, Mike Shepard, German Gonzales, and all
+the other great folks at Manning for all their help. I&#39;m also grateful
+to all the external reviewers for their time.</p>
+
+<p>I learned that the first chapter is the one that usually requires the
+most refactoring, which was definitely true in my case.</p>
+
+<h2>Writing</h2>
+
+<p>Because I started with a list of topics I wanted to cover and had a
+general idea of what to write in each chapter, things went pretty
+smoothly. I was able to write a chapter in a weekend so I was ahead of
+schedule most of the time.</p>
+
+<p>Turns out that writing a chapter is not the hard part, the grind comes
+when you have to edit, re-edit, and incorporate all the rounds of
+feedback. The editing part is much less creative than starting from a
+blank page, but is equally if not more important.</p>
+
+<p>I completed the draft mid-May and incorporated the last round of
+external feedback by July. Beyond the chapters, there is also a Front
+Matter, inside covers, and appendices, which I worked on in July/August.</p>
+
+<p>All in all it took about a year from when I started outlining the book
+on GitHub to having the final version ready to go to production.</p>
+
+<h2>Production</h2>
+
+<p>From then on, the book goes to production and another set of people goes
+over the spelling, layout, indexing and so on. At this stage, my
+responsibility was mostly to review changes and suggest minor updates.</p>
+
+<p>Last week I received the final PDF version of how the book will look
+like in print, and today I was notified it is being sent to the printer.</p>
+
+<p>Writing the book was a great experience and I got the chance to work
+with some wonderful people. I hope the final product is a good book
+which leads to better software.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2019/09/07/higher-kinded-types-monads.html>Higher Kinded Types: Monads</a></span></div>
+<div id="next"><span><a href=../../.././2019/11/18/unit-testing-101.html>Unit Testing 101</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

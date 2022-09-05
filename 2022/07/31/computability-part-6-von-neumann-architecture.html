@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Computability Part 6: Von Neumann Architecture &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>July 31, 2022</span></header>
+<article>
+<h1>Computability Part 6: Von Neumann Architecture</h1>
+
+<p>During the previous posts, we covered <a href="https://vladris.com/blog/2022/04/03/computability-part-2-turing-machines.html">Turing
+machines</a>,
+<a href="https://vladris.com/blog/2022/04/03/computability-part-2-turing-machines.html">tag
+systems</a>,
+and <a href="https://vladris.com/blog/2022/06/11/computability-part-4-conway-s-game-of-life.html">cellular
+automata</a>.
+All of these are equivalent in terms of what they can compute, but some
+are more practical than others. In this post, we&#39;ll look at the von
+Neumann architecture of physical computers and implement an extremely
+inefficient machine, write a few programs targeting it, then prove it is
+Turing complete.</p>
+
+<p>John von Neumann was a famous mathematician and physicist. Contemporary
+with Alan Turing, he was aware of Turing&#39;s work on Turing machines and
+computability. At the same time, von Neumann was involved in the
+<a href="https://en.wikipedia.org/wiki/Manhattan_Project">Manhattan Project</a>
+which required lots of computation provided by some early computers.
+Thus he got involved in computer design. Unlike a Turing machine, a
+physical computer can&#39;t have an infinite tape and while data is
+processed based on input and states, this needs to be more ergonomic
+than Yurii Rogozhin&#39;s 4-state 6-symbol machine we described in <a href="https://vladris.com/blog/2022/04/03/computability-part-2-turing-machines.html">Part
+2</a>.</p>
+
+<blockquote>
+<p>Von Neumann described a computer architecture as consisting of the
+following components<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>:</p>
+
+<ul>
+<li>A <em>central arithmetic</em> component (CA) handling calculation.</li>
+<li>A <em>central control</em> component (CC) driving which calculations
+should be performed.</li>
+<li><em>Memory</em> (M) for storage.</li>
+<li><em>Input</em> (I) and <em>output</em> (O) components to get data into the
+system and to communicate results outside of the system, from/to a
+<em>recording medium</em> (R)</li>
+</ul>
+</blockquote>
+
+<p>Here is a diagram of this architecture:</p>
+
+<p><img src="vn.png" alt="image"></p>
+
+<p>Before von Neumann, computers were single-purpose devices - the
+programming was hardwired. One of the major innovations, which might not
+be apparent, is the introduction of a <em>central control</em> component and
+the ability of the memory to store not only data but also the program
+itself. This makes devices based on this architecture able to be
+reprogrammed to perform different tasks.</p>
+
+<p>We can now load an arbitrary program into memory. The program will use
+the instructions which our <em>central arithmetic</em> understands to perform
+computations. The <em>central control</em> can read this program and have the
+<em>central arithmetic</em> perform the required operations. During execution,
+data is also read from/written to memory.</p>
+
+<p>Programs (and data) is loaded into memory through the <em>input</em> component
+and results are sent through the <em>output</em> component.</p>
+
+<p>While over the following decades this architecture got tweaked and
+tuned, it&#39;s pretty obvious it is the ancestor of all modern computers:
+computers still have CPUs, which include control and arithmetic, and
+memory.</p>
+
+<p>Let&#39;s create a virtual machine based on this architecture.</p>
+
+<h2>Implementation</h2>
+
+<p>We will create a very simple machine based on this architecture in
+Python. In subsequent posts, we will look at other designs, but we&#39;re
+starting with a direct translation of this architecture.</p>
+
+<h3>Input</h3>
+
+<p>The interface to our input component is a function that, when called,
+returns an integer. This is all our machine needs to get data.</p>
+
+<p>We will implement this over a text file. Our input component will buffer
+this file into a list and expose a <code>read_one()</code> function that will
+return one integer (as returned by [ord()]{.title-ref}) for each
+character from the buffer.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">inp</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">ord</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+
+<h3>Output</h3>
+
+<p>The interface to our output component is a function that takes an
+integer as an argument. This is all our machine needs to output one
+memory cell.</p>
+
+<p>We will implement this using <code>print()</code> and actually convert the given
+integer to a character. This is just to provide a convenient way for us
+to look at output like <q>Hello world!</q>.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">out</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+</pre></div>
+
+<h3>Memory</h3>
+
+<p>Our memory will consist of a list of 10000 integers. We will
+zero-initialize the list, then load a program from a file to memory,
+starting at address 0. We expect the program to consist of a series of
+integers separated by a space or a newline character. We&#39;ll use this
+encoding to make it easier for us to peek at the code targeting our von
+Neumann machine.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">memory</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+    <span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
+        <span class="n">memory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+
+<p>10000 is chosen arbitrarily, at this point we&#39;re not worrying about
+word size, page alignment etc. We simply have room to store 10000
+integers in our memory, which will include both code and data.</p>
+
+<h3>CPU</h3>
+
+<p>We&#39;ll package the control and arithmetic components into a <code>CPU</code> class.
+We&#39;ll initialize this class with memory, input, and output components.</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span>
+</pre></div>
+
+<h3>Central control</h3>
+
+<p>Our control unit will maintain a <em>program counter</em> (<code>PC</code>), an index into
+the memory pointing to the next instruction to execute. The machine runs
+by reading 3 integers from memory (at <code>PC</code>, <code>PC + 1</code> and <code>PC + 2</code>), and
+passing these to the arithmetic unit for processing. The program counter
+is then incremented by 3. This repeats until <code>PC</code> goes outside the
+bounds of the memory, at which point the machine halts (alternately we
+could have provided some <code>HALT</code> instruction).</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
+        <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+=</span> <span class="mi">3</span>
+</pre></div>
+
+<p>We will implement <code>process()</code> next.</p>
+
+<h3>Central arithmetic</h3>
+
+<p>Our arithmetic unit will process triples of
+<code>&lt;Instruction&gt; &lt;memory address 1&gt; &lt;memory address 2&gt;</code>. It will support 8
+instructions:</p>
+
+<ul>
+<li><code>AT</code> will set the value at <code>memory address 1</code> to be the value at the
+memory address specified by the value at <code>memory address 2</code> (in
+short, <code>m[m1] = m[m[m2]]</code>).</li>
+<li><code>SET</code> will set the value at the memory address specified by the
+value at <code>memory address 1</code> to be the value at <code>memory address 2</code>
+(in short, <code>m[m[m1]] = m[2]</code>).</li>
+<li><code>ADD</code> will update the value at <code>memory address 1</code> by adding the
+value at <code>memory address 2</code> to it (in short, <code>m[m1] += m[m2]</code>).</li>
+<li><code>NOT</code> will update the value at <code>memory address 1</code> to be 0 if the
+value at <code>memory address 2</code> is different than 0, or 1 if the value
+at <code>memory address 2</code> is 0 (in short, <code>m[m1] = !m[m2]</code>).</li>
+<li><code>EQ</code> will compare the values at <code>memory address 1</code> and
+<code>memory address 2</code> and update the value at <code>memory address 1</code> to be
+1 if they are equal, 0 otherwise (in short,
+<code>m[m1] = m[m1] == [m2]</code>).</li>
+<li><code>JZ</code> will perform a conditional <em>jump</em> - if the value at
+<code>memory address 1</code> is 0, it will update the program counter to point
+to <code>memory address 2</code> (in short, <code>if !m[m1] then PC = m[m2]</code>).</li>
+<li><code>INP</code> will read one integer from the input and store it at
+<code>memory address 1</code> + an offset value specified at <code>memory address 2</code>
+(in short, <code>m[m1 + m[m2]] = inp()</code>).</li>
+<li><code>OUT</code> will write the value at <code>memory address 1</code> + an offset value
+specified at <code>memory address 2</code> to the output (in short,
+<code>out(m[m1 + m[m2]])</code>.</li>
+</ul>
+
+<p>Since the instructions are also read from memory, which is a list of
+integers, we will encode them as integers: <code>AT = 0</code>, <code>SET = 1</code>, ...
+<code>OUT = 7</code>.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
+    <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
+        <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># AT</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]]</span>
+        <span class="k">case</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># SET</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]</span>
+        <span class="k">case</span> <span class="mi">2</span><span class="p">:</span> <span class="c1"># ADD</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]</span>
+        <span class="k">case</span> <span class="mi">3</span><span class="p">:</span> <span class="c1"># NOT</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">=</span> <span class="o">+</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">])</span>
+        <span class="k">case</span> <span class="mi">4</span><span class="p">:</span> <span class="c1"># EQ</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">=</span> <span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">])</span>
+        <span class="k">case</span> <span class="mi">5</span><span class="p">:</span> <span class="c1"># JZ</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]:</span>
+                <span class="c1"># Set PC to m2 - 3 since run() will increment PC by 3</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">m2</span> <span class="o">-</span> <span class="mi">3</span>
+        <span class="k">case</span> <span class="mi">6</span><span class="p">:</span> <span class="c1"># INP</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp</span><span class="p">()</span>
+        <span class="k">case</span> <span class="mi">7</span><span class="p">:</span> <span class="c1"># OUT</span>
+            <span class="n">out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]])</span>
+        <span class="k">case</span> <span class="k">_</span><span class="p">:</span> 
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unknown instruction&quot;</span><span class="p">)</span>
+</pre></div>
+
+<h3>Von Neumann VM</h3>
+
+<p>Putting it all together, we&#39;ll take two input arguments: the first one
+(<code>argv[1]</code>) will represent the code input file containing the program,
+the second one (<code>argv[2]</code>) will be the file containing additional input
+to be consumed by the <code>inp()</code> function:</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">vn</span> <span class="o">=</span> <span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">inp</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">out</span><span class="p">)</span>
+<span class="n">vn</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<p>Here is our von Neumann virtual machine in one listing:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">inp</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">ord</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">out</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">memory</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+    <span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
+        <span class="n">memory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">memory</span>
+
+<span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
+            <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+=</span> <span class="mi">3</span>
+
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
+        <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
+            <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># AT</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]]</span>
+            <span class="k">case</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># SET</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]</span>
+            <span class="k">case</span> <span class="mi">2</span><span class="p">:</span> <span class="c1"># ADD</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]</span>
+            <span class="k">case</span> <span class="mi">3</span><span class="p">:</span> <span class="c1"># NOT</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">=</span> <span class="o">+</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">])</span>
+            <span class="k">case</span> <span class="mi">4</span><span class="p">:</span> <span class="c1"># EQ</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">=</span> <span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">])</span>
+            <span class="k">case</span> <span class="mi">5</span><span class="p">:</span> <span class="c1"># JZ</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]:</span>
+                    <span class="c1"># Set PC to m2 - 3 since run() will increment PC by 3</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">m2</span> <span class="o">-</span> <span class="mi">3</span>
+            <span class="k">case</span> <span class="mi">6</span><span class="p">:</span> <span class="c1"># INP</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp</span><span class="p">()</span>
+            <span class="k">case</span> <span class="mi">7</span><span class="p">:</span> <span class="c1"># OUT</span>
+                <span class="n">out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]])</span>
+            <span class="k">case</span> <span class="k">_</span><span class="p">:</span> 
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unknown instruction&quot;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">vn</span> <span class="o">=</span> <span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">inp</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">out</span><span class="p">)</span>
+<span class="n">vn</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<p>We can save this as <code>vn.py</code>.</p>
+
+<p>Let&#39;s create a <q>Hello world!</q> program targeting this machine. We will
+use the <code>OUT</code> instruction to output each character of <q>Hello</q> and a
+new line (<code>\n</code>). We&#39;ll first tell the VM to output the values at memory
+address 21 to 26:</p>
+<div class="highlight"><pre><span></span>7 21 9999
+7 22 9999
+7 23 9999
+7 24 9999
+7 25 9999
+7 26 9999
+</pre></div>
+
+<p>We are referencing addresses 21 to 26 plus the offset 0 (the value at
+memory <code>9999</code>, since our memory is initialized with zeros).</p>
+
+<p>We want to halt after this, so we need to jump our program counter to
+10000. We will do this by using our <code>JZ</code> instruction, saying <em>if the
+memory value at index 9999 is 0, jump to 10000</em>:</p>
+<div class="highlight"><pre><span></span>5 9999 10000
+</pre></div>
+
+<p>Now we get to memory address 21, so we will set the values of memory 21
+to 26 to the values of the characters in <q>Hello</q> (as returned by
+<code>ord()</code>) plus a <code>10</code> for <code>\n</code>:</p>
+<div class="highlight"><pre><span></span>72 101 108 108 111 10
+</pre></div>
+
+<p>Here is the full listing which we can save as <code>hello.vn</code>:</p>
+<div class="highlight"><pre><span></span>7 21 9999
+7 22 9999
+7 23 9999
+7 24 9999
+7 25 9999
+7 26 9999
+5 9999 10000
+72 101 108 108 111 10
+</pre></div>
+
+<p>We can then use our VM to run the program like this:</p>
+<div class="highlight"><pre><span></span>touch input
+python3 vn.py hello.vn input
+</pre></div>
+
+<p>We&#39;re also creating a blank <code>input</code> file since <q>Hello world!</q> isn&#39;t
+going to read anything via <code>inp()</code>.</p>
+
+<p>Running this should print <code>Hello</code>. Our <q>program</q> is pretty hard to
+write or read, we&#39;re programming with integers. Let&#39;s make our life a
+bit easier.</p>
+
+<h2>Assembler</h2>
+
+<p>We will implement an assembler for our VM. An assembly language is a
+low-level language closely matching the architecture it targets (in our
+case, our very simple von Neumann machine).</p>
+
+<p>Our assembler will take 2 arguments - an input file and an output file -
+and automatically translate the input (assembly language) into
+instructions for our VM.</p>
+
+<p>We will add the following features:</p>
+
+<ul>
+<li>Comments - Lines starting with <code>#</code> will be ignored.</li>
+<li>Instructions - We will express our instructions as <code>at</code>, <code>set</code>,
+<code>add</code>, <code>not</code>, <code>eq</code>, <code>jz</code>, <code>inp</code>, <code>out</code> to represent the instructions
+<code>0</code>, <code>1</code>, ... <code>5</code>.</li>
+<li>Labels - We will tag a location in the code by a string ending in
+<code>:</code>, for example <code>HERE:</code>. We will then be able to refer to the
+location using the identified preceded by <code>:</code>, like <code>:HERE</code>. We will
+also allow adding an offset to a reference: <code>:HERE+2</code> is 2 past the
+<code>HERE</code> label.</li>
+<li><code>ORD</code> macro - To make implementing <q>Hello world!</q> easier, we will
+provide the <code>ORD()</code> macro which will return the integer
+representation of the character passed to it, for example <code>ORD(H)</code>
+will return <code>72</code>.</li>
+</ul>
+
+<p>Using this assembly language, we can rewrite <q>Hello world!</q> as:</p>
+<div class="highlight"><pre><span></span>## Print 6 characters starting from DATA
+out :DATA 9999
+out :DATA+1 9999
+out :DATA+2 9999
+out :DATA+3 9999
+out :DATA+4 9999
+out :DATA+5 9999
+
+## End program
+jz 9999 10000
+
+## Data section
+DATA: ORD(H) ORD(e) ORD(l) ORD(l) ORD(o) 10
+</pre></div>
+
+<p>First, we&#39;ll read the input file and convert it into a list of tokens.
+We will ignore lines starting with <code>#</code> (so we can add comments to our
+assembly file).</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Usage: asm.py &lt;input&gt; &lt;output&gt;&quot;</span><span class="p">)</span>
+    <span class="n">exit</span><span class="p">()</span>
+
+<span class="c1">## Read all lines into a list</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+<span class="c1">## Filter out blank lines and lines starting with &#39;#&#39;</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
+<span class="c1">## Join all lines and split into tokens</span>
+<span class="n">tokens</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+</pre></div>
+
+<p>The labels themselves aren&#39;t part of the program, rather mark locations
+in the program, so in the next step we will pluck these out from the
+list of tokens but retain the index they are referencing:</p>
+<div class="highlight"><pre><span></span><span class="c1">## pluck labels and remember position</span>
+<span class="n">labels</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="p">{},</span> <span class="mi">0</span>
+<span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+    <span class="c1"># If not a label, advance</span>
+    <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">continue</span>
+
+    <span class="c1"># Store location and pluck label</span>
+    <span class="n">labels</span><span class="p">[</span><span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</pre></div>
+
+<p>Now we will process all tokens and handle the following cases:</p>
+
+<ul>
+<li>If token starts with <code>:</code>, it is a label reference, so replace it
+with the actual location (as stored during the previous step).</li>
+<li>If the token is an op code, replace it with the integer value of the
+op code.</li>
+<li>If the token is an <code>ORD()</code> macro, replace the character passed to
+<code>ORD()</code> with its value.</li>
+</ul>
+<div class="highlight"><pre><span></span><span class="c1">## Op code list (constant)</span>
+<span class="n">OP_CODES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;at&#39;</span><span class="p">,</span> <span class="s1">&#39;set&#39;</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;eq&#39;</span><span class="p">,</span> <span class="s1">&#39;jz&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">,</span> <span class="s1">&#39;out&#39;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+    <span class="c1"># replace label references with actual position</span>
+    <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;+&#39;</span> <span class="ow">in</span> <span class="n">token</span><span class="p">:</span>
+            <span class="n">base</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+            <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">base</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+
+    <span class="c1"># replace op codes with values</span>
+    <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">OP_CODES</span><span class="p">:</span>
+        <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">OP_CODES</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+
+    <span class="c1"># replace ORD macro</span>
+    <span class="k">if</span> <span class="n">token</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ORD(&#39;</span><span class="p">:</span>
+        <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+
+<p>Finally, we write all tokens to the output file:</p>
+<div class="highlight"><pre><span></span><span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+    <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]))</span>
+</pre></div>
+
+<p>Here is the full source code of our assembler (<code>asm.py</code>):</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Usage: asm.py &lt;input&gt; &lt;output&gt;&quot;</span><span class="p">)</span>
+    <span class="n">exit</span><span class="p">()</span>
+
+<span class="c1">## Read all lines into a list</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+<span class="c1">## Filter out blank lines and lines starting with &#39;#&#39;</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
+<span class="c1">## Join all lines and split into tokens</span>
+<span class="n">tokens</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+<span class="c1">## pluck labels and remember position</span>
+<span class="n">labels</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="p">{},</span> <span class="mi">0</span>
+<span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+    <span class="c1"># If not a label, advance</span>
+    <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">continue</span>
+
+    <span class="c1"># Store location and pluck label</span>
+    <span class="n">labels</span><span class="p">[</span><span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+<span class="c1">## Op code list (constant)</span>
+<span class="n">OP_CODES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;at&#39;</span><span class="p">,</span> <span class="s1">&#39;set&#39;</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;eq&#39;</span><span class="p">,</span> <span class="s1">&#39;jz&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">,</span> <span class="s1">&#39;out&#39;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+    <span class="c1"># replace label references with actual position</span>
+    <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;+&#39;</span> <span class="ow">in</span> <span class="n">token</span><span class="p">:</span>
+            <span class="n">base</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+            <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">base</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+
+    <span class="c1"># replace op codes with values</span>
+    <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">OP_CODES</span><span class="p">:</span>
+        <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">OP_CODES</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+
+    <span class="c1"># replace ORD macro</span>
+    <span class="k">if</span> <span class="n">token</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ORD(&#39;</span><span class="p">:</span>
+        <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+    <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]))</span>
+</pre></div>
+
+<p>We can now save our assembly <q>Hello world!</q> (listed above) to a file,
+let&#39;s call it <code>hello.asm</code> and use the assembler to convert it to a
+program our VM can execute:</p>
+<div class="highlight"><pre><span></span>python3 asm.py hello.asm hello.vn
+</pre></div>
+
+<p>The resulting <code>hello.vn</code> should have the same content as our
+hand-crafted <q>Hello world!</q>, minus the newlines (the assembler
+doesn&#39;t output newlines). The content of the assembled file <code>hello.vn</code>
+is:</p>
+<div class="highlight"><pre><span></span>7 21 9999 7 22 9999 7 23 9999 7 24 9999 7 25 9999 7 26 9999 5 9999 10000 72 101 108 108 111 10
+</pre></div>
+
+<p>We can run this using:</p>
+<div class="highlight"><pre><span></span>python3 vn.py hello.vn input
+</pre></div>
+
+<p>We are again using an empty input file since we don&#39;t need input. As a
+convention, we use the <code>.asm</code> extensions for assembly files and <code>.vn</code>
+for assembled files targeting the VM.</p>
+
+<h3>Variables and loops</h3>
+
+<p>Let&#39;s rewrite our program: instead of outputting <code>:DATA</code>, then
+<code>:DATA+1</code>, then <code>DATA+2</code>... we should be able to output <code>:DATA + :I</code>
+where <code>:I</code> goes from 0 to 5.</p>
+
+<p>We can easily use a variable by tagging any part of the program then
+referencing it, then using that label to refer to the variable.</p>
+<div class="highlight"><pre><span></span>I: 0
+</pre></div>
+
+<p>Then we can use <code>:I</code> to reference to it. We will use a <code>COUNTER</code>
+variable to count down from 6 to 0, and an offset variable <code>I</code>:</p>
+<div class="highlight"><pre><span></span>## Variables
+I: 0
+COUNTER: 6
+</pre></div>
+
+<p>We also need a couple of constant values: <code>0</code>, <code>1</code> - by which we
+increment <code>I</code> during each iteration, and <code>-1</code> to decrement <code>COUNTER</code>
+during each iteration. And, of course, our <code>DATA</code>, where we store the
+<q>Hello</q> string:</p>
+<div class="highlight"><pre><span></span>## Constants
+CONST: 0 1 -1
+
+## Data
+DATA: ORD(H) ORD(e) ORD(l) ORD(l) ORD(o) 10
+</pre></div>
+
+<p>Now lets look at how we can implement a loop using <code>JZ</code>:</p>
+<div class="highlight"><pre><span></span>## Beginning of loop
+LOOP: 
+## Output I
+out :DATA :I
+## Decrement COUNTER, increment I
+add :COUNTER :CONST+2
+add :I :CONST+1
+## If COUNTER is 0, we&#39;re done
+jz :COUNTER 10000
+## If not, jump to the start of the loop
+jz :CONST :LOOP
+</pre></div>
+
+<p>At each iteration, our loop will output the character value at <code>DATA</code>
+plus the offset specified in <code>I</code> (initially 0). Then we subtract -1 from
+our <code>COUNTER</code> and add 1 to <code>I</code>. Since our VM uses memory addresses for
+all operations, we stored <code>1</code> and <code>-1</code> in memory at <code>CONST</code> and
+<code>CONST+1</code> respectively.</p>
+
+<p>If <code>COUNTER</code> is 0, we&#39;re done, so we jump to <code>10000</code>. If not, we repeat
+the loop (jump to <code>LOOP</code> if <code>CONST</code> is 0, but <code>CONST</code> is always 0).</p>
+
+<p>Here is the full listing of this program:</p>
+<div class="highlight"><pre><span></span>## Beginning of loop
+LOOP: 
+## Output I
+out :DATA :I
+## Decrement COUNTER, increment I
+add :COUNTER :CONST+2
+add :I :CONST+1
+## If COUNTER is 0, we&#39;re done
+jz :COUNTER 10000
+## If not, jump to the start of the loop
+jz :CONST :LOOP
+
+## Constants
+CONST: 0 1 -1
+
+## Data
+DATA: ORD(H) ORD(e) ORD(l) ORD(l) ORD(o) 10
+
+## Variables
+I: 0
+COUNTER: 6
+</pre></div>
+
+<p>We can save this as <code>hello2.asm</code>, then assemble and run it:</p>
+<div class="highlight"><pre><span></span>python3 asm.py hello2.asm hello2.vn
+python3 vn.py hello2.vn
+</pre></div>
+
+<h3>Notes</h3>
+
+<p>A few notes: data is mixed with code in all our programs, which follows
+from the von Neumann architecture, in which the memory of the system
+stores both code and data. This is fundamentally true for all computers,
+and enables some interesting behavior like self-modifying code. This
+could be intentional, or we could, accidentally due to a bug, interpret
+data as code or vice-versa, code as data. Modern systems employ various
+additional protections to prevent this type of accidental usage.</p>
+
+<p>Because our particular VM starts execution from memory location 0, we
+have to place our constants and variables (data) after the instructions
+in the program. Executable files on modern systems similarly contain
+code and data segments, albeit with more complex layout and rules.</p>
+
+<h2>Turing-completeness</h2>
+
+<p>Let&#39;s prove our simple von Neumann VM is Turing-complete, meaning
+capable of universal computation. As we saw throughout this series of
+blog posts, the best way to prove this is to emulate another known
+Turing-complete system.</p>
+
+<p>We will prove this by implementing a
+<a href="https://en.wikipedia.org/wiki/Brainfuck">Brainfuck</a> interpreter. We
+covered Brainfuck during the <a href="https://vladris.com/blog/2022/04/03/computability-part-2-turing-machines.html">second post in the
+series</a>,
+under <em>Esoteric Turing machines</em>. To recap: Brainfuck (BF) uses a byte
+array (tape), a data pointer (index in the array), and 8 symbols: <code>&gt;</code>,
+<code>&lt;</code>, <code>+</code>, <code>-</code>, <code>.</code>, <code>,</code>, <code>[</code>, <code>]</code>. The symbols are interpreted as:</p>
+
+<ul>
+<li><code>&gt;</code>: Increment the data pointer (move head right).</li>
+<li><code>&lt;</code>: Decrement the data pointer (move head left).</li>
+<li><code>+</code>: Increment array value at data pointer.</li>
+<li><code>-</code>: Decrement array value at data pointer.</li>
+<li><code>.</code>: Output value at data pointer.</li>
+<li><code>,</code>: Read 1 byte of input and store at data pointer.</li>
+<li><code>[</code>: If the byte at data pointer is 0, jump right to the matching
+<code>]</code>, else increment data pointer.</li>
+<li><code>]</code>: If the byte at data pointer is not 0, jump left to the matching
+<code>[</code>, else decrement data pointer.</li>
+</ul>
+
+<p>We will use our assembly language to implement a program which reads a
+BF program from input, then executes it. Effectively, we&#39;ll use our
+very simple virtual machine to emulate another very simple virtual
+machine!</p>
+
+<p>I won&#39;t cover the details of the implementation, since it is quite
+cumbersome due to the simplicity of our VM and assembly language. I will
+just provide a short summary of what is going on:</p>
+
+<ul>
+<li>We&#39;ll start by reading the BF program from input, until we
+encounter a newline (<code>\</code>).</li>
+<li>We will use a <code>CODE_PTR</code> code pointer variable to point to the
+current BF instructions and a <code>DATA_PTR</code> data pointer variable to
+point to the BF array.</li>
+<li>We&#39;ll overlay the BF array BF array over the VM memory, starting at
+address 5000 (middle of our memory).</li>
+<li>We will then handle each possible input (<code>&gt;</code>, <code>&lt;</code>, etc.).</li>
+<li>Most of the instructions are easy to implement, the most complex are
+<code>[</code> and <code>]</code>, which require keeping track of unbalanced parenthesis
+so we properly jump from <code>[</code> to matching <code>]</code> and vice-versa.</li>
+</ul>
+
+<p>Here is the full Brainfuck interpreter implemented in our assembly
+language:</p>
+<div class="highlight"><pre><span></span>## Read Brainfuck program until a \n is encountered
+START:
+## Read one integer at PROG + offset I
+inp :PROG :I
+## Increment I by 1
+add :I :CONST+1
+## Zero out DONE_READING (!1)
+not :DONE_READING :CONST+1
+## DONE_READING = 10
+add :DONE_READING :CONST+3
+## Load the last integer we read in TEMP
+at :TEMP :END
+## Increment END to keep track of program end
+add :END :CONST+1
+## Check if the last integer we read was 10 (\n)
+eq :DONE_READING :TEMP
+## If it wasn&#39;t zero, jump to start and read another value
+jz :DONE_READING :START 
+
+## Start running program
+BF_RUN:
+at :TEMP :CODE_PTR
+add :CODE_PTR :CONST+1
+
+## Check if we&#39;re on a &gt; instruction
+not :TEMP2 :CONST+1
+add :TEMP2 :BF
+eq :TEMP2 :TEMP
+not :TEMP2 :TEMP2
+jz :TEMP2 :RIGHT
+
+## Check if we&#39;re on a &lt; instruction
+not :TEMP2 :CONST+1
+add :TEMP2 :BF+1
+eq :TEMP2 :TEMP
+not :TEMP2 :TEMP2
+jz :TEMP2 :LEFT
+
+## Check if we&#39;re on a + instruction
+not :TEMP2 :CONST+1
+add :TEMP2 :BF+2
+eq :TEMP2 :TEMP
+not :TEMP2 :TEMP2
+jz :TEMP2 :INC
+
+## Check if we&#39;re on a - instruction
+not :TEMP2 :CONST+1
+add :TEMP2 :BF+3
+eq :TEMP2 :TEMP
+not :TEMP2 :TEMP2
+jz :TEMP2 :DEC
+
+## Check if we&#39;re on a . instruction
+not :TEMP2 :CONST+1
+add :TEMP2 :BF+4
+eq :TEMP2 :TEMP
+not :TEMP2 :TEMP2
+jz :TEMP2 :OUT
+
+## Check if we&#39;re on a , instruction
+not :TEMP2 :CONST+1
+add :TEMP2 :BF+5
+eq :TEMP2 :TEMP
+not :TEMP2 :TEMP2
+jz :TEMP2 :IN
+
+## Check if we&#39;re on a [ instruction
+not :TEMP2 :CONST+1
+add :TEMP2 :BF+6
+eq :TEMP2 :TEMP
+not :TEMP2 :TEMP2
+jz :TEMP2 :FORWARD
+
+## Check if we&#39;re on a ] instruction
+not :TEMP2 :CONST+1
+add :TEMP2 :BF+7
+eq :TEMP2 :TEMP
+not :TEMP2 :TEMP2
+jz :TEMP2 :BACKWARD
+
+## No matching BF instruction so we&#39;re done
+jz :CONST 10000
+
+RIGHT:
+## &gt; - increment data pointer
+add :DATA_PTR :CONST+1
+jz :CONST :BF_RUN
+
+LEFT:
+## &lt; - decrement data pointer
+add :DATA_PTR :CONST+2
+jz :CONST :BF_RUN
+
+INC:
+## + - increment cell
+at :TEMP :DATA_PTR
+add :TEMP :CONST+1
+set :DATA_PTR :TEMP
+jz :CONST :BF_RUN
+
+DEC:
+## - - decrement cell
+at :TEMP :DATA_PTR
+add :TEMP :CONST+2
+set :DATA_PTR :TEMP
+jz :CONST :BF_RUN
+
+OUT:
+## . - output cell
+at :TEMP :DATA_PTR
+out :TEMP :CONST
+jz :CONST :BF_RUN
+
+IN:
+## , - store input in cell
+inp :TEMP :CONST
+set :DATA_PTR :TEMP
+jz :CONST :BF_RUN
+
+FORWARD:
+## [
+at :TEMP :DATA_PTR    
+not :TEMP :TEMP
+## If value in cell is not 0, continue
+jz :TEMP :BF_RUN
+## Find matching ]
+## Set TEMP to 1, counting unbalanced [
+not :TEMP :TEMP
+add :TEMP :CONST+1
+SCAN_FORWARD:
+at :TEMP2 :CODE_PTR
+eq :TEMP2 :BF+6
+not :TEMP2 :TEMP2
+## Jump if found a [
+jz :TEMP2 :FORWARD_LPAR
+at :TEMP2 :CODE_PTR
+eq :TEMP2 :BF+7
+not :TEMP2 :TEMP2
+## Jump if found a ]
+jz :TEMP2 :FORWARD_RPAR
+## Keep scanning
+add :CODE_PTR :CONST+1
+jz :CONST :SCAN_FORWARD
+## Increment counter when finding a [
+FORWARD_LPAR:
+add :TEMP :CONST+1
+add :CODE_PTR :CONST+1
+jz :CONST :SCAN_FORWARD
+## Decrement counter when finding a ]
+FORWARD_RPAR:
+add :TEMP :CONST+2
+## If counter is 0, we&#39;re done
+jz :TEMP :BF_RUN
+## Else keep scanning
+add :CODE_PTR :CONST+1
+jz :CONST :SCAN_FORWARD
+
+BACKWARD:
+## ]
+at :TEMP :DATA_PTR    
+## If value in cell is 0, continue
+jz :TEMP :BF_RUN
+## Find matching [
+## Set TEMP to 1, counting unbalanced ]
+not :TEMP :TEMP
+add :TEMP :CONST+1
+## Move code pointer back 2
+add :CODE_PTR :CONST+2
+add :CODE_PTR :CONST+2
+SCAN_BACKWARD:
+at :TEMP2 :CODE_PTR
+eq :TEMP2 :BF+6
+not :TEMP2 :TEMP2
+## Jump if found a [
+jz :TEMP2 :BACKWARD_LPAR
+at :TEMP2 :CODE_PTR
+eq :TEMP2 :BF+7
+not :TEMP2 :TEMP2
+## Jump if found a ]
+jz :TEMP2 :BACKWARD_RPAR
+## Keep scanning
+add :CODE_PTR :CONST+2
+jz :CONST :SCAN_BACKWARD
+## Decrement counter when finding a [
+BACKWARD_LPAR:
+add :TEMP :CONST+2
+## If counter is 0, we&#39;re done
+jz :TEMP :BF_RUN
+## Else keep scanning
+add :CODE_PTR :CONST+2
+jz :CONST :SCAN_BACKWARD
+## Increment counter when finding a ]
+BACKWARD_RPAR:
+add :TEMP :CONST+1
+add :CODE_PTR :CONST+2
+jz :CONST :SCAN_BACKWARD
+
+CONST: 0 1 -1 10 
+BF: ORD(&gt;) ORD(&lt;) ORD(+) ORD(-) ORD(.) ORD(,) ORD([) ORD(])
+I: 0
+TEMP: 0
+TEMP2: 0
+END: :PROG
+DONE_READING: 0
+CODE_PTR: :PROG
+DATA_PTR: 5000
+
+## We&#39;ll load the BF program here
+PROG:
+</pre></div>
+
+<p>We can save this program as <code>bf.asm</code>. We will also create a Brainfuck
+program to run - <q>Hello world</q>:</p>
+<div class="highlight"><pre><span></span>++++++++[&gt;++++[&gt;++&gt;+++&gt;+++&gt;+&lt;&lt;&lt;&lt;-]&gt;+&gt;+&gt;-&gt;&gt;+[&lt;]&lt;-]&gt;&gt;.&gt;---.+++++++..+++.&gt;&gt;.&lt;-.&lt;.+++.------.--------.&gt;&gt;+.&gt;++.
+</pre></div>
+
+<p>We will save this as <code>hello.bf</code>. Now we can compile our BF interpreter
+and run it using our VM:</p>
+<div class="highlight"><pre><span></span>python3 asm.py bf.asm bf.vn
+python3 vn.py bf.vn hello.bf
+</pre></div>
+
+<p>This should output <q>Hello world!</q>.</p>
+
+<p>Since Brainfuck is Turing-complete and our VM can emulate a Brainfuck
+interpreter, our VM is also Turing-complete.</p>
+
+<h2>Summary</h2>
+
+<ul>
+<li>We talked about the von Neumann architecture and looked at a simple
+VM built using this architecture.</li>
+<li>We created an assembler targeting this VM, to make it easier to
+write code that runs on the VM.</li>
+<li>We looked at a couple of versions of <q>Hello world</q>, and saw how we
+can use variables and loops.</li>
+<li>Finally, we implemented a Brainfuck interpreter that runs on the VM,
+proving our von Neumann machine is Turing-complete.</li>
+</ul>
+
+<p>For convenience, the code we covered in this post is online here:</p>
+
+<ul>
+<li><a href="https://vladris.com/code/vonNeumann/vn.py">vn.py</a> - virtual
+machine.</li>
+<li><a href="https://vladris.com/code/vonNeumann/asm.py">asm.py</a> - assembler.</li>
+<li><a href="https://vladris.com/code/vonNeumann/hello.asm">hello.asm</a> - simple
+<q>Hello world</q>.</li>
+<li><a href="https://vladris.com/code/vonNeumann/hello2.asm">hello2.asm</a> -
+<q>Hello world</q> using a loop.</li>
+<li><a href="https://vladris.com/code/vonNeumann/bf.asm">bf.asm</a> - Brainfuck
+interpreter.</li>
+<li><a href="https://vladris.com/code/vonNeumann/hello.bf">hello.bf</a> - <q>Hello
+world</q> in Brainfuck.</li>
+</ul>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p><a href="https://web.archive.org/web/20130314123032/http://qss.stanford.edu/%7Egodfrey/vonNeumann/vnedvac.pdf">First Draft of a Report on the
+EDVAC</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2022/07/06/computability-part-5-elementary-cellular-automata.html>Computability Part 5: Elementary Cellular Automata</a></span></div>
+<div id="next"><span><a href=../../.././2022/09/02/computability-part-7-machine-implementation-practicalities.html>Computability Part 7: Machine Implementation Practicalities</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

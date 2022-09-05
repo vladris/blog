@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Fold &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>December 31, 2018</span></header>
+<article>
+<h1>Fold</h1>
+
+<p>Most object-oriented programming languages represent object instances in
+memory in two separate chunks. One of them contains the
+instance-specific state - the class attributes. The other one contains
+the methods, which are actually shared across instances. Let&#39;s take as
+an example a simple type with a couple of properties and a method:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Point</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">X</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">Y</span><span class="p">;</span><span class="w"> </span>
+
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="nf">distanceToOrigin</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>If we take two distinct instances of <code>Point</code>, like <code>new Point(10, 5)</code>
+and <code>new Point(20, 20)</code>, they have different <code>X</code> and <code>Y</code> coordinates, so
+those need to be stored individually. On the other hand, the logic of
+<code>distanceToOrigin</code> is the same for both objects. The method evaluates to
+different results, because <code>this-&gt;X</code> and <code>this-&gt;Y</code> are different for the
+two objects, but the code is the same.</p>
+
+<p>Instead of storing separate copies of the code for each instance, the
+method implementations are shared across objects. <code>distanceToOrigin</code> can
+return different results for different objects because each invocation
+gets a different <code>this</code> pointer to the state of each object. In fact,
+under the hood, every class method gets an implicit <code>this</code> argument
+which represents the object on which the method is invoked. Python makes
+that explicit, requiring all class methods to implement a <code>self</code>
+argument in order to reference instance-specific state.</p>
+
+<p>There isn&#39;t much difference between a method like
+<code>Point::distanceToOrigin</code> and a free function which takes a <code>Point</code> as
+an argument:</p>
+<div class="highlight"><pre><span></span><span class="kt">double</span><span class="w"> </span><span class="nf">distanceToOrigin</span><span class="p">(</span><span class="n">Point</span><span class="w"> </span><span class="n">p</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* ... */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>The only difference is that a class member gets access to privates,
+while an outside function doesn&#39;t. Visibility aside, methods of a class
+are an independent <q>chunk</q> shared across object instances and the
+state of each object is another, separate <q>chunk</q>.</p>
+
+<p>An interpretation of this is that, even though classes contain methods,
+object instances of a given type can still be thought of as pure state.
+Our <code>new Point(10, 5)</code> is represented by a combination of the <code>Point</code>
+class, which includes the method implementations and their memory layout
+etc. and instance-specific state. The <code>Point</code> class includes the method
+<code>distanceToOrigin</code> with an implicit <code>this</code> argument (and some additional
+metadata).</p>
+
+<p>With this view, a <code>Point</code> instance is a pair of values <code>X</code> and <code>Y</code>. Any
+particular instance of <code>Point</code> is a member of the set
+<code>{ (X, Y) : X ∈ double, Y ∈ double }</code>. The function <code>distanceToOrigin</code>
+can be viewed as a function from this set (from the implicit <code>this</code>
+argument) to a <code>double</code> value.</p>
+
+<p><code>disntaceToOrigin : { (X, Y) : X ∈ double, Y ∈ double } → double.</code></p>
+
+<h2>Operations and Closures</h2>
+
+<p>A function that takes two arguments of type <code>Point</code> is called a binary
+operation on the set. We can represent it as a function
+<code>f(Point, Point)</code> or, equivalently, as an operation <code>Point ⊙ Point</code>. If
+the codomain of the function is also a <code>Point</code>, for example let&#39;s take a
+function like <code>Point midPoint(Point x, Point y)</code>, which computes the
+middle point between two given points, we call the operation <em>closed</em>
+over the set.</p>
+
+<p>The notion of closure in algebra is different from the notion closure in
+computer science, which deals with context captured in lambdas. In this
+case it simply means an operation that combines a number of elements of
+a set into another element of the set.</p>
+
+<p>Since we can view any type as a set, and any function taking two
+arguments of a type and returning another instance of that type as a
+closed binary operation on the set, we can start talking about algebraic
+structures.</p>
+
+<h2>Magmas</h2>
+
+<p>A magma is just a set with a closed operation, without any other
+constraints imposed. If we have a magma, we can implement an algorithm
+like <code>fold</code> which, given a set of values in the magma, combines them
+into a single value.</p>
+
+<p>For example we can fold three <code>Point</code> instances <code>a</code>, <code>b</code>, and <code>c</code> into a
+single <code>Point</code> using the <code>midPoint</code> function like this:</p>
+<div class="highlight"><pre><span></span><span class="n">Point</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">midPoint</span><span class="p">(</span><span class="n">midPoint</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">),</span><span class="w"> </span><span class="n">c</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>We can sketch out a function that, given a set of objects of any type
+<code>T</code> and an operation closed over <code>T</code>, produces a final value of type
+<code>T</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">It</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Op</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">=</span><span class="k">typename</span><span class="w"> </span><span class="nc">std</span><span class="o">::</span><span class="n">iterator_traits</span><span class="o">&lt;</span><span class="n">It</span><span class="o">&gt;::</span><span class="n">value_type</span><span class="o">&gt;</span><span class="w"></span>
+<span class="n">T</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">It</span><span class="w"> </span><span class="n">begin</span><span class="p">,</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">end</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">init</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">T</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">init</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">begin</span><span class="p">;</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">end</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">it</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This function takes a pair of iterators which we use to traverse the set
+of values of type <code>T</code>, an initial value of type <code>T</code>, and a binary
+operation <code>Op</code>. We need an initial value of type <code>T</code> because if the set
+is empty, we still need to return something from the function. That is,
+if the <code>for</code> loop never executes, and we never apply <code>op</code>, we still need
+a <code>T</code> to return. In this case we will simply return <code>init</code>.</p>
+
+<p>Since a magma doesn&#39;t impose any constraints on the operation, the
+order in which we combine elements might be important. For example, for
+integers and the subtraction operation, if we start with the set of
+number <code>1</code>, <code>2</code>, and <code>3</code>, and an initial value of <code>1</code>, we can fold from
+left to right and get <code>((1 - 1) - 2) - 3</code>, or <code>-5</code>. On the other hand,
+we can start from right to left, and fold <code>1 - (2 - (3 - 1))</code>, or <code>1</code>.
+Let&#39;s call this verison <code>foldRight</code> and look at a possible
+implementation:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">It</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Op</span><span class="w"></span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">=</span><span class="k">typename</span><span class="w"> </span><span class="nc">std</span><span class="o">::</span><span class="n">iterator_traits</span><span class="o">&lt;</span><span class="n">It</span><span class="o">&gt;::</span><span class="n">value_type</span><span class="o">&gt;</span><span class="w"></span>
+<span class="n">T</span><span class="w"> </span><span class="n">fold_right</span><span class="p">(</span><span class="n">It</span><span class="w"> </span><span class="n">begin</span><span class="p">,</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">end</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">init</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">T</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">init</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">end</span><span class="p">;</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">begin</span><span class="p">;</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="o">--</span><span class="n">it</span><span class="p">),</span><span class="w"> </span><span class="n">result</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Note that for an operation like addition, this is not the case: if we
+fold <code>1</code>, <code>2</code>, and <code>3</code>, with an initial value of <code>1</code>, we get <code>7</code>
+regardless of the direction and whether we make the initial value a left
+or a right operand. Let&#39;s zoom in on this.</p>
+
+<h2>Semigroups</h2>
+
+<p>If we have a set with a closed operation that is also associative, we
+have a <em>semigroup</em>. For an <em>associative</em> operation, it doesn&#39;t really
+matter what order we apply multiple operations on. For example, for the
+set of strings and the string concatenation operation, it doesn&#39;t
+metter whether we append <code>foo</code> to <code>bar</code>, then the result to <code>baz</code> or
+whether we concatenate <code>bar</code> with <code>baz</code> first, then prepend <code>foo</code> to it:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="n">s</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="n">s</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;baz&quot;</span><span class="n">s</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="n">s</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="s">&quot;bar&quot;</span><span class="n">s</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;baz&quot;</span><span class="n">s</span><span class="p">)</span><span class="w"></span>
+</pre></div>
+
+<p>More formally, an opeartion is associative if, for any <code>a</code>, <code>b</code>, and
+<code>c</code>, <code>(a ⊙ b) ⊙ c == a ⊙ (b ⊙ c)</code>. That being said, that&#39;s not enough
+to make our right fold redundant:</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">elems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;baz&quot;</span><span class="n">s</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">elems</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">elems</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;!&quot;</span><span class="n">s</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span>
+<span class="w">    </span><span class="p">});</span><span class="w"></span>
+<span class="c1">// Prints !foobarbaz</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">fold_right</span><span class="p">(</span><span class="n">elems</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">elems</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;!&quot;</span><span class="n">s</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">});</span><span class="w"></span>
+<span class="c1">// Prints foobarbaz!</span>
+</pre></div>
+
+<p>It still matters whether our initial value is a left or right argument
+to our operation. If for an operation we get the same result regardless
+of how we arrange the operands, then we have a <em>commutative</em> operation.
+Integer addition is an example of a commutative operation, where <code>1 + 2</code>
+is the same as <code>2 + 1</code>. Note this is different than string
+concatenation, where <code>&quot;foo&quot;s + &quot;bar&quot;s != &quot;bar&quot;s + &quot;foo&quot;s</code>. A semigroup
+with a commutative operation is called an <em>abelian semigroup</em>. Here we
+finally no longer need to distinguish between <code>fold</code> and <code>fold_right</code> as
+they both produce the same result.</p>
+
+<p>Let&#39;s also look at that mandatory initial value.</p>
+
+<h2>Monoids</h2>
+
+<p>The reason we require an initial value is that we need to return
+something in case our set is empty, and we don&#39;t always have a good
+default. That&#39;s not always the case. There are operations for which we
+have such a default, called the <em>identity</em> of the opeartion. This value,
+combined with any other value using the operation, leaves the other
+value unchanged. For string concatenation, the identity is the empty
+string. For addition, the identity is <code>0</code>. In general, we have
+<code>a ⊙ id == id ⊙ a == a</code> for any <code>a</code>. This is what makes <code>id</code> an
+identity.</p>
+
+<p>A semigroup with an identity is a <em>monoid</em>. That&#39;s a set with an
+associative operation and an identity element. Note commutativity is not
+required. If the operation is also commutative, then we have a
+<em>commutative monoid</em>.</p>
+
+<p>If the default constructor of our type <code>T</code> creates an identiy, then we
+can reimplement <code>fold</code> like this:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">It</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Op</span><span class="p">,</span><span class="w"> </span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">=</span><span class="k">typename</span><span class="w"> </span><span class="nc">std</span><span class="o">::</span><span class="n">iterator_traits</span><span class="o">&lt;</span><span class="n">It</span><span class="o">&gt;::</span><span class="n">value_type</span><span class="o">&gt;</span><span class="w"></span>
+<span class="n">T</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">It</span><span class="w"> </span><span class="n">begin</span><span class="p">,</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">end</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">T</span><span class="w"> </span><span class="n">result</span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">begin</span><span class="p">;</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">end</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">it</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We no longer require an initial value to be passed in. That&#39;s because,
+if we really want to combine all elements with a certain value, we can
+do it after calling <code>fold</code>. For example we can concatenate our strings
+and then append or prepend our <q>!</q>s:</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">elems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;baz&quot;</span><span class="n">s</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">folded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">elems</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">elems</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span><span class="w"></span>
+<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="c1">// folded is &quot;foobarbaz&quot;s</span>
+</pre></div>
+
+<p>Unlike the first implementation, this works for empty sets too:</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">elems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">folded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">elems</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">elems</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span><span class="w"></span>
+<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="c1">// folded is the empty string</span>
+</pre></div>
+
+<p>This version only works if we have an identity and if the default
+constructor actually creates that identity. Note identity is a property
+related to the operation, so we need to be careful. The default integer
+value is <code>0</code>, which is the identity for addition, so we can very well
+sum numbers using the second version of <code>fold</code>. On the other hand, we
+can&#39;t use it for product:</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">elems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="kt">int</span><span class="w"> </span><span class="n">sum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">elems</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">elems</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span><span class="w"></span>
+<span class="w">    </span><span class="p">[](</span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="c1">// sum is 6</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">elems</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">elems</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span><span class="w"></span>
+<span class="w">    </span><span class="p">[](</span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="c1">// product is 0</span>
+</pre></div>
+
+<p>If we default to <code>0</code> and multiply all numbers with it, our product
+becomes <code>0</code>. On the other hand, if we do have a default identity, then
+<code>fold</code> and <code>fold_right</code> give us the same result even if the operation is
+only associative, without necessarily being commutative. That&#39;s
+because, if our initial value is an identity, it doesn&#39;t matter whether
+it is a left or right argument to our operation. By definition,
+<code>a ⊙ id == id ⊙ a == a</code> so for a set of values like <code>a</code>, <code>b</code>, and <code>c</code>,
+we get:</p>
+<div class="highlight"><pre><span></span>((id ⊙ a) ⊙ b) ⊙ c == (a ⊙ b) ⊙ c
+</pre></div>
+
+<p>From associativity, we get:</p>
+<div class="highlight"><pre><span></span>(a ⊙ b) ⊙ c == a ⊙ (b ⊙ c)
+</pre></div>
+
+<p>We can add another identity in there, since <code>c == c ⊙ id</code>:</p>
+<div class="highlight"><pre><span></span>a ⊙ (b ⊙ c) == (a ⊙ (b ⊙ (c ⊙ id)))
+</pre></div>
+
+<p>We started with how <code>fold</code> evaluates and ended up with how <code>fold_right</code>
+evaluates. That means we don&#39;t distinguish between a left to right or
+right to left fold is either:</p>
+
+<ul>
+<li>The operation is associative and commutative (abelian semigroup).</li>
+<li>The operation is associative and the initial value is the identity
+(monoid with identity as initial value).</li>
+</ul>
+
+<p>If neither of these holds, it matters which way the fold happens as we
+get different results.</p>
+
+<h2>Parallelized Fold</h2>
+
+<p>Wihout going into too many details, we can also divide &amp; conquer a fold
+operation, fold subsets in parallel, then merge the results.
+Associativity allows us to do so, as we can split the set of values <code>a</code>,
+<code>b</code>, <code>c</code>, and <code>d</code> into <code>left_half = a ⊙ b</code> and <code>right_half = c ⊙ d</code>,
+then combine the two halves for the final result
+<code>left_half ⊙ right_half</code>. This is the same thing as <code>(a ⊙ b) ⊙ (c ⊙ d)</code>.
+As long as the operation is associative, this is the same as
+<code>((a ⊙ b) ⊙ c) ⊙ d</code> or <code>a ⊙ (b ⊙ (c ⊙ d))</code>.</p>
+
+<p>Not all operations are associative though, as we saw before. Subtraction
+isn&#39;t for example. <code>(1 - 2) - (3 - 4)</code> is <code>0</code>. <code>((1 - 2) - 3) - 4</code> is
+<code>-8</code>. We can only parallelize folding a semigroup, not any magma.</p>
+
+<p>Here, since we are talking about dividing the input set, we can assume
+we have more than zero elements in a subset (otherwise we wouldn&#39;t
+divide it), so whether we have an identity or not or whether we apply it
+to the left or the right can be left to the top function which combines
+the partial results.</p>
+
+<h2>Alternatives</h2>
+
+<p>We covered traditional implementations of <code>fold</code> but let&#39;s go over a
+couple of alternative implementations. We could say that if the set is
+empty, we don&#39;t return anything, otherwise we take the first element as
+our initial value:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">It</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Op</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">=</span><span class="k">typename</span><span class="w"> </span><span class="nc">std</span><span class="o">::</span><span class="n">iterator_traits</span><span class="o">&lt;</span><span class="n">It</span><span class="o">&gt;::</span><span class="n">value_type</span><span class="o">&gt;</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">It</span><span class="w"> </span><span class="n">begin</span><span class="p">,</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">end</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">begin</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">end</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">nullopt</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">It</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">begin</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">T</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="p">(</span><span class="n">it</span><span class="o">++</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">end</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">it</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>As long as the operation is associative, the fold direction doesn&#39;t
+matter. In case we don&#39;t have any value at all, we return <code>nullopt</code> to
+signal the absence of a value.</p>
+
+<p>Another option is to take a default value as an argument and return that
+in case we have no elements to combine, but if we do, simply ignore that
+value instead of combining it with the input elements:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">It</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Op</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">=</span><span class="k">typename</span><span class="w"> </span><span class="nc">std</span><span class="o">::</span><span class="n">iterator_traits</span><span class="o">&lt;</span><span class="n">It</span><span class="o">&gt;::</span><span class="n">value_type</span><span class="o">&gt;</span><span class="w"></span>
+<span class="n">T</span><span class="w"> </span><span class="n">fold</span><span class="p">(</span><span class="n">It</span><span class="w"> </span><span class="n">begin</span><span class="p">,</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">end</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">def</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">begin</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">end</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">def</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">It</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">begin</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">T</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="p">(</span><span class="n">it</span><span class="o">++</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">end</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">it</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This is similar to the previous implementation, but instead of an empty
+optional we return a supplied value in case we don&#39;t have anything to
+fold. This would be interpreted as <em>fold or return def</em>, as opposed to
+our original implementation, which was <em>fold with init</em>.</p>
+
+<h2>Summary</h2>
+
+<p>This post started with a discussion of how types can be viewed as sets
+and functions as functions over those sets. We then covered a few
+abstract algebra concepts as applied to the <code>fold</code> higher order
+function, looking in which situations do <code>fold</code> and <code>fold_right</code> return
+the same result.</p>
+
+<ul>
+<li>A function <code>T f(T, T)</code> is a closed binary operation on the set <code>T</code>.</li>
+<li>A set with a binary operation is called a magma. We can implement a
+<code>fold</code> and a <code>fold_right</code> if we have a magma. Both functions need an
+initial value.</li>
+<li>If the operation is also associative, we have a semigroup. Here it
+still matters whether the initial value is applied on the left or
+the right, as the results might be different.</li>
+<li>If the operation is also commutative, we have an abelian semigroup.
+There is no distinction between a left-to-right and a right-to-left
+fold for an abelian semigroup.</li>
+<li>If the operation has an identity, then we have a monoid. If we use
+the identity as an initial value, then we again have no distinctino
+between a left-to-right and a right-to-left fold.</li>
+<li>We can paralllize fold to take subsets of the input set, combine
+them in parallel, then combine the results. Associativity is the
+only requirement for this, so we can parallelize folding a
+semigroup.</li>
+<li>We also looked at a couple of alternative implementations which only
+require a semigroup for the fold direction not to matter. The first
+one returns an empty optional if there are no values to combine; the
+second returns a value supplied as argument, without otherwise
+combining it.</li>
+</ul>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2018/11/18/notes-on-encoding-text.html>Notes on Encoding Text</a></span></div>
+<div id="next"><span><a href=../../.././2019/04/28/programming-with-types.html>Programming with Types</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

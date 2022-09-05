@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Machine Learning on Azure - Part 3 &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>September 24, 2021</span></header>
+<article>
+<h1>Machine Learning on Azure - Part 3</h1>
+
+<p>This is an excerpt from chapter 7 of my book, <a href="https://www.manning.com/books/azure-data-engineering">Data Engineering on
+Azure</a>, which
+deals with machine learning workloads. This is part 3 in a 3 part
+series. In this post, we&#39;ll run the model we created in <a href="https://vladris.com/blog/2021/09/10/machine-learning-on-azure-part-1.html">part
+1</a>
+on the Azure Machine Learning (AML) infrastructure we set up in <a href="https://vladris.com/blog/2021/09/17/machine-learning-on-azure-part-2.html">part
+2</a>
+.</p>
+
+<h2>Running ML in the cloud</h2>
+
+<p>We use the Python Azure Machine Learning SDK for this, so the first step
+is to install it using the Python package manager (pip). First, make
+sure pip is up-to-date. (If there is a newer pip version, you should see
+a message printed to the console suggesting you upgrade when you run a
+pip command.) You can update pip by running
+<code>python -m pip install --upgrade pip</code> as an administrator. Once pip is
+up-to-date, install the Azure Machine Learning SDK with the command in
+the following listing:</p>
+<div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">azureml-sdk</span>
+</pre></div>
+
+<p>Let&#39;s now write a Python script to publish our original ML model to the
+cloud, with all the required configuration. We&#39;ll call this
+<code>pipeline.py</code>.</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">azureml.core</span> <span class="kn">import</span> <span class="n">Workspace</span><span class="p">,</span> <span class="n">Datastore</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">azureml.core.authentication</span> <span class="kn">import</span> <span class="n">ServicePrincipalAuthentication</span>
+<span class="kn">from</span> <span class="nn">azureml.core.compute</span> <span class="kn">import</span> <span class="n">AmlCompute</span>
+<span class="kn">from</span> <span class="nn">azureml.core.conda_dependencies</span> <span class="kn">import</span> <span class="n">CondaDependencies</span> 
+<span class="kn">from</span> <span class="nn">azureml.core.runconfig</span> <span class="kn">import</span> <span class="n">RunConfiguration</span>
+<span class="kn">from</span> <span class="nn">azureml.pipeline.core</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span> <span class="nn">azureml.pipeline.steps.python_script_step</span> <span class="kn">import</span> <span class="n">PythonScriptStep</span>
+<span class="kn">import</span> <span class="nn">os</span>  
+
+<span class="n">tenant_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your tenant ID&gt;&#39;</span>
+<span class="n">subscription_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your Azure subscription GUID&gt;&#39;</span>
+<span class="n">service_principal_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your service principal ID&gt;&#39;</span>
+<span class="n">resource_group</span>  <span class="o">=</span> <span class="s1">&#39;aml-rg&#39;</span>
+<span class="n">workspace_name</span>  <span class="o">=</span> <span class="s1">&#39;aml&#39;</span>
+
+<span class="c1">## Auth </span>
+<span class="n">auth</span> <span class="o">=</span> <span class="n">ServicePrincipalAuthentication</span><span class="p">(</span>
+    <span class="n">tenant_id</span><span class="p">,</span> 
+    <span class="n">service_principal_id</span><span class="p">,</span> 
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;SP_PASSWORD&#39;</span><span class="p">))</span>  
+
+<span class="c1">## Workspace </span>
+<span class="n">workspace</span> <span class="o">=</span> <span class="n">Workspace</span><span class="p">(</span> 
+    <span class="n">subscription_id</span> <span class="o">=</span> <span class="n">subscription_id</span><span class="p">,</span>
+    <span class="n">resource_group</span> <span class="o">=</span> <span class="n">resource_group</span><span class="p">,</span>
+    <span class="n">workspace_name</span> <span class="o">=</span> <span class="n">workspace_name</span><span class="p">,</span>
+    <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
+
+<span class="c1">## Datastore </span>
+<span class="n">datastore</span> <span class="o">=</span> <span class="n">Datastore</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">&#39;MLData&#39;</span><span class="p">)</span>
+
+<span class="c1">## Compute target </span>
+<span class="n">compute_target</span> <span class="o">=</span> <span class="n">AmlCompute</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">&#39;d1compute&#39;</span><span class="p">)</span>
+
+<span class="c1">## Input </span>
+<span class="n">model_input</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">from_files</span><span class="p">(</span> 
+    <span class="p">[(</span><span class="n">datastore</span><span class="p">,</span> <span class="s1">&#39;/models/highspenders/input.csv&#39;</span><span class="p">)])</span><span class="o">.</span><span class="n">as_mount</span><span class="p">()</span>
+
+<span class="c1">## Python package configuration  </span>
+<span class="n">conda_deps</span> <span class="o">=</span> <span class="n">CondaDependencies</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">pip_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pandas&#39;</span><span class="p">,</span> <span class="s1">&#39;sklearn&#39;</span><span class="p">,</span> <span class="s1">&#39;azureml-core&#39;</span><span class="p">,</span> <span class="s1">&#39;azureml-dataprep&#39;</span><span class="p">])</span>
+
+<span class="n">run_config</span> <span class="o">=</span> <span class="n">RunConfiguration</span><span class="p">(</span><span class="n">conda_dependencies</span><span class="o">=</span><span class="n">conda_deps</span><span class="p">)</span>
+
+<span class="c1">## Train step </span>
+<span class="n">trainStep</span> <span class="o">=</span> <span class="n">PythonScriptStep</span><span class="p">(</span> 
+    <span class="n">script_name</span><span class="o">=</span><span class="s1">&#39;highspenders.py&#39;</span><span class="p">,</span>
+    <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;--input&#39;</span><span class="p">,</span> <span class="n">model_input</span><span class="p">],</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">model_input</span><span class="p">],</span>
+    <span class="n">runconfig</span><span class="o">=</span><span class="n">run_config</span><span class="p">,</span>
+    <span class="n">compute_target</span><span class="o">=</span><span class="n">compute_target</span><span class="p">)</span>  
+
+<span class="c1">## Submit pipeline </span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">workspace</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="p">[</span><span class="n">trainStep</span><span class="p">])</span>
+
+<span class="n">published_pipeline</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;HighSpenders&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;High spenders model&#39;</span><span class="p">,</span>
+    <span class="n">continue_on_step_failure</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">open</span><span class="p">(</span><span class="s1">&#39;highspenders.id&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">published_pipeline</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</pre></div>
+
+<p>We&#39;ll break down this script and discuss each part. First, we have the
+required imports and the additional parameters we need.</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">azureml.core</span> <span class="kn">import</span> <span class="n">Workspace</span><span class="p">,</span> <span class="n">Datastore</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">azureml.core.authentication</span> <span class="kn">import</span> <span class="n">ServicePrincipalAuthentication</span>
+<span class="kn">from</span> <span class="nn">azureml.core.compute</span> <span class="kn">import</span> <span class="n">AmlCompute</span>
+<span class="kn">from</span> <span class="nn">azureml.core.conda_dependencies</span> <span class="kn">import</span> <span class="n">CondaDependencies</span> 
+<span class="kn">from</span> <span class="nn">azureml.core.runconfig</span> <span class="kn">import</span> <span class="n">RunConfiguration</span>
+<span class="kn">from</span> <span class="nn">azureml.pipeline.core</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span> <span class="nn">azureml.pipeline.steps.python_script_step</span> <span class="kn">import</span> <span class="n">PythonScriptStep</span>
+<span class="kn">import</span> <span class="nn">os</span>  
+
+<span class="n">tenant_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your tenant ID&gt;&#39;</span>
+<span class="n">subscription_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your Azure subscription GUID&gt;&#39;</span>
+<span class="n">service_principal_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your service principal ID&gt;&#39;</span>
+<span class="n">resource_group</span>  <span class="o">=</span> <span class="s1">&#39;aml-rg&#39;</span>
+<span class="n">workspace_name</span>  <span class="o">=</span> <span class="s1">&#39;aml&#39;</span>
+</pre></div>
+
+<p>We import a set of packages from the <code>azureml-sdk</code>. We need the tenant
+ID, subscription ID, and service principal ID we will use to connect to
+the Azure Machine Learning service. We created the service principal in
+<a href="https://vladris.com/blog/2021/09/17/machine-learning-on-azure-part-2.html">part
+2</a>.
+We stored it in the <code>$sp</code> variable. In case you closed that PowerShell
+session and no longer have the <code>$sp</code> variable, you can simply rerun the
+scripts we covered in part 2 to create a new service principal and grant
+it the required permissions.</p>
+
+<p>You can get the service principal ID from <code>$sp.appId</code> in PowerShell.
+Similarly, you can get the tenant ID from <code>$sp.tenant</code>. The subscription
+ID is the GUID of your Azure subscription.</p>
+
+<p>Use these to intialize the <code>tenant_id</code>, <code>subscription_id</code>, and
+<code>service_principal_id</code> in the script above.</p>
+
+<p>Next, we connect to the workspace using the service principal and get
+the data store (<code>MLData</code>) and compute target (<code>d1compute</code>) needed by our
+model. The following listing shows the steps.</p>
+<div class="highlight"><pre><span></span><span class="c1">## Auth </span>
+<span class="n">auth</span> <span class="o">=</span> <span class="n">ServicePrincipalAuthentication</span><span class="p">(</span>
+    <span class="n">tenant_id</span><span class="p">,</span> 
+    <span class="n">service_principal_id</span><span class="p">,</span> 
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;SP_PASSWORD&#39;</span><span class="p">))</span>  
+
+<span class="c1">## Workspace </span>
+<span class="n">workspace</span> <span class="o">=</span> <span class="n">Workspace</span><span class="p">(</span> 
+    <span class="n">subscription_id</span> <span class="o">=</span> <span class="n">subscription_id</span><span class="p">,</span>
+    <span class="n">resource_group</span> <span class="o">=</span> <span class="n">resource_group</span><span class="p">,</span>
+    <span class="n">workspace_name</span> <span class="o">=</span> <span class="n">workspace_name</span><span class="p">,</span>
+    <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
+
+<span class="c1">## Datastore </span>
+<span class="n">datastore</span> <span class="o">=</span> <span class="n">Datastore</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">&#39;MLData&#39;</span><span class="p">)</span>
+
+<span class="c1">## Compute target </span>
+<span class="n">compute_target</span> <span class="o">=</span> <span class="n">AmlCompute</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">&#39;d1compute&#39;</span><span class="p">)</span>
+</pre></div>
+
+<p>Here we define a service principal authentication as <code>Auth</code> and use the
+environment variable <code>SP_PASSWORD</code> to retrieve the service principal
+secret. We set this variable in part 2, after we created the principal.</p>
+
+<p>We connect to the Azure Machine Learning workspace with the given
+subscription ID, resource group, name, and auth. We then retrieve the
+datastore (<code>MLData</code>) and compute target (<code>d1compute</code>) from the
+workspace.</p>
+
+<p>We need these to set up our deployment: the data store is where we have
+our input, while the compute target is where the model trains. The
+following listing shows how we can specify the model input.</p>
+<div class="highlight"><pre><span></span><span class="c1">## Input </span>
+<span class="n">model_input</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">from_files</span><span class="p">(</span> 
+    <span class="p">[(</span><span class="n">datastore</span><span class="p">,</span> <span class="s1">&#39;/models/highspenders/input.csv&#39;</span><span class="p">)])</span><span class="o">.</span><span class="n">as_mount</span><span class="p">()</span>
+</pre></div>
+
+<p>The <code>from_files()</code> method takes a list of files. Each element of the
+list is a tuple consisting of a data store and a path. The <code>as_mount()</code>
+method ensures the file is mounted and made available to the compute
+that trains the model.</p>
+
+<blockquote>
+<p>Azure Machine Learning <em>datasets</em> reference a data source location,
+along with a copy of its metadata. This allows models to seamlessly
+access data during training.</p>
+</blockquote>
+
+<p>Next, we&#39;ll specify the Python packages required by our model, from
+which we can initialize a run configuration. If you remember from part
+1, we used <code>pandas</code> and <code>sklearn</code>. We&#39;ll also need the <code>azureml-core</code>
+and <code>azureml-dataprep</code> packages required by the runtime. The next
+listing shows how to create the run configuration.</p>
+<div class="highlight"><pre><span></span><span class="c1">## Python package configuration  </span>
+<span class="n">conda_deps</span> <span class="o">=</span> <span class="n">CondaDependencies</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">pip_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pandas&#39;</span><span class="p">,</span> <span class="s1">&#39;sklearn&#39;</span><span class="p">,</span> <span class="s1">&#39;azureml-core&#39;</span><span class="p">,</span> <span class="s1">&#39;azureml-dataprep&#39;</span><span class="p">])</span>
+
+<span class="n">run_config</span> <span class="o">=</span> <span class="n">RunConfiguration</span><span class="p">(</span><span class="n">conda_dependencies</span><span class="o">=</span><span class="n">conda_deps</span><span class="p">)</span>
+</pre></div>
+
+<p><em>Conda</em> stands for Anaconda, a Python and R open source distribution of
+common data science packages. Anaconda simplifies package management and
+dependencies and is commonly used in data science projects because it
+provides a stable environment for this type of workload. Azure Machine
+Learning also uses it under the hood.</p>
+
+<p>Next, let&#39;s create a step for training our model. In our case, this is
+a <code>PythonScriptStep</code>, a step that executes Python code. We&#39;ll provide
+the name of the script (from our previous section), the command-line
+arguments, the inputs, run configuration, and compute target. The
+following listing shows the details.</p>
+<div class="highlight"><pre><span></span><span class="c1">## Train step </span>
+<span class="n">trainStep</span> <span class="o">=</span> <span class="n">PythonScriptStep</span><span class="p">(</span> 
+    <span class="n">script_name</span><span class="o">=</span><span class="s1">&#39;highspenders.py&#39;</span><span class="p">,</span>
+    <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;--input&#39;</span><span class="p">,</span> <span class="n">model_input</span><span class="p">],</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">model_input</span><span class="p">],</span>
+    <span class="n">runconfig</span><span class="o">=</span><span class="n">run_config</span><span class="p">,</span>
+    <span class="n">compute_target</span><span class="o">=</span><span class="n">compute_target</span><span class="p">)</span>
+</pre></div>
+
+<p>We specify the script to upload/run with <code>script_name</code>. This is our
+<code>highspenders.py</code> model we created in part 1. We set the arguments we
+want passed to the script as <code>arguments</code>. Here, <code>model_input</code> resolves
+at runtime to the path where the data is mounted on the node running the
+script. We set the inputs, run configuration, and compute target to run
+on as <code>inputs</code>, <code>runconfig</code>, and <code>compute_target</code>.</p>
+
+<p>We can chain multiple steps together, but we only need one in our case.
+One or more steps form a ML <em>pipeline</em>.</p>
+
+<blockquote>
+<p>An Azure Machine Learning <em>pipeline</em> simplifies building ML workflows
+including data preparation, training, validation, scoring, and
+deployment.</p>
+</blockquote>
+
+<p>Pipelines are an important concept in Azure Machine Learning. These
+capture all the information needed to run a ML workflow. The following
+listing shows how we can create and submit a pipeline to our workspace.</p>
+<div class="highlight"><pre><span></span><span class="c1">## Submit pipeline </span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">workspace</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="p">[</span><span class="n">trainStep</span><span class="p">])</span>
+
+<span class="n">published_pipeline</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;HighSpenders&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;High spenders model&#39;</span><span class="p">,</span>
+    <span class="n">continue_on_step_failure</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">open</span><span class="p">(</span><span class="s1">&#39;highspenders.id&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">published_pipeline</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</pre></div>
+
+<p>We create a pipeline with a single step, <code>trainStep</code> in our workspace.
+We publish the pipeline. We&#39;ll save the GUID of the published pipeline
+into the <code>highspenders.id</code> file so we can refer to it later.</p>
+
+<p>This covers the whole <code>pipeline.py</code> script. Our pipeline automation is
+almost complete. But before calling this script to create the pipeline,
+let&#39;s make one small addition to our high spender model. While we could
+do all of the previous steps without touching our original model code,
+we add the final step to the model code itself. Remember that once the
+model is trained, we save it to disk as <code>outputs/highspender.pkl</code>.</p>
+
+<p>For this step, we&#39;ll make one Azure Machine Learning-specific addition:
+taking the trained model and storing it in the workspace. Add the lines
+in the following listing to the <code>highspenders.py</code> model we created in
+part 1 (not to <code>pipeline.py</code>, which we just covered).</p>
+<div class="highlight"><pre><span></span><span class="c1">## Register model </span>
+<span class="kn">from</span> <span class="nn">azureml.core</span> <span class="kn">import</span> <span class="n">Model</span> 
+<span class="kn">from</span> <span class="nn">azureml.core.run</span> <span class="kn">import</span> <span class="n">Run</span>  
+
+<span class="n">run</span> <span class="o">=</span> <span class="n">Run</span><span class="o">.</span><span class="n">get_context</span><span class="p">()</span>
+<span class="n">workspace</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">workspace</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+    <span class="n">workspace</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;highspender&#39;</span><span class="p">,</span>
+    <span class="n">model_path</span><span class="o">=</span><span class="n">model_path</span><span class="p">)</span>
+</pre></div>
+
+<p>Note the call to <code>Run.get_context()</code> and how we use this to retrieve the
+workspace. In <code>pipeline.py</code>, we provided the subscription ID, resource
+group, and workspace name. That is how we can get a workspace from
+outside Azure Machine Learning. In this case, though, the code runs in
+Azure Machine Learning as part of our pipeline. This gives us additional
+context that we can use to retrieve the workspace at runtime. Every run
+of a pipeline in Azure Machine Learning is called an <em>experiment</em>.</p>
+
+<blockquote>
+<p>Azure Machine Learning <em>experiments</em> represent one execution of a
+pipeline. When we rerun a pipeline, we have a new experiment.</p>
+</blockquote>
+
+<p>We are all set! Let&#39;s run the <code>pipeline.py</code> script to publish our
+pipeline to the workspace. The following listing provides the command
+for this step.</p>
+<div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">pipeline</span><span class="p">.</span><span class="n">py</span>
+</pre></div>
+
+<p>The GUID matters! If we rerun the script, it registers another pipeline
+with the same name but a different GUID. Azure Machine Learning does not
+update pipelines in place. We have the option to disable pipelines so
+these don&#39;t clutter the workspace, but not to update those. Let&#39;s kick
+off the pipeline using Azure CLI as the next listing shows.</p>
+<div class="highlight"><pre><span></span><span class="nv">$pipelineId</span> <span class="p">=</span> <span class="nb">Get-Content</span> <span class="n">-Path</span> <span class="n">highspenders</span><span class="p">.</span><span class="n">id</span>
+
+<span class="n">az</span> <span class="n">ml</span> <span class="n">run</span> <span class="nb">submit-pipeline</span> <span class="p">`</span>
+<span class="p">-</span><span class="n">-pipeline-id</span> <span class="nv">$pipelineId</span> <span class="p">`</span>
+<span class="p">-</span><span class="n">-workspace-name</span> <span class="n">aml</span> <span class="p">`</span>
+<span class="p">-</span><span class="n">-resource-group</span> <span class="n">aml-rg</span>
+</pre></div>
+
+<p>We read the pipeline ID from the <code>highspenders.id</code> file produced in the
+previous step into the <code>$pipelineId</code> variable. We then submit a new run.</p>
+
+<p>Check the UI at <a href="https://ml.azure.com">https://ml.azure.com</a>. You should see the pipeline
+under the Pipelines section, the run we just kicked off under the
+Experiments section. Once the model is trained, you&#39;ll see the model
+output under the Models section.</p>
+
+<h2>Azure Machine Learning recap</h2>
+
+<p>After implementing a model in Python, we started with provisioning a
+workspace, which is the top-level container for all Azure Machine
+Learning-related artifacts. Next, we created a compute target, which
+specifies the type of compute our model runs on. We can define as many
+compute targets as needed; some models require more resources than
+others, some require GPUs, etc. Azure provides many types of VM images
+suited to all these workloads. A main advantage of using compute targets
+in Azure Machine Learning is that compute is provisioned on demand when
+we run a pipeline. Once the pipeline finishes, compute gets
+deprovisioned. This allows us to scale elastically and only pay for what
+we need.</p>
+
+<p>We then attached a data store. Data stores are an abstraction over
+existing storage services, and these allow Azure Machine Learning
+connections to read the data. The main advantage of using data stores is
+that these abstract away access control, so our data scientists don&#39;t
+need to worry about authenticating against the storage service.</p>
+
+<p>With the infrastructure in place, we proceeded to set up a pipeline for
+our model. A pipeline specifies all the requirements and steps our
+execution needs to take. There are many pipelines in Azure: Azure DevOps
+Pipelines are focused on DevOps, provisioning resources, and in general,
+providing automation around Git; Azure Data Factory pipelines are
+focused on ETL, data movement, and orchestration; Azure Machine Learning
+Pipelines are meant for ML workflows, where we set up the environment
+and then execute a set of steps to train, validate, and publish a model.</p>
+
+<p>Our pipeline included a dataset (our input), a compute target, a set of
+Python package dependencies, a run configuration, and a step to run a
+Python script. We also enhanced our original model code to publish the
+model in AML. This takes the result of our training run and makes it
+available in the workspace. Then we published the pipeline to our Azure
+Machine Learning workspace and submitted a run, which in Azure Machine
+Learning is called an experiment.</p>
+
+<h2>Next steps</h2>
+
+<p>We will stop here with the series of article. Grab the book to see how
+we can apply DevOps to our ML scenario. In the book, we go over putting
+both the model code and <code>pipeline.py</code> in Git, then deploy updates using
+Azure DevOps Pipelines. We also cover orchestrating ML runs with Azure
+Data Factory, which includes getting the input data ready, running an
+Azure Machine Learning experiment, and handling the output.</p>
+
+<p><img src="mlops.png" alt="image"></p>
+
+<p>All of this and more in <a href="https://www.manning.com/books/azure-data-engineering">Data Engineering on
+Azure</a>.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2021/09/17/machine-learning-on-azure-part-2.html>Machine Learning on Azure - Part 2</a></span></div>
+<div id="next"><span><a href=../../.././2021/11/27/notes-on-software-lifecycle.html>Notes on Software Lifecycle</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

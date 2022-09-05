@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Variance &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>December 27, 2019</span></header>
+<article>
+<h1>Variance</h1>
+
+<p>This blog post is an excerpt from my book, <a href="https://www.manning.com/books/programming-with-types">Programming with
+Types</a>. The code
+samples are in TypeScript. If you enjoy the article, you can use the
+discount code <strong>vlri40</strong> for a 40% discount on the book.</p>
+
+<h2>Subtyping Relationships</h2>
+
+<p>We know that if <code>Triangle extends Shape</code>, then <code>Triangle</code> is a subtype
+of <code>Shape</code>. Let&#39;s try to answer a few trickier questions:</p>
+
+<ul>
+<li>What is the subtyping relationship between the sum types
+<code>Triangle | Square</code> and <code>Triangle | Square | Circle</code>?</li>
+<li>What is the subtyping relationship between an array of triangles
+(<code>Triangle[]</code>) and an array of shapes (<code>Shape[]</code>)?</li>
+<li>What is the subtyping relationship between a generic data structure
+like <code>List&lt;T&gt;</code>, for <code>List&lt;Triangle&gt;</code> and <code>List&lt;Shape&gt;</code>?</li>
+<li>What about the function types <code>() =&gt; Shape</code> and <code>() =&gt; Triangle</code>?</li>
+<li>Conversely, what about the function type <code>(argument: Shape) =&gt; void</code>
+and the function type <code>(argument: Triangle) =&gt; void</code>?</li>
+</ul>
+
+<p>These are important questions, as they tell us which of these types can
+be substituted for their subtypes. Whenever we see a function that
+expects an argument of one of these types, we should understand whether
+we can provide a subtype instead.</p>
+
+<p>The challenge in the above examples is that things aren&#39;t as
+straightforward as <code>Triangle extends Shape</code>. We are looking at types
+which are defined <em>based</em> on <code>Triangle</code> and <code>Shape</code>. <code>Triangle</code> and
+<code>Shape</code> are either part of the sum types, or the types of elements of a
+collection, or a function&#39;s argument types or return types.</p>
+
+<h2>Subtyping and Sum Types</h2>
+
+<p>Let&#39;s take the simplest example first, the sum type. Let&#39;s say we have
+a <code>draw()</code> function which can draw a <code>Triangle</code>, a <code>Square</code>, or a
+<code>Circle</code>. Can we pass a <code>Triangle</code> or <code>Square</code> to it? As you might have
+guessed, the answer is <q>yes</q>. We can check that such code compiles:</p>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">TriangleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"> </span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* Triangle members */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">SquareType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"></span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="nx">SquareType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* Square members */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">CircleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"></span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="nx">CircleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* Circle members */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Circle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+
+<span class="nx">draw</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+
+<p><code>makeShape()</code> returns a <code>Triangle</code> or a <code>Square</code> while <code>draw()</code> accepts
+a <code>Triangle</code>, a <code>Square</code> or a <code>Circle</code> (implementations omitted).</p>
+
+<p>We enforce nominal subtyping throughout these examples since we&#39;re not
+providing full implementations for these types. In practice, they would
+have various different properties and methods to distinguish them. We
+simulate that with unique symbols for our examples, as leaving the
+classes empty would make all of them equivalent due to TypeScript&#39;s
+<a href="https://en.wikipedia.org/wiki/Structural_type_system">structural
+subtyping</a>.</p>
+
+<p>As expected, this code compiles. The opposite doesn&#39;t: if we can draw a
+<code>Triangle</code> or a <code>Square</code> and we attempt to draw a <code>Triangle</code>, <code>Square</code>,
+or <code>Circle</code>, the compiler will complain because we might end up passing
+a <code>Circle</code> to the <code>draw()</code> function, which wouldn&#39;t know what to do
+with it. We can confirm that the below code doesn&#39;t compile:</p>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Circle</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+
+<span class="nx">draw</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+
+<p>We flipped the types so <code>makeShape()</code> could also return a <code>Circle</code>,
+while <code>draw()</code> no longer accepts a <code>Circle</code>. This no longer compiles.</p>
+
+<p>This means that <code>Triangle | Square</code> is a subtype of
+<code>Triangle | Square | Circle</code>: we can always substitute a <code>Triangle</code> or
+<code>Square</code> for a <code>Triangle</code>, <code>Square</code>, or <code>Circle</code>, but not the other way
+around. This might seem counterintuitive, since <code>Triangle | Square</code> is
+<q>less</q> than <code>Triangle | Square | Circle</code>. Whenever we use inheritance,
+we end up with a subtype that has more properties than its supertype.
+For sum types it works the opposite way: the supertype has more types
+than the subtype.</p>
+
+<p><img src="sum-types.png" alt="image"></p>
+
+<p>Say we have an <code>EquilateralTriangle</code> which inherits from <code>Triangle</code>:</p>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">EquilateralTriangleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"> </span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">EquilateralTriangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="nx">EquilateralTriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* EquilateralTriangle members */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>As an exercise, check what happens when we mix sum types with
+inheritance. Does <code>makeShape()</code> returning <code>EquilateralTriangle | Square</code>
+and <code>draw()</code> accepting <code>Triangle | Square | Circle</code> work? What about
+<code>makeShape()</code> returning <code>Triangle | Square</code> and <code>draw()</code> accepting
+<code>EquilateralTriangle | Square | Circle</code>?</p>
+
+<h2>Subtyping and Collections</h2>
+
+<p>Now let&#39;s look at types which contain a set of values of some other
+type. Let&#39;s start with arrays: can we pass an array of <code>Triangle</code>
+objects to a <code>draw()</code> function which accepts an array of <code>Shape</code>
+objects, if <code>Triangle</code> is a subtype of <code>Shape</code>?</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* Shape members */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">TriangleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"> </span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* Triangle members */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangles</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">[];</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shapes</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+
+<span class="nx">draw</span><span class="p">(</span><span class="nx">makeTriangles</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+
+<p><code>Triangle</code> is a subtype of <code>Shape</code>. <code>makeTriangles()</code> returns an array
+of <code>Triangle</code> objects. <code>draw()</code> accepts an array of <code>Shape</code> objects. We
+can use an array of <code>Triangle</code> objects as an array of <code>Shape</code> objects</p>
+
+<p>This might not be surprising, but it is an important observation:
+<em>arrays preserve the subtyping relationship of the underlying types they
+are storing</em>. As expected, the opposite doesn&#39;t work: if we try to pass
+an array of <code>Shape</code> objects where an array of <code>Triangle</code> objects is
+expected, the code won&#39;t compile.</p>
+
+<p><img src="arrays.png" alt="image"></p>
+
+<p>Arrays are basic types that come out-of-the-box in many programming
+languages. What if we define a custom collection, say a <code>LinkedList&lt;T&gt;</code>?</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="nx">next</span><span class="o">:</span><span class="w"> </span><span class="kt">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">append</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">LinkedList</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">next</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangles</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">Triangle</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shapes</span><span class="o">:</span><span class="w"> </span><span class="kt">LinkedList</span><span class="o">&lt;</span><span class="nx">Shape</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+
+<span class="nx">draw</span><span class="p">(</span><span class="nx">makeTriangles</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+
+<p><code>LinkedList&lt;T&gt;</code> is a generic linked list collection. <code>makeTriangle()</code>
+now returns a linked list of traingles. <code>draw()</code> accepts a linked list
+of shapes. This code compiles.</p>
+
+<p>Even without an out-of-the-box type, TypeScript correctly establishes
+that <code>LinkedList&lt;Triangle&gt;</code> is a subtype of <code>LinkedList&lt;Shape&gt;</code>. Like
+before, the opposite doesn&#39;t compile - we can&#39;t pass a
+<code>LinkedList&lt;Shape&gt;</code> as a <code>LinkedList&lt;Triangle&gt;</code>.</p>
+
+<blockquote>
+<p><strong>Covariance</strong></p>
+
+<p>A type which preserves the subtyping relationship of its underlying
+type is called <em>covariant</em>. An array is covariant, because it
+preserves the subtyping relationship: <code>Triangle</code> is a subtype of
+<code>Shape</code>, so <code>Triangle[]</code> is a subtype of <code>Shape[]</code>.</p>
+</blockquote>
+
+<p>Various languages behave differently when dealing with arrays and
+collections like <code>LinkedList&lt;T&gt;</code>. For example, in C# we would have to
+explicitly state covariance for a type like <code>LinkedList&lt;T&gt;</code> by declaring
+an interface and using the <code>out</code> keyword (<code>ILinkedList&lt;out T&gt;</code>),
+otherwise the compiler will not deduce the subtyping relationship.</p>
+
+<p>An alternative to covariance is to simply ignore the subtyping
+relationship between two given types and consider a <code>LinkedList&lt;Shape&gt;</code>
+and <code>LinkedList&lt;Triangle&gt;</code> as types with no subtyping relationship
+between them (neither is a subtype of the other). This is not the case
+in TypeScript, but it is in C#, where a <code>List&lt;Shape&gt;</code> and a
+<code>List&lt;Triangle&gt;</code> have no subtyping relationship.</p>
+
+<blockquote>
+<p><strong>Invariance</strong></p>
+
+<p>A type which ignores the subtyping relationship of its underlying type
+is called invariant. A C# <code>List&lt;T&gt;</code> is invariant, because it ignores
+the subtyping relationship <q><code>Triangle</code> is a subtype of <code>Shape</code></q>, so
+<code>List&lt;Shape&gt;</code> and <code>List&lt;Triangle&gt;</code> have no subtype-supertype
+relationship.</p>
+</blockquote>
+
+<p>Now that we looked at how collections relate to each other in terms of
+subtyping and saw two common types of variance, let&#39;s see how function
+types related to each other.</p>
+
+<h2>Subtyping and Function Return Types</h2>
+
+<p>We&#39;ll start with the simpler case first: see what substitutions we can
+make between a function that returns a <code>Triangle</code> and a function that
+returns a <code>Shape</code>. We&#39;ll declare two factory functions, a <code>makeShape()</code>
+which returns a <code>Shape</code> and a <code>makeTriangle()</code> which returns a
+<code>Triangle</code>.</p>
+
+<p>We&#39;ll then implement a <code>useFactory()</code> function which takes a function
+of type <code>() =&gt; Shape</code> as argument and returns a <code>Shape</code>. We&#39;ll try
+passing <code>makeTriangle()</code> to it:</p>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangle</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="p">;</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">factory</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">factory</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">let</span><span class="w"> </span><span class="nx">shape1</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">);</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">shape2</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeTriangle</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p><code>useFactory()</code> takes a function with no arguments which returns a
+<code>Shape</code> and calls it. Both <code>makeTriangle()</code> and <code>makeShape()</code> can be
+used as arguments to <code>useFactory()</code>.</p>
+
+<p>Nothing out of the ordinary here: we can pass a function that returns a
+<code>Triangle</code> as a function that returns a <code>Shape</code>, because the return
+value (a <code>Triangle</code>) is a subtype of <code>Shape</code>, so we can assign it to a
+<code>Shape</code>.</p>
+
+<p><img src="function-returns.png" alt="image"></p>
+
+<p>The opposite doesn&#39;t work: if we change our <code>useFactory()</code> to expect a
+<code>() =&gt; Triangle</code> argument and try to pass it <code>makeShape()</code>, the code
+won&#39;t compile:</p>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangle</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="p">;</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">factory</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">factory</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">let</span><span class="w"> </span><span class="nx">shape1</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">);</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">shape2</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeTriangle</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>We replaced <code>Shape</code> with <code>Triangle</code> in the <code>useFactory()</code> definition.
+The code fails to compile: we can&#39;t use <code>makeShape()</code> as a
+<code>() =&gt; Triangle</code>.</p>
+
+<p>This is again pretty straightforward: we can&#39;t use <code>makeShape()</code> as a
+function of type <code>() =&gt; Triangle</code> because <code>makeShape()</code> returns a
+<code>Shape</code> object. That object could be a <code>Triangle</code>, but it might be a
+<code>Square</code>. <code>useFactory()</code> promises to return a <code>Triangle</code>, so it can&#39;t
+return a supertype of <code>Triangle</code>. It could, of course, return a subtype,
+like <code>EquilateralTriangle</code>, given a <code>makeEquilateralTriangle()</code>.</p>
+
+<p>Functions are covariant in their return types. In other words, if
+<code>Triangle</code> is a subtype of <code>Shape</code>, a function type like
+<code>() =&gt; Triangle</code> is a subtype of a function <code>() =&gt; Shape</code>. Note that the
+function types don&#39;t have to describe functions that don&#39;t take any
+arguments. If <code>makeTriangle()</code> and <code>makeShape()</code> both took a couple of
+number arguments, they would still be covariant as we just saw.</p>
+
+<p>This is the behavior followed by most mainstream programming languages.
+The same rules are followed for overriding methods in inherited types,
+changing their return type. If we implement a <code>ShapeMaker</code> class which
+provides a <code>make()</code> method that returns a <code>Shape</code>, we can override it in
+a derived class <code>TriangleMaker</code> to return <code>Triangle</code> instead. The
+compiler will allow this, as calling either of the <code>make()</code> methods will
+give us a <code>Shape</code> object:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">ShapeMaker</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">make</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Shape</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">TriangleMaker</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">ShapeMaker</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">make</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This is, again, allowed behavior in most mainstream programming
+languages, as most consider functions covariant in their return type.
+Let&#39;s now see what happens to function types whose argument types are
+subtypes of each other.</p>
+
+<h2>Subtyping and Function Argument Types</h2>
+
+<p>We&#39;ll turn things inside out, so instead of a function that returns a
+<code>Shape</code> and a function that returns a <code>Triangle</code>, we&#39;ll take a function
+that takes a <code>Shape</code> as argument and a function that takes a <code>Triangle</code>
+as argument. We&#39;ll call these <code>drawShape()</code> and <code>drawTriangle()</code>. How
+do <code>(argument: Shape) =&gt; void</code> and <code>(argument: Triangle) =&gt; void</code> relate
+to one another?</p>
+
+<p>Let&#39;s introduce another function, <code>render()</code>, which takes as arguments
+a <code>Triangle</code> and an <code>(argument: Triangle) =&gt; void</code> function. It simply
+calls the given function with the given <code>Triangle</code>:</p>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawShape</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">argument</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="p">(</span><span class="nx">triangle</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p><code>drawShape()</code> takes a <code>Shape</code> argument, <code>drawTriangle()</code> takes a
+<code>Triangle</code> argument. <code>render()</code> expects a <code>Triangle</code> and a function that
+takes a <code>Triangle</code> as argument. <code>render()</code> simply calls the provided
+function passing it the triangle it received.</p>
+
+<p>Here comes the interesting bit: in this case, we can safely pass
+<code>drawShape()</code> to the <code>render()</code> function! That means we can use a
+<code>(argument: Shape) =&gt; void</code> where an <code>(argument: Triangle) =&gt; void</code> is
+expected.</p>
+
+<p>Logically it makes sense: we have a <code>Triangle</code> and we pass it to a
+drawing function which can use it as an argument. If the function itself
+expects a <code>Triangle</code>, like our <code>drawTriangle()</code> function, then of course
+it works. But it should also work for a function which expects a
+supertype of <code>Triangle</code>: <code>drawShape()</code> wants a shape - any shape - to
+draw. Since it doesn&#39;t use anything that&#39;s triangle-specific, it is
+more general than <code>drawTriangle()</code>, it can accept any shape as argument,
+be it <code>Triangle</code> or <code>Square</code>. So in this particular case, the subtyping
+relationship is reversed.</p>
+
+<blockquote>
+<p><strong>Contravariance</strong></p>
+
+<p>A type which reverses the subtyping relationship of its underlying
+type is called <em>contravariant</em>. In most programming languages,
+functions are contravariant with regards to their arguments. A
+function which expects a <code>Triangle</code> as argument can be substituted
+with a function which expects a <code>Shape</code> as argument. The relationship
+of the functions is the reverse of the relationship of the argument
+types: if <code>Triangle</code> is a subtype <code>Shape</code>, the type of a function
+taking a <code>Triangle</code> as an argument is a supertype of the type of a
+function taking a <code>Shape</code> as an argument.</p>
+</blockquote>
+
+<p><img src="function-arguments.png" alt="image"></p>
+
+<p>We said <q>most programming languages</q> in the definition above. A
+notable exception is TypeScript. In TypeScript, we can also do the
+opposite: pass a function which expects a subtype instead of a function
+which expects a supertype. This was an explicit design choice, to
+facilitate common JavaScript programming patterns. It can lead to
+runtime issues though. Let&#39;s look at an example. We&#39;ll first define a
+method <code>isRightAngled()</code> on our <code>Triangle</code> type, which would determine
+whether a given instance describes a right-angled triangle. The
+implementation of the method is not important:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* Shape members */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">TriangleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"> </span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="nx">isRightAngled</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="cm">/* Determine whether it is a right-angled triangle */</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span>
+
+<span class="w">    </span><span class="cm">/* More Triangle members */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Now let&#39;s reverse the drawing example and let&#39;s say our <code>render()</code>
+function expects a <code>Shape</code> instead of a <code>Triangle</code>, and a function which
+can draw shapes <code>(argument: Shape) =&gt; void</code> instead of a function which
+can only draw triangles <code>(argument: Triangle) =&gt; void</code>:</p>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawShape</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">argument</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="p">(</span><span class="nx">shape</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p><code>drawShape()</code> and <code>drawTriangle()</code> are just like before. <code>render()</code> now
+expects a <code>Shape</code> and a function that takes a <code>Shape</code> as argument.</p>
+
+<p>Here&#39;s how we can cause a runtime error: we can define <code>drawTriangle()</code>
+to actually use something that is triangle-specific, like the
+<code>isRightAngled()</code> method we just added. We then call <code>render()</code> with a
+<code>Shape</code> object (not a <code>Triangle</code>) and <code>drawTriangle()</code>.</p>
+
+<p>Now <code>drawTriangle()</code> will receive a <code>Shape</code> object and attempt to call
+<code>isRightAngled()</code> on it, but since the <code>Shape</code> is not a <code>Triangle</code>, this
+will cause an error:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">triangle</span><span class="p">.</span><span class="nx">isRightAngled</span><span class="p">());</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* ... */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">,</span><span class="w">    </span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">argument</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w">    </span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="p">(</span><span class="nx">shape</span><span class="p">);</span><span class="w">  </span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="nx">render</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">Shape</span><span class="p">(),</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>We can pass a <code>Shape</code> and <code>drawTriangle()</code> to <code>render()</code>. This code will
+compile but it will fail at runtime with a JavaScript error, since the
+runtime won&#39;t be able to find <code>isRightAngled()</code> on the <code>Shape</code> object
+we gave to <code>drawTriangle()</code>. This is not ideal but, as mentioned before,
+it was a conscious decision made during the implementation of
+TypeScript.</p>
+
+<p>In TypeScript, if <code>Triangle</code> is a subtype of <code>Shape</code>, a function of type
+<code>(argument: Shape) =&gt; void</code> and a function of type
+<code>(argument: Triangle) =&gt; void</code> can be substituted for each other.
+Effectively, they are both subtypes of each other. This property is
+called <em>bivariance</em>.</p>
+
+<blockquote>
+<p><strong>Bivariance</strong></p>
+
+<p>Types are <em>bivariant</em> if, from the subtyping relationship of their
+underlying types, they become subtypes of each other. In TypeScript,
+if <code>Triangle</code> is a subtype of <code>Shape</code>, the function types
+<code>(argument: Shape) =&gt; void</code> and <code>(argument: Triangle) =&gt; void</code> are
+subtypes of each other.</p>
+</blockquote>
+
+<p><img src="bivariance.png" alt="image"></p>
+
+<p>Again, the bivariance of functions with respect to their arguments in
+TypeScript allows incorrect code to compile. We rely on static type
+checking to eliminate runtime errors at compile time. For TypeScript it
+was a deliberate design decision to enable common JavaScript programming
+patterns.</p>
+
+<h2>Summary</h2>
+
+<p>We looked at what types can be substituted with what other types. While
+subtyping is straight-forward when dealing with simple inheritance,
+things get more complicated when we add types parameterized on other
+types. These could be collections, function types, or other generic
+types. The way the subtyping relationships of these parameterized types
+is removed, preserved, reversed, or made two-way based on the
+relationship of their underlying types is called <em>variance</em>.</p>
+
+<ul>
+<li><em>Invariant</em> types ignore the subtyping relationship of their
+underlying types.</li>
+<li><em>Covariant</em> types preserve the subtyping relationship of their
+underlying types. If <code>Triangle</code> is a subtype of <code>Shape</code>, an array of
+type <code>Triangle[]</code> is a subtype of an array of type <code>Shape[]</code>. In
+most programming languages, function types are covariant in their
+return types.</li>
+<li><em>Contravariant</em> types reverse the subtyping relationship of their
+underlying types. If <code>Triangle</code> is a subtype of <code>Shape</code>, the
+function type <code>(argument: Shape) =&gt; void</code> is a subtype of the
+function type <code>(argument: Triangle) =&gt; void</code> in most languages. This
+is not true for TypeScript, where function types are bivariant with
+regards to their argument types.</li>
+<li><em>Bivariant</em> types are subtypes of each other when their underlying
+types are in a subtyping relationship. If <code>Triangle</code> is a subtype of
+<code>Shape</code>, the function type <code>(argument: Shape) =&gt; void</code> and the
+function type <code>(argument: Triangle) =&gt; void</code> are subtypes of each
+other (functions of both types can be substituted for one another).</li>
+</ul>
+
+<p>While some common rules exist across programming languages, there is no
+one way to support variance. You should understand what the type system
+of your programming language does and how it establishes subtyping
+relationships. This is important to know, as these rules tell us what
+can be substituted for what. Do you need to implement a function to
+transform a <code>List&lt;Triangle&gt;</code> into a <code>List&lt;Shape&gt;</code>, or can you just use
+the <code>List&lt;Triangle&gt;</code> as-is? It all depends on the variance of <code>List&lt;T&gt;</code>
+in your programming language of choice.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2019/12/08/notes-on-data-engineering.html>Notes on Data Engineering</a></span></div>
+<div id="next"><span><a href=../../.././2020/01/19/time-and-complexity.html>Time and Complexity</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Recommendations &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>December 29, 2020</span></header>
+<article>
+<h1>Recommendations</h1>
+
+<p>I sometimes get asked for learning resources and areas aspiring software
+engineers should focus on. This post will cover some of my
+recommendations. This is purely for software development, design, and
+engineering. I will share a complementary list of resources on soft
+skills, systems, leadership, and working within organizations in a
+future post.</p>
+
+<h2>Fundamentals</h2>
+
+<p><strong>Data structures and algorithms</strong> -- This is CS 101. Understand lists,
+stacks, queues, heaps, trees, graphs, and algorithms to sort, select,
+traverse etc. Understand big-O notation and complexity -- this is
+important in practice, when implementing solutions that deal with
+real-world data. This is foundational to the field of computer science,
+so unless you are working on some cutting-edge stuff, there&#39;s probably
+a well-known solution to your problem. You don&#39;t need to know all
+implementations by heart but know what applies and where to look it up
+when needed, be it an A* search or B-tree.</p>
+
+<p><strong>Understand your compute target</strong> -- this can be a physical machine, an
+operating system, a virtual machine like the JVM or .NET CLR, the
+browser, or the cloud. Either way you need to know what resources are
+available, how they are allocated, what are the performance
+characteristics and so on. Without understanding your compute target you
+won&#39;t be able to leverage it to its full capabilities and run the risk
+of misusing it.</p>
+
+<p><strong>Concurrent programming</strong> -- today, I believe this is unescapable.
+Concurrency is everywhere, regardless of whether you are building
+services that talk to each other, a multi-threaded native application,
+or a Node.JS, event loop-based application. Having a good mental model
+of how concurrency works, understanding deadlocks, livelocks,
+synchronization mechanisms, and consistency models is foundational.</p>
+
+<h2>Programming languages</h2>
+
+<p>Programming languages are not just how we talk to computers, they are
+tools for thought. They enable us to express solutions to problems. We
+model our solutions using the languages, and different languages are
+best suited to different problems. I&#39;m a firm believer in
+multi-paradigm and using the best tool for a job. Saying that
+<em>everything is an object</em>, or <em>everything is a function</em> is an
+oversimplification. Many modern programming languages support multiple
+paradigms, so we can write object-oriented code when appropriate, and
+functional code when appropriate. With that said, I suggest learning:</p>
+
+<p><strong>A system programming language</strong> like C++, Rust or Swift if you need to
+write native, performant code. These languages are close to the machine
+and will help you understand OS resource management, how code gets
+executed, and what impacts performance.</p>
+
+<p><strong>A <q>higher-level</q> language</strong> for writing tools and services.
+Something like C#, Java or Go. These are all garbage collected and trade
+off some performance for productivity.</p>
+
+<p><strong>A dynamic language</strong> for quick prototyping and experimentation. Python
+and Ruby come to mind. While static typing is much safer for production
+code, I do love <em>thinking</em> in Python.</p>
+
+<p><strong>A purely functional language</strong> like Haskell or Idris. This is again to
+understand different ways of thinking about problems. Even if you don&#39;t
+get to write production code in a purely functional language, you will
+learn alternative approaches to designing your code which you will be
+able to apply even when using other languages.</p>
+
+<p><strong>A language with strong support for generics</strong>, like C++, Rust, or
+TypeScript. Generics are a powerful way to reuse and combine code and
+understanding them will make you a better programmer.</p>
+
+<p>From my personal experience, within the same paradigm, languages are
+more similar than different. In other words, once you know two, it is
+significantly easier to understand the third. There is value in learning
+new programming languages to see how they differ from existing ones and
+what they bring to the table.</p>
+
+<h2>Practice</h2>
+
+<p>Write code. Learning needs to be a mix of theory and practice. Here are
+some practice ideas:</p>
+
+<p><a href="https://en.wikipedia.org/wiki/Kata_(programming)">Code katas</a> -- These
+could be some good first projects when picking up a new language. For
+example: <a href="http://codekata.com/">http://codekata.com/</a>,
+<a href="https://github.com/gamontal/awesome-katas">https://github.com/gamontal/awesome-katas</a>.</p>
+
+<p><strong>Programming puzzles</strong> -- These are good ways to practice problem
+solving, data structures, and algorithms. I really enjoy <a href="https://adventofcode.com/">Advent of
+Code</a>, which has been running every December
+since 2015. <a href="https://www.facebook.com/codingcompetitions/hacker-cup/">Facebook Hacker
+Cup</a> also has
+some great puzzles.</p>
+
+<p><strong>Contribute to an open-source project</strong>, many have supportive
+communities and paths to get you started.</p>
+
+<p><strong>Work on your own project</strong>, be it a website or a game or something
+else you are passionate about. Scope it to fit the amount of time you
+must dedicate and use the technologies you want to learn.</p>
+
+<p>Of course, you will do most of the <strong>learning on the job</strong>. Work on
+projects that interest you, projects you can learn from, and projects
+where you can apply what you learned.</p>
+
+<h2>Books</h2>
+
+<p>This is a list of books on software design and craftsmanship that I
+highly recommend:</p>
+
+<p><a href="https://www.goodreads.com/book/show/4845.Code_Complete">Code Complete</a>
+-I love this one. This is The Big Book of Software Engineering, and it
+covers the fundamentals, like writing proper functions, using good
+naming in the code, testing, debugging etc.</p>
+
+<p><a href="https://www.goodreads.com/book/show/4099.The_Pragmatic_Programmer">The Pragmatic
+Programmer</a> -
+Great book which gives general advice on what it takes to become a good
+programmer. From basic tips like know thy text editor and use source
+control to implementation and design advice.</p>
+
+<p><a href="https://www.goodreads.com/book/show/84983.Agile_Principles_Patterns_and_Practices_in_C_">Agile Principles, Patterns and Practices in
+C#</a> -
+On writing software in an agile world. Principles to keep in mind (like
+the Open/Close Principle, the Single Responsibility Principle etc.),
+patterns to enable them, and agile practices. Also covers TDD, extreme
+programming, and all the other agile methodologies.</p>
+
+<p><a href="https://www.goodreads.com/book/show/85009.Design_Patterns">Design
+Patterns</a> -
+The classic book on design patterns. It is a bit cumbersome but
+definitely worth reading. Patterns are basically well-known solutions to
+recurring design problems. Do read <a href="https://vladris.com/blog/2020/12/10/notes-on-design-patterns.html">my previous
+post</a>
+and don&#39;t over-index on patterns.</p>
+
+<p><a href="https://www.goodreads.com/book/show/44936.Refactoring">Refactoring</a> -
+The classical book on refactoring code - re-structuring implementation
+without changing functionality. Talks about code smells (pieces of code
+that feel wrong) and how to rearchitect such code to make it right.</p>
+
+<p><a href="https://www.goodreads.com/book/show/3139913-emergent-design">Emergent
+Design</a> -
+This book talks about how design emerges as code evolves. By respecting
+a few principles and knowing about design patterns, you don&#39;t have to
+over-design and future-proof, rather keep refactoring and extending as
+new requirements come in.</p>
+
+<p>There are a few other books which I really enjoyed, though they are a
+bit different than the above. I recommend these more for the aesthetics
+and insights (more on that below): <a href="https://www.goodreads.com/book/show/52084.Programming_Pearls">Programming
+Pearls</a>,
+<a href="https://www.goodreads.com/book/show/23498372-from-mathematics-to-generic-programming">From Mathematics to Generic
+Programming</a>,
+<a href="https://www.goodreads.com/book/show/405790.Beautiful_Code">Beautiful
+Code</a>.</p>
+
+<h2>Other considerations</h2>
+
+<p><strong>Develop a sense of aesthetics</strong> - This comes with practice. Know what
+good code looks like, what makes it beautiful. Don&#39;t just get code
+working, try to make it beautiful.</p>
+
+<p><strong>Understand your problem space</strong> -- Whatever you are working on,
+knowing the business domain will help inform your software design.
+Understand why you are doing what you are doing. Is there a better way
+to solve the same business problem? Do you know what will likely come up
+in 6 months from now or a year?</p>
+
+<p><strong>Security</strong> -- Software security is critical in today&#39;s connected
+world. You should understand security best practices, which hashing
+algorithms to use, how to properly store secrets and passwords, how
+trust gets established, attack vectors, how to create a <a href="https://en.wikipedia.org/wiki/Threat_model">threat
+model</a> and so on.</p>
+
+<p><strong>AI</strong> - AI is permeating more areas of software. It is also being
+commoditized through libraries like scikit-learn and services like Azure
+Cognitive Services. While I won&#39;t quite yet put it under
+<em>fundamentals</em>, I believe using AI will soon be a must-know, much like
+concurrent programming. Having a good understanding of the types of
+problems AI can help with, when and how to apply it is very valuable.</p>
+
+<p><strong>Keep learning</strong> -- The way we build software keeps evolving. Try to
+keep up to date with recent developments and trends. This is one of the
+reasons software engineering is such an exciting field: there&#39;s always
+something new, there&#39;s always more to learn.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2020/12/10/notes-on-design-patterns.html>Notes on Design Patterns</a></span></div>
+<div id="next"><span><a href=../../.././2021/03/12/ingesting-data.html>Ingesting Data</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

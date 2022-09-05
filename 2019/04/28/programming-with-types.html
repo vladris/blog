@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Programming with Types &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>April 28, 2019</span></header>
+<article>
+<h1>Programming with Types</h1>
+
+<p>I&#39;m happy to announce the early access launch of my book, <a href="https://www.manning.com/books/programming-with-types">Programming
+with Types</a>.</p>
+
+<p>This is the culmination of several years of geeking out on type systems
+and software correctness. I&#39;ve always liked to learn how to write
+better code, but if I were to point out exactly when I started down this
+particular rabbit hole, I&#39;d say it was 2015.</p>
+
+<p>I was switching teams at that point and decided to get up to speed on
+modern C++. I started by watching C++ conference videos and was
+mind-blown by the <a href="https://channel9.msdn.com/Events/GoingNative/2013/Cpp-Seasoning">C++
+Seasoning</a>
+talk Sean Parent gave at Going Native a couple of years before. That
+gave me a completely different perspective on generic programming.</p>
+
+<p>On a parallel thread, I was playing with Haskell and learning about the
+advanced features of its type system. Programming in a functional
+language makes it obvious how some of the features taken from granted in
+such languages get adopted by more mainstream languages as time goes by.
+Closures, sum types, and monads are slowly making their way to the
+mainstream.</p>
+
+<h2>Bibliography</h2>
+
+<p>In awe of the elegance of generics and trying to learn more about them,
+I picked up Stepanov&#39;s <a href="https://www.goodreads.com/book/show/23498372-from-mathematics-to-generic-programming">From Mathematics to Generic
+Programming</a>
+and <a href="https://www.goodreads.com/book/show/6142482-elements-of-programming">Elements of
+Programming</a>.
+I realized I need a refresher on abstract algebra, so I took a detour
+and went through Pinter&#39;s <a href="https://www.goodreads.com/book/show/8295305-a-book-of-abstract-algebra">A Book of Abstract
+Algebra</a>.</p>
+
+<p>Getting a sense of the mathematical underpinnings of generics made
+things much clearer for me. I wanted to get a similar understanding of
+the math underlying the Haskell type system, namely category theory. A
+great resource on category theory is Bartosz Milewski&#39;s <a href="https://www.goodreads.com/book/show/33618151-category-theory-for-programmers">Category
+Theory for
+Programmers</a>.</p>
+
+<p>Deeper still down the rabbit hole, I picked up Benjamin Pierce&#39;s famous
+<a href="https://www.goodreads.com/book/show/112252.Types_and_Programming_Languages">Types and Programming
+Languages</a>.
+The book covers many aspects of type systems, from basic types and
+function types, to subtyping, generics, and higher-kinded types. In
+fact, this is exactly the progression my own book follows. Types and
+Programming Languages is geared towards compiler writers. I wanted to
+write something that can benefit any developer.</p>
+
+<h2>From Theory to Practice</h2>
+
+<p>While learning more and more about type systems, I could tell the code I
+was writing at work became better. There is a direct link between the
+more theoretical realm of type system design and the day-to-day
+production software. This isn&#39;t a revolutionary discovery - all fancy
+type system features exist to solve some real-world problems.</p>
+
+<p>I had new insights which I could use and did my best to share them. I
+started this blog and posted about various practical applications. I did
+hundreds of code reviews and applied what I learned there. And here is
+where I found my niche.</p>
+
+<p>Not every practicing programmer has the time and patience to read
+highly-theoretical books, with mathematical proofs. On the other hand, I
+could tell that my time wasn&#39;t wasted reading such books - they made me
+a better software engineer. I figured there is room for a book which
+covers type systems and the safety features they provide, with practical
+applications anyone can use in their day jobs.</p>
+
+<h2>Programming with Types {#programming-with-types-1}</h2>
+
+<p>The book starts with basic types and some of their common pitfalls:
+numerical types tend to overflow or are subject to rounding errors,
+strings have several encodings, and manipulating them naively causes all
+sorts of issues. There are lesser known basic types, like the empty type
+and the unit type, which are not as popular for some reason, even though
+they have great applications: as return types for functions which never
+return, or don&#39;t return anything meaningful.</p>
+
+<p>After basic types, the book covers composition. Why record types are
+generally better than tuples, what algebraic data types are about, and
+countless applications of sum types. Functions should return either a
+valid value or an error, never both. The variant design pattern,
+enabling double-dispatch, looks different today than it did a few years
+ago.</p>
+
+<p>Function types are discussed at length, from lambdas and the functional
+staples <code>map</code>, <code>filter</code>, and <code>reduce</code>, to modern features of programming
+languages like <code>yield</code> and <code>async</code>/<code>await</code>. The book shows modern takes
+on the strategy and decorator design patterns, implemented more
+succinctly using function types.</p>
+
+<p>Subtyping is another major topic, covering not only the elements of
+object oriented programming and how to use them effectively, but also
+variance, top types, and bottom types. For example, we can use a bottom
+type to produce a value out of nowhere. Mixins are controversial, as
+they are usually implemented as multiple inheritance, but I believe they
+are extremely useful when designed correctly.</p>
+
+<p>The next major topic is generic programming. Generic data structures are
+responsible for shaping the data, while algorithms are responsible for
+processing data. Iterators are a bridge between data structures and
+algorithms, allowing us to mix-and-match them. As an example, we can
+find an item in a tree using the same code we use to find an item in a
+list.</p>
+
+<p>Finally, the book covers higher-kinded types. These are higher-level
+abstractions, generic types with generic arguments, which underpin
+concepts like functors and monads. The joke goes that as soon as you
+understand monads, you lose the ability to explain them. I&#39;m taking it
+as a challenge.</p>
+
+<p>Check out my book
+<a href="https://www.manning.com/books/programming-with-types">here</a>.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2018/12/31/fold.html>Fold</a></span></div>
+<div id="next"><span><a href=../../.././2019/07/16/a-switchless-state-machine.html>A Switchless State Machine</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

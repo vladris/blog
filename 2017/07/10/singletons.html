@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Singletons &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>July 10, 2017</span></header>
+<article>
+<h1>Singletons</h1>
+
+<h2>Singletons are evil</h2>
+
+<p>I will start off with a word of caution that singletons should be
+avoided. Singleton is the object-oriented equivalent of a global
+variable -- a piece of state which anyone can grab and modify, which
+makes it hard to reason locally about code and generates ugly dependency
+graphs. That being said, in a large system there are situations where
+there is a legitimate need for global state or some component that
+exposes a service to other components.</p>
+
+<h2>Implementation</h2>
+
+<p><a href="https://www.youtube.com/watch?v=23xDn3ReH7E">This CppCon lightning
+talk</a> by Arno Lepisk covers
+some implementation alternatives, suggesting that in most cases using a
+namespace and flat functions is the simplest and best way to implement a
+singleton:</p>
+<div class="highlight"><pre><span></span><span class="k">namespace</span><span class="w"> </span><span class="nn">Foo</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">DoFoo</span><span class="p">();</span><span class="w"></span>
+
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>instead of:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">DoFoo</span><span class="p">();</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+
+<p>I completely agree with this, with the caveat that sometimes we do want
+to inject dependencies and work against an interface instead of the
+actual implementation, in which case the above approach might be
+insufficient. Note that unless dependency injection is needed, the
+default should be a namespace and flat functions.</p>
+
+<h2>Dependency Injection</h2>
+
+<p>Given an interface, an implementation, and a function to retrieve the
+singleton like the following:</p>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">IFoo</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">DoFoo</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">IFoo</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">IFoo</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">DoFoo</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/*...*/</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+
+<p>a common mistake I see is components directly calling the function like
+this:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Component</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Bar</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">UseFoo</span><span class="p">().</span><span class="n">DoFoo</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>If the goal is to inject the dependency, for example have tests run
+against <code>MockFoo</code>, this approach is not ideal. Code explicitly calls
+<code>UseFoo</code> so the only way to switch implementation is to modify <code>UseFoo</code>
+and provide some internal mechanism to change its return value. A better
+approach is to have the client simply require an interface and provide
+that at construction time:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Component</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">Component</span><span class="p">(</span><span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UseFoo</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="n">m_foo</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Bar</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">m_foo</span><span class="p">.</span><span class="n">DoFoo</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">m_foo</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+
+<p>Note that in the above example we can create <code>Component</code> with a
+<code>MockFoo</code> implementation of <code>IFoo</code> or some other implementation, which
+is a better decoupling than directly calling <code>UseFoo</code> inside the member
+functions of <code>Component</code>.</p>
+
+<h2>Magic Statics</h2>
+
+<p>By definition, a singleton should represent a unique object, so our
+<code>UseFoo</code> needs to return the same reference on each call. Ensuring that
+concurrent calls from multiple threads don&#39;t cause problems was
+non-trivial until C++11, which introduced <q>magic statics</q>. Quote from
+the C++ standard section 6.7:</p>
+
+<blockquote>
+<p>... such a variable [with static storage] is initialized the first
+time control passes through its declaration; such a variable is
+considered initialized upon the completion of its initialization. If
+the initialization exits by throwing an exception, the initialization
+is not complete, so it will be tried again the next time control
+enters the declaration. If control enters the declaration concurrently
+while the variable is being initialized, the concurrent execution
+shall wait for completion of the initialization.</p>
+</blockquote>
+
+<p>The standard now guarantees that a static would only ever be created
+once, and the simple way to implement a singleton (for example according
+to Scott Meyer&#39;s <a href="https://www.goodreads.com/book/show/22800553-effective-modern-c">Effective Modern
+C++</a>)
+is:</p>
+<div class="highlight"><pre><span></span><span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Or the heap-allocated version:</p>
+<div class="highlight"><pre><span></span><span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">*</span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<h2>Deterministic shutdown</h2>
+
+<p>A more interesting problem which the above implementation doesn&#39;t cover
+is deterministic shutdown. A local static, once created, will be live
+for the duration of the program, which might not always be desirable.
+Building on the previous implementation, here is a singleton which we
+can also shutdown on demand:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Singleton</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">Use</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">static</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">m_instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="o">*</span><span class="n">m_instance</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}();</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">Free</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">m_instance</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_instance</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Singleton</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;::</span><span class="n">m_instance</span><span class="p">;</span><span class="w"></span>
+
+<span class="cm">/* ... */</span><span class="w"></span>
+
+<span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">Singleton</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;::</span><span class="n">Use</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">FreeFoo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Singleton</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;::</span><span class="n">Free</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Using this implementation, we can deterministically free the singleton
+on demand via the <code>Free</code> function as opposed to having to wait for the
+program to get unloaded, which can be useful in certain cases.</p>
+
+<h2>Atomics</h2>
+
+<p>Magic statics provide an easy way to guarantee we end up with a single
+object, but the code generated to support this is non-trivial.
+Disassembly of the <code>UseFoo</code> above as compiled by Clang 4.0.0 with <code>-O3</code>
+flag:</p>
+<div class="highlight"><pre><span></span><span class="x">UseFoo():                             # @UseFoo()</span>
+<span class="x">        push    rbx</span>
+<span class="x">        mov     al, byte ptr [rip + guard variable for Singleton&lt;Foo&gt;::Use()::instance]</span>
+<span class="x">        test    al, al</span>
+<span class="x">        jne     .LBB0_6</span>
+<span class="x">        mov     edi, guard variable for Singleton&lt;Foo&gt;::Use()::instance</span>
+<span class="x">        call    __cxa_guard_acquire</span>
+<span class="x">        test    eax, eax</span>
+<span class="x">        je      .LBB0_6</span>
+<span class="x">        mov     edi, 8</span>
+<span class="x">        call    operator new(unsigned long)</span>
+<span class="x">        mov     qword ptr [rax], vtable for Foo+16</span>
+<span class="x">        mov     rdi, qword ptr [rip + Singleton&lt;Foo&gt;::m_instance]</span>
+<span class="x">        mov     qword ptr [rip + Singleton&lt;Foo&gt;::m_instance], rax</span>
+<span class="x">        test    rdi, rdi</span>
+<span class="x">        je      .LBB0_5</span>
+<span class="x">        mov     rax, qword ptr [rdi]</span>
+<span class="x">        call    qword ptr [rax + 8]</span>
+<span class="x">        mov     rax, qword ptr [rip + Singleton&lt;Foo&gt;::m_instance]</span>
+<span class="x">.LBB0_5:</span>
+<span class="x">        mov     qword ptr [rip + Singleton&lt;Foo&gt;::Use()::instance], rax</span>
+<span class="x">        mov     edi, guard variable for Singleton&lt;Foo&gt;::Use()::instance</span>
+<span class="x">        call    __cxa_guard_release</span>
+<span class="x">.LBB0_6:</span>
+<span class="x">        mov     rax, qword ptr [rip + Singleton&lt;Foo&gt;::Use()::instance]</span>
+<span class="x">        pop     rbx</span>
+<span class="x">        ret</span>
+<span class="x">        mov     rbx, rax</span>
+<span class="x">        mov     edi, guard variable for Singleton&lt;Foo&gt;::Use()::instance</span>
+<span class="x">        call    __cxa_guard_abort</span>
+<span class="x">        mov     rdi, rbx</span>
+<span class="x">        call    _Unwind_Resume</span>
+</pre></div>
+
+<p>A lot of the generated code is the compiler implementing the guarantee
+that on concurrent calls, a single intialization is performed. The
+<code>Singleton</code> functions are inlined here since we are compiling with
+<code>-O3</code>. We can provide a much more efficient implementation using an
+atomic pointer on architectures where atomics are lock-free and we are
+not worried about redundantly calling the constructor in the rare cases
+of concurrent access that requires initialization:</p>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Singleton</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">Use</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_instance</span><span class="p">.</span><span class="n">load</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="o">*</span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">T</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="n">T</span><span class="o">*</span><span class="w"> </span><span class="n">temp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">m_instance</span><span class="p">.</span><span class="n">compare_exchange_strong</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">))</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="o">*</span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">delete</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">*</span><span class="n">m_instance</span><span class="p">.</span><span class="n">load</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">Free</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_instance</span><span class="p">.</span><span class="n">exchange</span><span class="p">(</span><span class="k">nullptr</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">delete</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">atomic</span><span class="o">&lt;</span><span class="n">T</span><span class="o">*&gt;</span><span class="w"> </span><span class="n">m_instance</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">atomic</span><span class="o">&lt;</span><span class="n">T</span><span class="o">*&gt;</span><span class="w"> </span><span class="n">Singleton</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;::</span><span class="n">m_instance</span><span class="p">;</span><span class="w"></span>
+
+<span class="cm">/* ... */</span><span class="w"></span>
+
+<span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">Singleton</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;::</span><span class="n">Use</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">FreeFoo</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Singleton</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;::</span><span class="n">Free</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>The disassembly of the above <code>UseFoo</code> (built with the same compiler and
+<code>-O3</code> flag) is:</p>
+<div class="highlight"><pre><span></span><span class="x">UseFoo():                             # @UseFoo()</span>
+<span class="x">        push    rax</span>
+<span class="x">        mov     rcx, qword ptr [rip + Singleton&lt;Foo&gt;::m_instance]</span>
+<span class="x">        test    rcx, rcx</span>
+<span class="x">        jne     .LBB0_3</span>
+<span class="x">        mov     edi, 8</span>
+<span class="x">        call    operator new(unsigned long)</span>
+<span class="x">        mov     rcx, rax</span>
+<span class="x">        mov     qword ptr [rcx], vtable for Foo+16</span>
+<span class="x">        xor     eax, eax</span>
+<span class="x">        lock</span>
+<span class="x">        cmpxchg qword ptr [rip + Singleton&lt;Foo&gt;::m_instance], rcx</span>
+<span class="x">        je      .LBB0_3</span>
+<span class="x">        mov     rax, qword ptr [rcx]</span>
+<span class="x">        mov     rdi, rcx</span>
+<span class="x">        call    qword ptr [rax + 8]</span>
+<span class="x">        mov     rcx, qword ptr [rip + Singleton&lt;Foo&gt;::m_instance]</span>
+<span class="x">.LBB0_3:</span>
+<span class="x">        mov     rax, rcx</span>
+<span class="x">        pop     rcx</span>
+<span class="x">        ret</span>
+</pre></div>
+
+<p>This code might new the object multiple times, but is guaranteed to
+always return the same instance and retrieving it is more efficient than
+relying on statics, since it uses a compare-exchange to guarantee
+uniqueness. Many thanks to my colleague Vladimir Morozov who suggested
+this approach.</p>
+
+<h2>Tri-state</h2>
+
+<p>We now have an efficient way to create and shutdown a singleton. If
+shutdown, a subsequent call to <code>Use</code> would re-create the object. One
+optional feature we can add is to enforce that once shutdown, a
+singleton should never be accessed again. So instead of the two-state
+<em>not initialized</em> and <em>live</em>, we can use three states: <em>not
+initialized</em>, <em>live</em>, <em>freed</em> and terminate if an access is attempted in
+the <em>freed</em> state:</p>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">uintptr_t</span><span class="w"> </span><span class="n">FreedSingleton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0xDEADBEEF</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Singleton</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">Use</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">T</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">FreedSingleton</span><span class="p">))</span><span class="w"></span>
+<span class="w">            </span><span class="n">terminate</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">*</span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">Free</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_instance</span><span class="p">.</span><span class="n">exchange</span><span class="p">(</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">T</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">FreedSingleton</span><span class="p">));</span><span class="w"></span>
+<span class="w">        </span><span class="k">delete</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="o">*</span><span class="w"> </span><span class="n">Get</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_instance</span><span class="p">.</span><span class="n">load</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">T</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="n">T</span><span class="o">*</span><span class="w"> </span><span class="n">temp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">m_instance</span><span class="p">.</span><span class="n">compare_exchange_strong</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">))</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">delete</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">m_instance</span><span class="p">.</span><span class="n">load</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">atomic</span><span class="o">&lt;</span><span class="n">T</span><span class="o">*&gt;</span><span class="w"> </span><span class="n">m_instance</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">atomic</span><span class="o">&lt;</span><span class="n">T</span><span class="o">*&gt;</span><span class="w"> </span><span class="n">Singleton</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;::</span><span class="n">m_instance</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+
+<p>We now have an efficient generic singleton which we can shutdown
+on-demand and ensure clients never call after shutdown.</p>
+
+<h2>Summary</h2>
+
+<ul>
+<li>Try not to use singletons, singletons are evil.</li>
+<li>In most cases, a namespace and flat functions are enough, no need to
+over-complicate things.</li>
+<li>If dependency injection is required, make sure dependency is
+properly injected during construction as opposed to member functions
+directly calling the singleton-retrieving function.</li>
+<li>Magic statics provide an easy way to implement singletons.</li>
+<li>Atomics are more efficient than magic statics when they are
+lock-free and we aren&#39;t worried about potentially having multiple
+constructor calls in race cases.</li>
+<li>If needed, singletons can be extended with a shutdown mechanism.</li>
+<li>Three-state singletons can terminate on use-after-shutdown.</li>
+</ul>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2017/04/07/data-structures-and-algorithms.html>Data Structures and Algorithms</a></span></div>
+<div id="next"><span><a href=../../.././2017/07/20/idris-totality-dependent-types-proofs.html>Idris: Totality, Dependent Types, Proofs</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

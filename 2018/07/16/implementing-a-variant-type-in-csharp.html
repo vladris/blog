@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Implementing a Variant Type in C# &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>July 16, 2018</span></header>
+<article>
+<h1>Implementing a Variant Type in C&#35;</h1>
+
+<p>A variant, or discriminated union type<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>, is a type that can hold a
+value of any of a finite set of types. For example, a
+<code>Variant&lt;int, string&gt;</code> can hold either an <code>int</code> or a <code>string</code> value.
+This is also known as a <em>sum type</em>, as its domain is the sum of the
+<code>int</code> and <code>string</code> domains. Contrast this with a <code>Tuple&lt;int, string&gt;</code>,
+also known as a <em>product type</em>, which holds <em>both</em> an <code>int</code> and a
+<code>string</code> (so its domain is the product of the <code>int</code> and <code>string</code>
+domains).</p>
+
+<p>First, let&#39;s look at how something like this would be achieved without a
+<code>Variant</code> type. Let&#39;s take an expression tree where a node can be either
+an <code>int</code> value or an expression consisting of an operation (let&#39;s say
+addition and multiplication) and two operands which are in turn nodes.
+We could implement this by starting with an <code>INode</code> base interface and
+deriving our types from that:</p>
+<div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Add</span><span class="p">,</span><span class="w"> </span><span class="n">Mul</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">interface</span><span class="w"> </span><span class="n">INode</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ExpressionNode</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">INode</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">INode</span><span class="w"> </span><span class="n">Left</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">INode</span><span class="w"> </span><span class="n">Right</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ValueNode</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">INode</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This works, but has a couple of drawbacks -- first, to discriminate
+between the types allowed to be part of the tree and the types that
+aren&#39;t, we need to establish a typing relationship and force every type
+of node in our tree to implement a dummy <code>INode</code> interface. In the case
+of a value, even though we just need an <code>int</code>, we must wrap it into a
+<code>ValueNode</code> class because <code>int</code> itself does not implement <code>INode</code>.</p>
+
+<p>Another drawback is that in many cases we want to restrict the types
+that can participate in our system (in this case our expression tree).
+This is harder to enforce via an interface, as one could always
+implement some other <code>class FooNode : INode</code> and there is no
+compile-time way to prevent this node from becoming part of our tree.</p>
+
+<p>This is how the above tree would be declared if we had a
+<code>Variant&lt;T1, T2&gt;</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Add</span><span class="p">,</span><span class="w"> </span><span class="n">Mul</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Expression</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="n">Op</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">Expression</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">Left</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">Expression</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">Right</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>First, we no longer need an <code>INode</code>, as it would get replaced by
+<code>Variant&lt;Expression, int&gt;</code>, which effectively translates to <em>it&#39;s either
+an Expression or an int</em>. There is also no room to sneak in another type
+without being explicit about it. We do not need to wrap <code>int</code> into
+another class either just to make it conform to our hierarchy, as a
+<code>Variant</code> can handle it directly.</p>
+
+<p>So how would we go about designing such a generic variant in C#?</p>
+
+<h2>Design Considerations</h2>
+
+<p>Our variant implementation should satisfy a few requirements:</p>
+
+<ul>
+<li><p>Since C# does not support variadic generic arguments, we want
+implementations from <code>Variant&lt;T1&gt;</code>, holding a value of a single
+type, up to <code>Variant&lt;T1, T2, T3, T4, T5, T6, T7, T8&gt;</code>, holding a
+value of any of 8 types. This is in line with how other library
+types like <code>Tuple</code> are implemented.</p></li>
+<li><p>We want to support implicit casting from one of the generic types to
+the variant, as this enables assignment:</p>
+<div class="highlight"><pre><span></span><span class="n">Variant</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="m">42</span><span class="p">;</span><span class="w"></span>
+</pre></div></li>
+<li><p>We want to support explicit casting from a variant to any of its
+generic types. Since a variant might hold a value of a different
+type, we should be explicit in this case, as a mismatch between the
+actual held value and the cast-to type would throw an
+<code>InvalidCastException</code>.</p></li>
+<li><p>We need an API to get the value of the variant as a given type. A
+type mismatch between the given type and the one actually held by
+the variant would result in an <code>InvalidCastException</code>:</p>
+<div class="highlight"><pre><span></span><span class="n">Variant</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="m">42</span><span class="p">;</span><span class="w"></span>
+
+<span class="kt">int</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;();</span><span class="w"></span>
+<span class="kt">string</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;();</span><span class="w"> </span><span class="c1">// throws InvalidCastException</span>
+</pre></div></li>
+<li><p>We need an API to check if the value of the variant is of a certain
+type:</p>
+<div class="highlight"><pre><span></span><span class="n">Variant</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="m">42</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">variant</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;();</span><span class="w"> </span><span class="c1">// false</span>
+<span class="n">variant</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;();</span><span class="w"> </span><span class="c1">// true</span>
+</pre></div></li>
+<li><p>We need to support variants where the same type appears several
+times, like <code>Variant&lt;int, int&gt;</code>. There are legitimate use cases for
+this, for example an API that would return either an error code or a
+value, both being of the same type. For such cases, we need another
+way to explicitly set a value as the first, second, and so on type,
+and an <code>Index</code> property that would tell us which occurrence of the
+type it is (as <code>Get&lt;int&gt;() called on a Variant&lt;int, int&gt;</code> would
+succeed in returning us an <code>int</code>, but we wouldn&#39;t be able to tell
+whether it got in there as a <code>T1 or as a T2</code>.</p></li>
+<li><p>We would also provide a non-generic <code>Get()</code> which returns an
+<code>object</code>, so we can use pattern matching on a variant:</p>
+<div class="highlight"><pre><span></span><span class="n">Variant</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="m">42</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">())</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="n">s</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;It&#39;s a string: &quot;</span><span class="w"> </span><span class="p">+</span><span class="w"> </span><span class="n">s</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;It&#39;s an int: &quot;</span><span class="w"> </span><span class="p">+</span><span class="w"> </span><span class="n">i</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></li>
+<li><p>We need to override equality: two variants are equivalent if they
+are the same type (same generic parameters), they contain values of
+the same type at the same index, and the contained values are
+equivalent:</p>
+<div class="highlight"><pre><span></span><span class="n">Variant</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="m">42</span><span class="p">;</span><span class="w"></span>
+<span class="n">Variant</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant2</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="m">42</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">variant1</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">variant2</span><span class="p">);</span><span class="w"> </span><span class="c1">// true</span>
+</pre></div></li>
+</ul>
+
+<p>Given these requirements, let&#39;s see how an implementation would look
+like.</p>
+
+<h2>Implementation</h2>
+
+<h3>API</h3>
+
+<p>We&#39;ll start with a <code>Variant&lt;T1, T2&gt;</code> and build up from there. Adding
+more generic arguments becomes easy once this implementation is figured
+out. Starting from the simpler <code>Variant&lt;T1&gt;</code> would not uncover some of
+the issues mentioned above, like the need for an index and ability to
+handle <code>T1</code> and <code>T2</code> being the same type. Let&#39;s define our API based on
+the requirements:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// Variant API</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">Index</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// T1 constructor, casts</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T1</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// T2 constructor, casts</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T2</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// Equality</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">GetHashCode</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NotImplementedException</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We have the <code>Index</code> property which should be <code>0</code> if the variant is
+holding a <code>T1</code> and <code>1</code> if the variant is holding a <code>T2</code>. We&#39;re using
+0-based indexing for this, though it is a bit awkward that generic
+arguments start, by convention, from 1. This is in line with what other
+.NET types do, for example <code>Tuple</code> provides a 0-based indexer.</p>
+
+<p><code>It&lt;T&gt;()</code> allows callers to check if the variant is currently holding a
+<code>T</code>, while <code>Get&lt;T&gt;()</code> should return a <code>T</code> or throw an
+<code>InvalidCastException</code>. The non-generic version <code>Get()</code> simply returns
+an <code>object</code>.</p>
+
+<p>Below that, for both <code>T1</code> and <code>T2</code> we provide a constructor which takes
+a <code>T1</code> (or <code>T2</code>) and places it in the variant, implicit casts from <code>T1</code>
+and <code>T2</code> to <code>Variant&lt;T1, T2&gt;</code>, and explicit casts the other way around.</p>
+
+<p>Finally, we override <code>Equals(object)</code> and <code>GetHashCode()</code> (it&#39;s always a
+good idea to override <code>GetHashCode</code> when overriding <code>Equals</code>).</p>
+
+<h3>Type erasure</h3>
+
+<p>Let&#39;s look at how we would store a value. Unlike a <code>Tuple&lt;T1, T2&gt;</code>, we
+don&#39;t want to store both a <code>T1</code> <em>and</em> a <code>T2</code>, rather we want either a
+<code>T1</code> <em>or</em> a <code>T2</code>. In order to generalize this, we need a way to perform
+type-erasure, which means a way to store any type (as we want a generic
+implementation), while at the same type we need to keep track of the
+stored type so we can answer <code>Is&lt;T&gt;()</code> properly. Let&#39;s create a
+<code>VariantHolder</code> to handle this.</p>
+
+<p>We could achieve this by storing everything as an <code>object</code>
+(type-erasure) and a <code>Type</code> (for type information), like this:</p>
+<div class="highlight"><pre><span></span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">VariantHolder</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="n">Item</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">Type</span><span class="w"> </span><span class="n">_itemType</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="n">_itemType</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Item</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">VariantHolder</span><span class="p">(</span><span class="kt">object</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">Item</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">item</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">_itemType</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">GetType</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We can then implement our variant in terms of this:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">VariantHolder</span><span class="w"> </span><span class="n">variant</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T1</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="cm">/* ...</span>
+<span class="cm">       Same for T2, ignoring Equals() and GetHashCode() for now */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This implementation is not quite correct, as it stores too much type
+information:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Base</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Derived</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Base</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="cm">/* ... */</span><span class="w"></span>
+
+<span class="n">Variant</span><span class="p">&lt;</span><span class="n">Base</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Derived</span><span class="p">();</span><span class="w"></span>
+<span class="n">variant</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="n">Base</span><span class="p">&gt;();</span><span class="w"> </span><span class="c1">// == false!</span>
+</pre></div>
+
+<p>We are comparing the actual type of the item, though we should store it
+as one of the generic types of the variant declaration. A better idea is
+to make our <code>VariantHolder</code> itself generic:</p>
+<div class="highlight"><pre><span></span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">VariantHolder</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Item</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">U</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">typeof</span><span class="p">(</span><span class="n">U</span><span class="p">)</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Item</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">VariantHolder</span><span class="p">(</span><span class="n">T</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Item</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">item</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>This gets us rid of the extra <code>_itemType</code> member (we can use <code>typeof(T)</code>
+on the generic parameter), but we have another problem: how do we
+declare this in our <code>Variant</code>? If we make it a <code>VariantHolder&lt;T1&gt;</code>, then
+we won&#39;t be able to store a <code>T2</code> value and vice-versa. There is a way
+around this - we can extract an interface:</p>
+<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IVariantHolder</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We can declare that our <code>VariantHolder&lt;T&gt;</code> implements this interface (it
+already does, as it has both a generic <code>Is</code> and a non-generic <code>Get</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">VariantHolder</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IVariantHolder</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Item</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">U</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">typeof</span><span class="p">(</span><span class="n">U</span><span class="p">)</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Item</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">VariantHolder</span><span class="p">(</span><span class="n">T</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Item</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">item</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>And now we can implement our <code>Variant</code> in terms of an <code>IVariantHolder</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">variant</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">((</span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;)</span><span class="n">variant</span><span class="p">).</span><span class="n">Item</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// T1 constructor, casts</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T1</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// T2 constructor, casts</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T2</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="cm">/* ...</span>
+<span class="cm">       Ignoring Equals() and GetHashCode() for now */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>For <code>Get&lt;T&gt;()</code> we use a cast to <code>VariantHolder&lt;T&gt;</code> as opposed to
+<code>(T)_variantHolder.Get()</code> as this avoids an extra boxing operation if
+<code>T</code> is a value type. This correctly throws <code>InvalidCastException</code> if
+called with the wrong type. If we wanted to throw a different exception
+or add more details to the exception, we could either wrap this cast in
+a try/catch and catch an <code>InvalidCastException</code> or we could check the
+type using <code>Is&lt;T&gt;()</code> before performing the cast.</p>
+
+<h3>Index and disambiguation</h3>
+
+<p>The only problem with this implementation is that we cannot instantiate
+a variant if <code>T1</code> and <code>T2</code> are the same:</p>
+<div class="highlight"><pre><span></span><span class="n">Variant</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="m">42</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+
+<p>yields a compiler error: <q>Ambiguous user defined conversions</q>. If we
+try calling the constructor:</p>
+<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;(</span><span class="m">42</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>we get <q>The call is ambiguous between the following methods...</q>. If
+<code>T1</code> and <code>T2</code> are the same type, there is no way to disambiguate between
+constructors and casts. Because of this, we need to add our <code>Index</code>
+property and provide a way to explicitly construct the variant with an
+index. First, let&#39;s add <code>Index</code> to our current implementation:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">variant</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">Index</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">((</span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;)</span><span class="n">variant</span><span class="p">).</span><span class="n">Item</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">index</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">item</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">Index</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">index</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">:</span><span class="w"> </span><span class="k">this</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T1</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">:</span><span class="w"> </span><span class="k">this</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T2</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="cm">/* ...</span>
+<span class="cm">       Ignoring Equals() and GetHashCode() for now */</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We added a read-only <code>Index</code> property, a private constructor that not
+only sets the <code>IVariantHolder</code> but also the <code>Index</code>, and we updated our
+two constructors, <code>Variant(T1 item)</code> and <code>Variant(T2 item)</code> to
+internally call this private constructor with the correct index.</p>
+
+<p>Now we have an <code>Index</code> property which accurately keeps track of the
+index of the type stored, so for a <code>Variant&lt;int, int&gt;</code> we would be able
+to tell whether we set the first or second <code>int</code>, but we still can&#39;t
+disambiguate between constructor calls if <code>T1</code> and <code>T2</code> are the same. We
+can solve this by adding a couple of explicit factory methods:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">Make1</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">Make2</span><span class="p">(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">1</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+
+<p>We could have provided a way for the callers to explicitly provide an
+index, but it becomes hard to enforce that the index is in sync with the
+type. If <code>T1</code> and <code>T2</code> are the same, then the caller ultimately decides
+the index, but if <code>T1</code> and <code>T2</code> are different, then <code>Variant</code> needs to
+decide the index.</p>
+
+<p>Providing <code>Make1</code> and <code>Make2</code> works, since <code>Make1</code> only accepts a <code>T1</code>
+argument while <code>Make2</code> only accepts a <code>T2</code> argument. Thus, if they are
+the same, the caller disambiguates by calling one of the methods and
+there is no compilation issue. If they are different, calling one of
+them is the equivalent of calling one of the constructors (there is no
+way to call <code>Make1</code> with a <code>T2</code> argument).</p>
+
+<h3>Equality</h3>
+
+<p>Now the only remaining bit is overriding <code>Equals</code>, as we want two
+variants containing equivalent values to be equivalent. In other words,
+given another object, we would consider it equivalent if it has the same
+type as this object, has the value <em>at the same index</em>, and the value of
+the other object is equivalent to the value of this object:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">obj</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="p">||</span><span class="w"> </span><span class="p">!(</span><span class="n">obj</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;))</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">false</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">other</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;)</span><span class="n">obj</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">Index</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="n">other</span><span class="p">.</span><span class="n">Index</span><span class="w"> </span><span class="p">&amp;&amp;</span><span class="w"> </span><span class="n">Get</span><span class="p">().</span><span class="n">Equals</span><span class="p">(</span><span class="n">other</span><span class="p">.</span><span class="n">Get</span><span class="p">());</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Overriding <code>Equals</code> usually means overriding <code>GetHashCode</code> in such a way
+that equivalent objects hash to the same value. In our case, we can rely
+on the value stored in the variant to implement this by simply
+delegating hashing to it:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">GetHashCode</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Get</span><span class="p">().</span><span class="n">GetHashCode</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+
+<h3>Multiple generic arguments</h3>
+
+<p>We have an implementation for a <code>Variant&lt;T1, T2&gt;</code> but we are looking at
+providing variants from <code>Variant&lt;T1&gt;</code> all the way to
+<code>Variant&lt;T1, T2, T3, T4, T5, T6, T7, T8&gt;</code>.</p>
+
+<p>First, let&#39;s look at what would be common to all of these. The API
+(<code>Is&lt;T&gt;</code>, <code>Get&lt;T&gt;</code> etc.) is implemented in terms of <code>IVariantHolder</code>.
+Let&#39;s extract this into a base class. Since we are going to make all our
+variants derive from it, it must be <code>public</code>, but we probably don&#39;t want
+clients to derive from it as it is an implementation detail, so we will
+provide an <code>internal</code> constructor. This will make this class
+instantiable only within the assembly declaring it:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">abstract</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">VariantBase</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">variant</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">Index</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">private</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">((</span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;)</span><span class="n">variant</span><span class="p">).</span><span class="n">Item</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">internal</span><span class="w"> </span><span class="nf">VariantBase</span><span class="p">(</span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">index</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">item</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">Index</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">index</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Our <code>Variant&lt;T1, T2&gt;</code> ends up containing only the constructors, casts,
+and equality:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">VariantBase</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// Calls base constructor</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">index</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">:</span><span class="w"> </span><span class="k">base</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// T1 constructor, casts</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">:</span><span class="w"> </span><span class="k">this</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T1</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">Make1</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// T2 constructor, casts</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">:</span><span class="w"> </span><span class="k">this</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T2</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">Make2</span><span class="p">(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">1</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// Equality</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">obj</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="p">||</span><span class="w"> </span><span class="p">!(</span><span class="n">obj</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="k">false</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">other</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;)</span><span class="n">obj</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Index</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="n">other</span><span class="p">.</span><span class="n">Index</span><span class="w"> </span><span class="p">&amp;&amp;</span><span class="w"> </span><span class="n">Get</span><span class="p">().</span><span class="n">Equals</span><span class="p">(</span><span class="n">other</span><span class="p">.</span><span class="n">Get</span><span class="p">());</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">GetHashCode</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Get</span><span class="p">().</span><span class="n">GetHashCode</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>We can even hoist <code>Equals</code> to our base class, since we can replace the
+<code>is</code> check <code>!(obj is Variant&lt;T1, T2&gt;)</code> with
+<code>GetType() != obj.GetType()</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">abstract</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">VariantBase</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">variant</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">Index</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">private</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">((</span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;)</span><span class="n">variant</span><span class="p">).</span><span class="n">Item</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">object</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">internal</span><span class="w"> </span><span class="nf">VariantBase</span><span class="p">(</span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">index</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">item</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">Index</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">index</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">obj</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="p">||</span><span class="w"> </span><span class="n">GetType</span><span class="p">()</span><span class="w"> </span><span class="p">!=</span><span class="w"> </span><span class="n">obj</span><span class="p">.</span><span class="n">GetType</span><span class="p">())</span><span class="w"></span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">false</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">other</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">VariantBase</span><span class="p">)</span><span class="n">obj</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Index</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="n">other</span><span class="p">.</span><span class="n">Index</span><span class="w"> </span><span class="p">&amp;&amp;</span><span class="w"> </span><span class="n">Get</span><span class="p">().</span><span class="n">Equals</span><span class="p">(</span><span class="n">other</span><span class="p">.</span><span class="n">Get</span><span class="p">());</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">GetHashCode</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Get</span><span class="p">().</span><span class="n">GetHashCode</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>Now our <code>Variant&lt;T1, T2&gt;</code> contains only constructors and casts:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">sealed</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">VariantBase</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// Calls base constructor</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">IVariantHolder</span><span class="w"> </span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">index</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">:</span><span class="w"> </span><span class="k">base</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// T1 constructor, casts</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">:</span><span class="w"> </span><span class="k">this</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T1</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">Make1</span><span class="p">(</span><span class="n">T1</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// T2 constructor, casts</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Variant</span><span class="p">(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">:</span><span class="w"> </span><span class="k">this</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">implicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="nf">T2</span><span class="p">(</span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">Get</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;</span><span class="w"> </span><span class="n">Make2</span><span class="p">(</span><span class="n">T2</span><span class="w"> </span><span class="n">item</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Variant</span><span class="p">&lt;</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">&gt;(</span><span class="k">new</span><span class="w"> </span><span class="n">VariantHolder</span><span class="p">&lt;</span><span class="n">T2</span><span class="p">&gt;(</span><span class="n">item</span><span class="p">),</span><span class="w"> </span><span class="m">1</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+<p>While C# doesn&#39;t provide a way to implement variable number of generic
+arguments, constructors and casts for all types are identical, so we can
+use a <a href="https://docs.microsoft.com/en-us/visualstudio/modeling/design-time-code-generation-by-using-t4-text-templates">T4 text
+template</a>
+to generate all this code. Our template would iterate for each type and
+emit the C# code for these:</p>
+<div class="highlight"><pre><span></span>&lt;#
+for (int types = 1; types &lt;= 8; types++)
+{
+    // Comma-delimited string of types (eg. &quot;T1, T2, T3&quot;)
+    var args = String.Join(&quot;, &quot;,
+        Enumerable.Range(1, types).Select(i =&gt; &quot;T&quot; + i));
+
+    // Type we are generating code for (eg. &quot;Variant&lt;T1, T2, T3&gt;&quot;)
+    var type = $&quot;Variant&lt;{args}&gt;&quot;;
+##&gt;
+
+    public sealed class &lt;#= type #&gt; : VariantBase
+    {
+        private Variant(IVariantHolder item, byte index)
+            : base(item, index)
+        {}
+
+&lt;#
+    // For each type argument T1, T2, T3 etc.
+    for (int i = 1; i &lt;= types; i++)
+    {
+##&gt;
+        public Variant(T&lt;#= i #&gt; item)
+            : base(new VariantHolder&lt;T&lt;#= i #&gt;&gt;(item), &lt;#= i - 1 #&gt;)
+        {}
+
+        public static implicit operator &lt;#= type #&gt;(T&lt;#= i #&gt; item)
+            =&gt; new &lt;#= type #&gt;(item);
+
+        public static explicit operator T&lt;#= i #&gt;(&lt;#= type #&gt; variant)
+            =&gt; variant.Get&lt;T&lt;#= i #&gt;&gt;();
+
+        public static &lt;#= type #&gt; Make&lt;#= i #&gt;(T&lt;#= i #&gt; item)
+            =&gt; new &lt;#= type #&gt;(new VariantHolder&lt;T&lt;#= i #&gt;&gt;(item), &lt;#= i - 1 #&gt;);
+&lt;#
+    }
+##&gt;
+    }
+
+&lt;#
+}
+##&gt;
+</pre></div>
+
+<p>I will not cover T4 templates in this blog post, just highlight that the
+template above does generate all the <code>Variant&lt;&gt;</code> variations with the
+appropriate constructors and cats.</p>
+
+<p>I am currently working on a type library which includes this variant and
+some other useful types: <a href="https://github.com/vladris/Maki">https://github.com/vladris/Maki</a>.</p>
+
+<h2>Summary</h2>
+
+<p>In this post we implemented a generic variant type in C#, going over:</p>
+
+<ul>
+<li>Variant types and how they are useful.</li>
+<li>Requirements for a variant type.</li>
+<li>Implementation:
+
+<ul>
+<li>API.</li>
+<li>Type erasure.</li>
+<li>Disambiguating between similar generic arguments.</li>
+<li>Overrides for <code>Equals</code> and <code>GetHashCode</code>.</li>
+<li>Implementations for various numbers of generic arguments.</li>
+</ul></li>
+</ul>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>See <a href="https://en.wikipedia.org/wiki/Tagged_union"><q>tagged union</q> on
+Wikipedia</a>&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2018/06/23/ioc-containers.html>IoC Containers</a></span></div>
+<div id="next"><span><a href=../../.././2018/09/09/clean-code-types.html>Clean Code: Types</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

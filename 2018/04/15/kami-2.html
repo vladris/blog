@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Kami 2 &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/style.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>April 15, 2018</span></header>
+<article>
+<h1>Kami 2</h1>
+
+<p><a href="https://itunes.apple.com/us/app/kami-2/id1133161444">Kami 2</a> is an iOS
+game where the player folds colored paper with the goal of making the
+whole screen have the same color. Each level has a set of colors and the
+player can pick any of them, color a section, then repeat for a limited
+number of steps:</p>
+
+<p><img src="kami-animation.gif" alt="image"></p>
+
+<p>Some levels are fairly tricky. For example I got stuck on this one:</p>
+
+<p><img src="kami-screenshot.png" alt="image"></p>
+
+<p>While the app can provide hints, a more interesting exercise is to see
+if we can solve this with an algorithm. We can look at this as a graph
+problem. Each colored section represents a node in the graph and we
+consider adjacent areas as connected by edges:</p>
+
+<p><img src="kami-graph.png" alt="image"></p>
+
+<p>Here is a more abstract representation of the same level:</p>
+
+<p><img src="graph.png" alt="image"></p>
+
+<p>The only information we care about is the color of each node and what
+other nodes it is connected with.</p>
+
+<p>A step in the game consists of choosing a color, picking a node to get
+colored with the chosen colore, then merging the colored node with
+adjacent nodes of the same (new) color. The game is won if the nodes get
+merged down to a single node within the step limit.</p>
+
+<p>A Python representation of the graph would look like this:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Graph</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">edges</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">edges</span>
+</pre></div>
+
+<p>We represent nodes as a dictionary where the key is the node id and the
+value is the color of the node, and edge as a list of pairs of ids. The
+level diagramed above would be represented as:</p>
+<div class="highlight"><pre><span></span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;Red&quot;</span><span class="p">,</span>
+            <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
+            <span class="mi">5</span><span class="p">:</span> <span class="s2">&quot;White&quot;</span><span class="p">,</span>
+            <span class="mi">6</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
+            <span class="mi">7</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
+            <span class="mi">8</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
+            <span class="mi">9</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
+            <span class="mi">10</span><span class="p">:</span> <span class="s2">&quot;Red&quot;</span><span class="p">,</span>
+            <span class="mi">11</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
+            <span class="mi">12</span><span class="p">:</span> <span class="s2">&quot;White&quot;</span><span class="p">,</span>
+            <span class="mi">13</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
+            <span class="mi">14</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
+            <span class="mi">15</span><span class="p">:</span> <span class="s2">&quot;White&quot;</span><span class="p">,</span>
+            <span class="mi">16</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
+            <span class="mi">17</span><span class="p">:</span> <span class="s2">&quot;Red&quot;</span><span class="p">,</span>
+            <span class="mi">18</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">18</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">18</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">17</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">18</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">17</span><span class="p">,</span> <span class="mi">18</span><span class="p">),</span>
+        <span class="p">])</span>
+</pre></div>
+
+<p>We need a function that, for a given node id, enumerates all the
+connected nodes. This is a member function of the graph:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">connected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">node</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">node</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+
+<p>We also need a function that colors a node and merges it with adjacent
+nodes of the same color. We can make this function return a new graph
+instance with the applied updates. Its signature would be:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+</pre></div>
+
+<p>First it would have to determine the set of nodes that need to be merged
+after coloring. That is the node that just got colored and adjacent
+nodes which have the same color as its new color. By convention, when we
+merge nodes we keep the smallest id:</p>
+<div class="highlight"><pre><span></span><span class="n">to_merge</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="p">]</span>
+<span class="n">to_merge</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">==</span> <span class="n">color</span><span class="p">]</span>
+<span class="n">new_n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">to_merge</span><span class="p">)</span>
+</pre></div>
+
+<p>The nodes of the new graph would be the same nodes as the old one, minus
+any node in <code>to_merge</code>. Nodes in the <code>to_merge</code> list would be
+represented by the node <code>new_n</code>:</p>
+<div class="highlight"><pre><span></span><span class="n">new_nodes</span> <span class="o">=</span> <span class="p">{</span> <span class="n">new_n</span><span class="p">:</span> <span class="n">color</span> <span class="p">}</span>
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">to_merge</span><span class="p">:</span>
+        <span class="n">new_nodes</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+</pre></div>
+
+<p>We also need to build the new list of edges. We do this as follows: for
+each edge, if both nodes are in <code>to_merge</code>, the edge does not exist in
+the new graph so we discard it. If one node is in <code>to_merge</code>, we create
+a new edge where the node in <code>to_merge</code> is replaced by <code>new_n</code>. If none
+of the nodes is in <code>to_merge</code>, we keeep the edge:</p>
+<div class="highlight"><pre><span></span><span class="n">new_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">to_merge</span> <span class="ow">and</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">to_merge</span><span class="p">:</span>
+        <span class="k">continue</span>
+    <span class="k">elif</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">to_merge</span><span class="p">:</span>
+        <span class="n">new_edges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">new_n</span><span class="p">,</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]))))</span>
+    <span class="k">elif</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">to_merge</span><span class="p">:</span>
+        <span class="n">new_edges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_n</span><span class="p">))))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_edges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+</pre></div>
+
+<p>We keep the edge tuples sorted by node id to avoid duplication (for
+example having both a <code>(1, 3)</code> and a <code>(3, 1)</code>). We return a graph
+consiting of <code>new_nodes</code> and <code>new_edges</code>. The full implementation of
+<code>color</code> is:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+    <span class="n">to_merge</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="p">]</span>
+    <span class="n">to_merge</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">==</span> <span class="n">color</span><span class="p">]</span>
+    <span class="n">new_n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">to_merge</span><span class="p">)</span>
+
+    <span class="n">new_nodes</span> <span class="o">=</span> <span class="p">{</span> <span class="n">new_n</span><span class="p">:</span> <span class="n">color</span> <span class="p">}</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">to_merge</span><span class="p">:</span>
+            <span class="n">new_nodes</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+
+    <span class="n">new_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">to_merge</span> <span class="ow">and</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">to_merge</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">elif</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">to_merge</span><span class="p">:</span>
+            <span class="n">new_edges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">new_n</span><span class="p">,</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]))))</span>
+        <span class="k">elif</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">to_merge</span><span class="p">:</span>
+            <span class="n">new_edges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_n</span><span class="p">))))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_edges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Graph</span><span class="p">(</span><span class="n">new_nodes</span><span class="p">,</span> <span class="n">new_edges</span><span class="p">)</span>
+</pre></div>
+
+<p>To solve a level we try coloring all of the nodes then recursively solve
+for the new graph. If our graph has one node, we found a solution. If we
+run out of steps, our candidate solution is not good so we backtrack:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">connected</span><span class="p">(</span><span class="n">node</span><span class="p">)]))</span>
+        <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="n">colors</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">color</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+            <span class="n">solve</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">steps</span> <span class="o">+</span> <span class="p">[(</span><span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">)],</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+<p>Here <code>graph</code> is the graph we are trying to solve, <code>steps</code> is the list of
+actions in our solution, consisting of pairs of node id and color, and
+<code>n</code> is the remaining number of steps.</p>
+
+<p>Note that we don&#39;t attempt to color a node with any random color,
+rather we want to color it with the color of one of its adjacent nodes.
+The reason for this is that such a coloring guarantees <em>some</em> nodes will
+get merged so we reduce the total number of nodes with this step. If we
+were to color a node with a color none of its adjacent nodes has, there
+would be nothing to merge so we would waste a step without reducing the
+graph.</p>
+
+<p>This solution works but is rather slow. One optimization we can do is to
+more aggressively prune our search space: if at any point our graph has
+more colors than the number of remaining steps + 1, we know we are down
+the wrong path and need to backtrack. As an example, if we have four
+colors on the board: blue, red, yellow, white, but we only have 2 steps
+left, no matter how the areas are connected, we can never end up with a
+single color in 2 steps as we need to recolor 3 areas.</p>
+
+<p>We can implement this optimization by updating the <code>Graph</code> constructor
+to keep track of the number of unique colors and update our <code>solve</code>
+function to backtrack if we have more colors than steps + 1:</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Graph</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">edges</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">edges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">colors</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+</pre></div>
+
+<p>The update is the last line, which maintains the count of unique values
+in the <code>nodes</code> dictionary. Updated <code>solve</code> looks like this:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">graph</span><span class="o">.</span><span class="n">colors</span> <span class="o">&gt;</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">connected</span><span class="p">(</span><span class="n">node</span><span class="p">)]))</span>
+        <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="n">colors</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">color</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+            <span class="n">solve</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">steps</span> <span class="o">+</span> <span class="p">[(</span><span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">)],</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+<p>We introduced a new <code>if</code> statement that returns if
+<code>graph.colors &gt; n + 1</code>.</p>
+
+<p>Running this yields the following solution for the level:</p>
+<div class="highlight"><pre><span></span><span class="p">[(</span><span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;Purple&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;White&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;Yellow&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Purple&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Red&#39;</span><span class="p">)]</span>
+</pre></div>
+
+<p>So coloring node 10 with purple, then node 8 with white and so on solves
+the level.</p>
+
+<p>Another potential optimization which I did not implement could improve
+pruning further by relying on the fact that coloring a node and merging
+it with adjacent nodes removes at most two edges from a path. So if the
+shortest path between two nodes in the graph is longer than twice the
+number of remaining steps, we would again not be able to find a solution
+from the current state.</p>
+
+<p>The full source code is available <a href="https://gist.github.com/vladris/c283de5d8a3289303c7aca258e9cbdb1">on
+GitHub</a>.</p>
+
+</article>
+<nav>
+<div id="prev"><span>« <a href=../../.././2018/02/11/fibonacci.html>Fibonacci</a></span></div>
+<div id="next"><span><a href=../../.././2018/06/23/ioc-containers.html>IoC Containers</a> »</span></div>
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>
