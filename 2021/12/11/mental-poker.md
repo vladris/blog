@@ -174,10 +174,10 @@ We can model the gameplay using an append-only list of moves. For
 example, if Alice "draws" the first card, the move can be modeled as
 `DRAW 1`. If Bob agrees Alice should see the card, Bob can publish his
 secret key $K_{B_1}$ as `PUBLISH <KB1>`. Alice can now use her
-$K_{A_1}$[ and the published :math:\`K\_{B_1}]{.title-ref} to decrypt
-the first card of the deck (stored in the other data structure). `DRAW`,
-`PUBLISH`, and other actions are part of the game semantics, which can
-be implemented and interpreted by clients.
+$K_{A_1}$ and the published $K_{B_1}$ to decrypt the first card of the
+deck (stored in the other data structure). `DRAW`, `PUBLISH`, and other
+actions are part of the game semantics, which can be implemented and
+interpreted by clients.
 
 Note the deck of cards stays in place during the game. "Drawing" a
 card means simply that all clients agree Alice should get the keys to
