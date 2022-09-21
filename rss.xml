@@ -12481,9 +12481,9 @@ this, for example an API that would return either an error code or a
 value, both being of the same type. For such cases, we need another
 way to explicitly set a value as the first, second, and so on type,
 and an <code>Index</code> property that would tell us which occurrence of the
-type it is (as <code>Get&lt;int&gt;() called on a Variant&lt;int, int&gt;</code> would
+type it is (as <code>Get&lt;int&gt;()</code> called on a <code>Variant&lt;int, int&gt;</code> would
 succeed in returning us an <code>int</code>, but we wouldn't be able to tell
-whether it got in there as a <code>T1 or as a T2</code>.</p></li>
+whether it got in there as a <code>T1</code> or as a <code>T2</code>.</p></li>
 <li><p>We would also provide a non-generic <code>Get()</code> which returns an
 <code>object</code>, so we can use pattern matching on a variant:</p>
 <div class="highlight"><pre><span/><span class="n">Variant</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">variant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="m">42</span><span class="p">;</span><span class="w"/>
