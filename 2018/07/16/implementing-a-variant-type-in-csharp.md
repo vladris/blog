@@ -120,9 +120,9 @@ Our variant implementation should satisfy a few requirements:
   value, both being of the same type. For such cases, we need another
   way to explicitly set a value as the first, second, and so on type,
   and an `Index` property that would tell us which occurrence of the
-  type it is (as `Get<int>() called on a Variant<int, int>` would
+  type it is (as `Get<int>()` called on a `Variant<int, int>` would
   succeed in returning us an `int`, but we wouldn't be able to tell
-  whether it got in there as a `T1 or as a T2`.
+  whether it got in there as a `T1` or as a `T2`.
 
 * We would also provide a non-generic `Get()` which returns an
   `object`, so we can use pattern matching on a variant:
