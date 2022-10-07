@@ -16,11 +16,9 @@ jobs:
         with:
           python-version: '3.10'
           
-      - name: Install baku
-        run: pip install baku
-          
       - name: Build blog
         run: |
+          pip install baku
           cd $GITHUB_WORKSPACE
           baku --build
           md $TMPDIR/html
