@@ -18,7 +18,7 @@ jobs:
           
       - name: Build blog
         run: |
-          pip install baku
+          python -m pip install --upgrade pip baku
           cd $GITHUB_WORKSPACE
           baku --build
           md $TMPDIR/html
