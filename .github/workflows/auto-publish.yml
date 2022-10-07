@@ -1,0 +1,33 @@
+name: auto-publish
+
+on:
+  push:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install baku
+        run: pip install baku
+          
+      - name: Build blog
+        run: |
+          cd $GITHUB_WORKSPACE
+          baku --build
+          md $TMPDIR/html
+          cp -r html/* $TMPDIR/html
+          git checkout gh-pages
+          rm -rf *
+          cp -r $TMPDIR/html/* ./
+          touch .nojekyll
+
+# TODO: commit & push to gh-pages
