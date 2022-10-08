@@ -29,8 +29,8 @@ jobs:
       - name: Update
         run: |
           rm -rf ./*
+          cp -r ${{ env.temp }}/* .
           touch .nojekyll
-          ls
-          echo "${{ env.temp }}"
+          git status
 
 # TODO: commit & push to gh-pages
