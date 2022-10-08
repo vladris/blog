@@ -28,8 +28,9 @@ jobs:
           ref: gh-pages
       - name: Update
         run: |
+          rm -rf ./*
           touch .nojekyll
           ls
-          echo "${{ env.action_state }}"
+          echo "${{ env.temp }}"
 
 # TODO: commit & push to gh-pages
