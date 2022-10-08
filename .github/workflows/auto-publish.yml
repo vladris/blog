@@ -22,13 +22,12 @@ jobs:
           baku --build
           TEMP=`mktemp -d`
           cp -r html/* $TEMP
+          ls $TEMP
       - uses: actions/checkout@v3
         with:
           ref: gh-pages
       - name: Update
         run: |
-          rm -rf *
-          cp -r $TEMP/* ./
           touch .nojekyll
           ls
 
