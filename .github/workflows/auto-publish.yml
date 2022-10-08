@@ -12,7 +12,8 @@ jobs:
 
     steps:
       # RSS feed should have accurate timezone
-      - uses: zcong1993/setup-timezone@v1.1.2
+      - name: Update timezone
+        uses: zcong1993/setup-timezone@v1.1.2
         with:
           timezone: America/Los_Angeles
       - uses: actions/checkout@v3
@@ -27,7 +28,8 @@ jobs:
           TEMP=`mktemp -d`
           cp -r html/* $TEMP
           echo "temp=$TEMP" >> $GITHUB_ENV
-      - uses: actions/checkout@v3
+      - name: Checkout gh-pages
+        uses: actions/checkout@v3
         with:
           ref: gh-pages
       - name: Update
@@ -40,6 +42,6 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git commit -m "Blog rebuild" -a
-          git log -1
-
-# TODO: push
+#      - name: Push
+#        uses: ad-m/github-push-action@v0.6.0
+#          git log -1
