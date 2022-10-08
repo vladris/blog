@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: zcong1993/setup-timezone@v1.1.2
         with:
-          timezoneLinux: "America/Los_Angeles"
+          timezone: America/Los_Angeles
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
