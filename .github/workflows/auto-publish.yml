@@ -31,6 +31,6 @@ jobs:
           rm -rf ./*
           cp -r ${{ env.temp }}/* .
           touch .nojekyll
-          git status
+          git diff rss.xml
 
 # TODO: commit & push to gh-pages
