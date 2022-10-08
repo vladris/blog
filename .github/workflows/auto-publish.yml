@@ -22,13 +22,14 @@ jobs:
           baku --build
           TEMP=`mktemp -d`
           cp -r html/* $TEMP
-          echo $TEMP
+          echo "temp=$TEMP" >> $GITHUB_ENV
       - uses: actions/checkout@v3
         with:
           ref: gh-pages
       - name: Update
         run: |
           touch .nojekyll
-          echo $TEMP
+          ls
+          echo "${{ env.action_state }}"
 
 # TODO: commit & push to gh-pages
