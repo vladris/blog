@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Computability Part 9: LISP &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/light.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>December 01, 2022</span></header>
+<article>
+<h1>Computability Part 9: LISP</h1>
+
+<p>In the <a href="https://vladris.com/blog/2022/10/14/computability-part-8-lambda-calculus.html">previous post</a>,
+we covered lambda calculus, a computational model underpinning <em>functional
+programming</em>. In this blog post, we&#39;ll continue down the functional programming
+road and cover one of the oldest programming languages still in use: LISP.</p>
+
+<p>LISP was originally specified in 1958 by John McCarthy and the paper describing
+the language was published in 1960<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>. It became very popular in AI research
+and flavors of it are still in use today.</p>
+
+<p>LISP has a quite unique syntax and execution model.</p>
+
+<h2>S-expression</h2>
+
+<p>If we are going to talk about LISP, we need to start with <em>symbolic
+expressions</em>. Symbolic expressions, or S-expressions, are defined as:</p>
+
+<p>An S-expression is either</p>
+
+<ol>
+<li>an atom, or</li>
+<li>an expression of the form <code>(x . y)</code></li>
+</ol>
+
+<p>where <code>x</code> and <code>y</code> are S-expressions.</p>
+
+<p>This very simple definition is very powerful: it allows us to represent any
+binary tree. Let&#39;s start with a very simple universe where the only atom is
+<code>()</code>, representing a null value. With this atom and the above definition, while
+we can&#39;t (easily) represent data, we can capture the shape of a binary tree. For
+example, the tree consisting of a root node and two leaf nodes:</p>
+
+<p><img src="./fig1.svg" alt="Binary tree shape"></p>
+
+<p>can be represented as <code>(() . ())</code>.</p>
+
+<p>The tree consisting of a root, a left leaf node, and a right node with two child
+leaf nodes</p>
+
+<p><img src="./fig2.svg" alt="Binary tree"></p>
+
+<p>would be <code>(() . (() . ()))</code>.</p>
+
+<p>If we expand the definition of atom to include numbers and basic arithmetic
+(<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>), we can represent arithmetic expressions as S-expressions.
+<code>2 + 3</code></p>
+
+<p><img src="./fig3.svg" alt="2 + 3"></p>
+
+<p>can be represented as <code>(+ . (2 . (3 . ()))</code>.</p>
+
+<p><code>2 * (3 + 5)</code></p>
+
+<p><img src="./fig4.svg" alt="2 * (3 + 5)"></p>
+
+<p>can be represented as <code>(* . (2 . ((+ . (3 . (5 . ()))) . ())</code>.</p>
+
+<p>Note the S-expression definition only allows for <q>values</q> (atoms) at leaf nodes
+of the tree. An S-expression is either a leaf node containing a value or a
+non-leaf node with 2 S-expression children. That means we can&#39;t represent <code>2 +
+3</code> as</p>
+
+<p><img src="./fig5.svg" alt="2 + 3"></p>
+
+<p>but the representation we just saw is equivalent.</p>
+
+<h3>Representing data</h3>
+
+<p>S-expressions can be used to represent data. Consider a simple list <code>1, 2, 3, 4,
+5</code>. Much like we saw in the previous post when we looked at representing lists
+as lambda expressions, we can represent lists using S-expressions using a head
+and a tail (recursively):</p>
+
+<p><img src="./fig6.svg" alt="List"></p>
+
+<p>can be viewed as</p>
+
+<p><img src="./fig7.svg" alt="Tree list"></p>
+
+<p>or <code>(1 . (2 . (3 . (4 . (5 . ())))))</code>.</p>
+
+<p>We can also represent an associative array: instead of a value, we can represent
+a key-value pair as an S-expression (<code>(key . value)</code>), so we can represent the
+associative array <code>{ 1: 2, 2: 3, 3: 5 }</code> as <code>((1 . 2) . ((2 . 3) . ((3 . 5) .
+())))</code>.</p>
+
+<p>Historically, a non-atom S-expression in LISP is called a <em>cons cell</em> (from
+<q>construction</q>). Instead of <em>head</em> and <em>tail</em>, LISP uses <em>car</em> and <em>cdr</em>
+(standing for <em>contents of the address register</em> and <em>contents of the decrement
+register</em>, which are artifacts of the computer architecture first flavors of
+LISP were implemented in).</p>
+
+<p>We just saw how we can represent trees, lists, and associative arrays using
+S-expressions. But S-expressions aren&#39;t limited to representing data: we can
+also use them to represent code.</p>
+
+<h3>Representing code</h3>
+
+<p>We looked at how <code>2 + 3</code> would look like as an S-expression. In fact, we can
+represent any function call as an S-expression, where the left node of the root
+S-expression is the function to be called and the right subtree contains the
+arguments.</p>
+
+<p><code>2 + 3</code> is equivalent to the function <code>add(2, 3)</code>. So we can represent the
+function call <code>add(2, 3)</code> as the S-expression <code>(add . (2 . (3 . ())))</code>.</p>
+
+<p>Note we can have any number of arguments as we grow the right subtrees: <code>sum(2,
+3, 4, 5)</code> can be represented as <code>(sum . (2 . (3 . (4 . (5 . ())))))</code>. If we want
+to pass the result of another function as an argument, say <code>sum(2, sum(3, 4),
+5)</code>, we can represent this as <code>(sum . (2 . ((sum . (3 . (4 . ())) . 5)))</code>.</p>
+
+<p>We saw in the previous post that we can represent pretty much anything using
+functions. An if expression is a function <code>if(condition, true-branch,
+false-branch)</code>. We can combine this with recursion to generate loops. So we have
+all the building blocks for a Turing-complete system.</p>
+
+<p>It turns out we can represent both data and code as S-expressions. Before
+moving on to look at some implementation details, let&#39;s introduce some syntactic
+sugar.</p>
+
+<h3>Syntactic sugar</h3>
+
+<p>Writing S-expression like this can become tedious, so let&#39;s introduce some
+syntactic sugar.  Instead of <code>(1 . (2 . (3 . (4 . (5 . ())))))</code>, we can write
+<code>(1 2 3 4 5)</code>. We omit some of the parenthesis, the concatenation symbol <code>.</code>,
+and the final <code>()</code>. By default, we concatenate on the right subtree. If we need
+to go down the left subtree, we add parenthesis. So instead of representing the
+associative array <code>{ 1: 2, 2: 3, 3: 5 }</code> as <code>((1 . 2) . ((2 . 3) . ((3 . 5) .
+())))</code>, we can more succinctly represent it as <code>((1 2) (2 3) (3 5))</code>, without
+losing any meaning.</p>
+
+<p>Similarly, <code>(add . (2 . (3 . ())))</code> becomes <code>(add 2 3)</code> and <code>(sum . (2 . ((sum .
+(3 . (4 . ())) . 5)))</code> becomes <code>(sum 2 (sum 3 4) 5)</code>.</p>
+
+<p>In our implementation, we will represent S-expressions as lists which can
+contain any number of elements. This is a more succinct representation and will
+make our code easier to understand.</p>
+
+<h2>Implementation</h2>
+
+<p>We can now look at implementing a small LISP. We take an input string, we parse
+it into an S-expression, then we evaluate the S-expression and print the result.</p>
+
+<p>First, the parser: we will take a string as input, split it into tokens, then
+parse the tokens into an S-expression.</p>
+
+<p>We will transform an input string into a list of tokens by matching it with
+either <code>(</code>, <code>)</code>, or a string of alphanumeric characters. We&#39;ll use a regular
+expression for this, then extract the matched values (using <code>match.group()</code>)
+into a list:</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+
+<span class="k">def</span> <span class="nf">lex</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s1">&#39;\(|\)|\w+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)]</span>
+</pre></div>
+
+<p>We can now transform an input like <code>&#39;(add 1 (add 2 3))&#39;</code> into the list of tokens
+<code>[&#39;(&#39;, &#39;add&#39;, &#39;1&#39;, &#39;(&#39;, &#39;add&#39;, &#39;2&#39;, &#39;3&#39;, &#39;)&#39;, &#39;)&#39;]</code> by calling <code>lex()</code> on it.</p>
+
+<p>We need to transform this list of tokens into an S-expression. First, we need a
+couple of helper functions. An atom can be either a number or a symbol. We&#39;ll
+create one from a token using an <code>atom()</code> function:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">atom</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>
+</pre></div>
+
+<p>The other helper function will yield while the head of our token list is
+different than <code>)</code>, then pop the <code>)</code> token. We&#39;ll use this while parsing to
+iterate over the tokens after a <code>(</code> and until we find the matching <code>)</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">pop_rpar</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+    <span class="k">while</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;)&#39;</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+<p>Parsing into an S-expression is now very simple:</p>
+
+<ul>
+<li>If we find a <code>(</code>, we recursively parse the following tokens until we reach
+the matching <code>)</code>.</li>
+<li>If we find a <code>)</code>, we raise an exception - this is an unmatched <code>)</code>.</li>
+<li>Otherwise we have an atom - we return the result of calling <code>atom()</code> on it.</li>
+</ul>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+    <span class="k">match</span> <span class="n">token</span> <span class="o">:=</span> <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">case</span> <span class="s1">&#39;(&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">parse</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">pop_rpar</span><span class="p">(</span><span class="n">tokens</span><span class="p">)]</span>
+        <span class="k">case</span> <span class="s1">&#39;)&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unexpected )&#39;</span><span class="p">)</span>
+        <span class="k">case</span> <span class="k">_</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">atom</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</pre></div>
+
+<p>That&#39;s it. If we parse the input string <code>&#39;(add 1 (add 2 3))&#39;</code> using our
+functions - <code>parse(lex(&#39;(add 1 (add 2 3))&#39;))</code> - we will get back
+<code>[&#39;add&#39;, 1, [&#39;add&#39;, 2, 3]]</code>.</p>
+
+<p>We can now take text as input and convert it into the internal representation
+we discussed.</p>
+
+<p>The next step is to evaluate such an S-expression and return a result. We need
+two pieces for this: an environment which stores built-in functions and
+user-defined variables, and an evaluation function which takes an S-expression
+and processes it using the environment.</p>
+
+<p>We&#39;ll start with a simple environment with built-in support for equality,
+arithmetic operations and list operations:</p>
+<div class="highlight"><pre><span></span><span class="n">env</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Equality</span>
+    <span class="s1">&#39;eq&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">==</span> <span class="n">arg2</span><span class="p">,</span>
+
+    <span class="c1"># Arithmetic</span>
+    <span class="s1">&#39;add&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">+</span> <span class="n">arg2</span><span class="p">,</span>
+    <span class="s1">&#39;sub&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">-</span> <span class="n">arg2</span><span class="p">,</span>
+    <span class="s1">&#39;mul&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">*</span> <span class="n">arg2</span><span class="p">,</span>
+    <span class="s1">&#39;div&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">/</span> <span class="n">arg2</span><span class="p">,</span>
+
+    <span class="c1"># Lists</span>
+    <span class="s1">&#39;cons&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">car</span><span class="p">,</span> <span class="n">cdr</span><span class="p">:</span> <span class="p">[</span><span class="n">car</span><span class="p">]</span> <span class="o">+</span> <span class="n">cdr</span><span class="p">,</span>
+    <span class="s1">&#39;car&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="nb">list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="s1">&#39;cdr&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="nb">list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Our evaluation function has a few special-case handling for variable
+definitions, quotations, and if-expressions, and is otherwise pretty
+straightforward:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">):</span>
+    <span class="c1"># If null or number atom, return it</span>
+    <span class="k">if</span> <span class="n">sexpr</span> <span class="o">==</span> <span class="p">[]</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">sexpr</span>
+
+    <span class="c1"># If string atom, look it up in environment</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">]</span>
+
+    <span class="k">match</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">case</span> <span class="s1">&#39;def&#39;</span><span class="p">:</span>
+            <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">case</span> <span class="s1">&#39;quote&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">case</span> <span class="s1">&#39;if&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">else</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="k">case</span> <span class="n">call</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">env</span><span class="p">[</span><span class="n">call</span><span class="p">](</span><span class="o">*</span><span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
+</pre></div>
+
+<p>Our evaluation works like this:</p>
+
+<ul>
+<li>If we have an atom representing the empty list, we return it.</li>
+<li>If we have an atom that is a number, we&#39;ll return its value.</li>
+<li>If we have an atom that is a string (a symbol), we&#39;ll look it up in the
+environment and return what we find there.</li>
+<li>Otherwise we don&#39;t have an atom, rather an S-expression.
+
+<ul>
+<li>If the first symbol is <code>def</code>, we add a definition to the environment.</li>
+<li>If the first symbol is <code>quote</code>, we return the second symbol unevaluated.</li>
+<li>If the first symbol is <code>if</code>, we evaluate the second symbol and if it is
+truthy, we evaluate the third symbol, otherwise the fourth symbol.</li>
+<li>If the first symbol doesn&#39;t denote a definition or an if expression, it
+is a function call: we grab the function from the environment,
+recursively evaluate all arguments, and pass them to the function.</li>
+</ul></li>
+</ul>
+
+<p>We&#39;re taking a bit of a shortcut here and relying on Python&#39;s notion of
+truthy-ness (e.g. <code>0</code> or an empty list <code>[]</code> is non-truthy). If needed, we can
+enhance our implementation with Boolean support.</p>
+
+<p>We can now implement a simple read-eval-print loop (REPL):</p>
+<div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">line</span> <span class="o">:=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">&#39;&gt; &#39;</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">parse</span><span class="p">(</span><span class="n">lex</span><span class="p">(</span><span class="n">line</span><span class="p">))))</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+
+<p>We can try a few simple commands (shown below with the corresponding output):</p>
+<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="mi">40</span><span class="p">)</span><span class="w"></span>
+<span class="nv">None</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"></span>
+<span class="nv">None</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">b</span><span class="p">)</span><span class="w"></span>
+<span class="mi">42</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="mi">1</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">4</span><span class="p">))</span><span class="w"></span>
+<span class="mi">9</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nb">list</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">()))))</span><span class="w"></span>
+<span class="nv">None</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nb">car</span><span class="w"> </span><span class="nb">list</span><span class="p">)</span><span class="w"></span>
+<span class="mi">1</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nb">cdr</span><span class="w"> </span><span class="nb">list</span><span class="p">)</span><span class="w"></span>
+<span class="nv">[2,</span><span class="w"> </span><span class="nv">3]</span><span class="w"></span>
+</pre></div>
+
+<h3>Custom functions</h3>
+
+<p>We can extend the environment with additional functions as needed. These
+represent the <q>built-in</q> functions of our LISP interpreter. One capability we
+are still missing is the ability to define custom functions at runtime. Let&#39;s
+extend our interpreter to support that.</p>
+
+<p>A function can take any number of arguments, which should become defined in
+the environment while the function is executing but which don&#39;t exist outside
+the function. For example, if we define an addition function as <code>add(x, y)</code>,
+we should be able to refer to the <code>x</code> and <code>y</code> arguments inside the body of the
+function but not outside of it. <code>x</code> and <code>y</code> only exist within the <em>scope</em> of
+the function.</p>
+
+<p>We can add scoping to our interpreter by extending our <code>eval</code> to take an
+environment as an argument instead of always referencing our <code>env</code>. Then when
+we create a new scope, we create a new environment to use.</p>
+
+<p>For function definition, we will use the following syntax: <code>(deffun
+function_name (arguments...) (body...))</code>. <code>deffun</code> denotes a function
+definition. The second argument is the function name. The third is a list of
+parameters and the fourth is the body of the function, which is going to be
+evaluated in an environment where its arguments are defined.</p>
+
+<p>We need a function factory:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_function</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+    <span class="k">return</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">eval</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">env</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">args</span><span class="p">)))</span>
+</pre></div>
+
+<p>This takes the parameters, body, and environment and returns a lambda which
+expects a list of arguments. Calling the lambda will invoke <code>eval</code> on the
+body. Note we extend the environment with a dictionary mapping parameters to
+arguments.</p>
+
+<p>Let&#39;s update <code>eval</code> to use a parameterized environment and support the new
+<code>deffun</code> function definition capability:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">):</span>
+    <span class="c1"># If number atom, return value</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">sexpr</span>
+
+    <span class="c1"># If string atom, look it up in environment</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">sexpr</span> <span class="o">==</span> <span class="p">[]:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">match</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">case</span> <span class="s1">&#39;def&#39;</span><span class="p">:</span>
+            <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+        <span class="k">case</span> <span class="s1">&#39;deffun&#39;</span><span class="p">:</span>
+            <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">make_function</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+        <span class="k">case</span> <span class="s1">&#39;quote&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">case</span> <span class="s1">&#39;if&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span> <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span> <span class="k">else</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+        <span class="k">case</span> <span class="n">call</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">env</span><span class="p">[</span><span class="n">call</span><span class="p">](</span><span class="o">*</span><span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
+</pre></div>
+
+<p>Besides plumbing <code>env</code> through each <code>eval</code> call, we just added a <code>deffun</code> case where
+we use our function factory.</p>
+
+<p>We can run our REPL again and try out the new capability:</p>
+<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">deffun</span><span class="w"> </span><span class="nv">myadd</span><span class="w"> </span><span class="p">(</span><span class="nv">x</span><span class="w"> </span><span class="nv">y</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="nv">y</span><span class="p">))</span><span class="w"></span>
+<span class="nv">None</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">myadd</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"></span>
+<span class="mi">5</span><span class="w"></span>
+</pre></div>
+
+<p>Here is a Fibonacci implementation, using <code>deffun</code> and recursion:</p>
+<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">deffun</span><span class="w"> </span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">n</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">eq</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">eq</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">sub</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">sub</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">2</span><span class="p">))))))</span><span class="w"></span>
+<span class="nv">None</span><span class="w"></span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"></span>
+<span class="mi">21</span><span class="w"></span>
+</pre></div>
+
+<p>If <code>n</code> is 0, return <code>0</code> else if <code>n</code> is 1, return <code>1</code>, else recursively call
+<code>fib</code> for <code>n - 1</code> and <code>n - 2</code> and add the results.</p>
+
+<p>We won&#39;t provide a proof of Turing-completeness but it should be obvious that
+the capabilities we implemented so far are sufficient to emulate, for example,
+a cyclic tag system like we did in the previous post with lambdas.</p>
+
+<h2>Conclusions</h2>
+
+<p>The full implementation of our mini-LISP is <a href="https://vladris.com/code/LISP/lisp.py">here</a>.</p>
+
+<p>Peter Norvig wrote a much more detailed article describing a LISP implementation
+<a href="https://norvig.com/lispy.html">here</a>.</p>
+
+<p>LISP is a very interesting language as it uses the same representation for both
+data and code (for better or worse). Turns out binary trees (or trees if we use
+our syntactic sugar) are enough to represent both.</p>
+
+<p>As we just saw, a core LISP runtime is fairly easy to implement and many of the
+more advanced features can be bootstrapped within the language itself.</p>
+
+<p>Languages in the LISP family are called <em>LISP dialects</em>. Even though the
+language is many decades old, modern dialects are alive and thriving. For
+example Raket and Closure are LISP dialects.</p>
+
+<h2>Summary</h2>
+
+<p>In this post we looked at LISP:</p>
+
+<ul>
+<li>S-expressions which describe binary trees.</li>
+<li>Representing data as S-expressions.</li>
+<li>Representing code as S-expressions.</li>
+<li>A simple LISP implementation including a lexer, parser, environment,
+evaluation function, and a REPL.</li>
+<li>Extending this with custom function definitions.</li>
+</ul>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p>Original paper: http://www-formal.stanford.edu/jmc/recursive.pdf.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2022/10/14/computability-part-8-lambda-calculus.html">Computability Part 8: Lambda Calculus</a></span></div>
+
+
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>

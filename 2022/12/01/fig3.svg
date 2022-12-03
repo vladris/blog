@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg height="400" width="400" style="display: block; stroke: black; stroke-width: 2; fill: white; text-anchor: middle; dominant-baseline: middle" xmlns="http://www.w3.org/2000/svg">
+    <line x1="140" y1="75" x2="80" y2="150"/>
+    <line x1="140" y1="75" x2="200" y2="150"/>
+    <line x1="200" y1="150" x2="140" y2="225"/>
+    <line x1="200" y1="150" x2="260" y2="225"/>
+    <line x1="260" y1="225" x2="200" y2="300"/>
+    <line x1="260" y1="225" x2="320" y2="300"/>
+    <circle cx="140" cy="75" r="30"/>
+    <circle cx="80" cy="150" r="30"/>
+    <circle cx="200" cy="150" r="30"/>
+    <circle cx="140" cy="225" r="30"/>
+    <circle cx="260" cy="225" r="30"/>
+    <circle cx="200" cy="300" r="30"/>
+    <circle cx="320" cy="300" r="30"/>
+    <text x="80" y="150">+</text>
+    <text x="140" y="225">2</text>
+    <text x="200" y="300">3</text>
+    <text x="320" y="300">NULL</text>
+</svg>
