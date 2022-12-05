@@ -123,7 +123,8 @@ function call <code>add(2, 3)</code> as the S-expression <code>(add . (2 . (3 . 
 <p>Note we can have any number of arguments as we grow the right subtrees: <code>sum(2,
 3, 4, 5)</code> can be represented as <code>(sum . (2 . (3 . (4 . (5 . ())))))</code>. If we want
 to pass the result of another function as an argument, say <code>sum(2, sum(3, 4),
-5)</code>, we can represent this as <code>(sum . (2 . ((sum . (3 . (4 . ())) . 5)))</code>.</p>
+5)</code>, we can represent this as <code>(sum . (2 . ((sum . (3 . (4 . ()))) . (5 . ()))
+))</code>.</p>
 
 <p>We saw in the previous post that we can represent pretty much anything using
 functions. An if expression is a function <code>if(condition, true-branch,
@@ -146,7 +147,7 @@ associative array <code>{ 1: 2, 2: 3, 3: 5 }</code> as <code>((1 . 2) . ((2 . 3)
 losing any meaning.</p>
 
 <p>Similarly, <code>(add . (2 . (3 . ())))</code> becomes <code>(add 2 3)</code> and <code>(sum . (2 . ((sum .
-(3 . (4 . ())) . 5)))</code> becomes <code>(sum 2 (sum 3 4) 5)</code>.</p>
+(3 . (4 . ()))) . (5 . ()))))</code> becomes <code>(sum 2 (sum 3 4) 5)</code>.</p>
 
 <p>In our implementation, we will represent S-expressions as lists which can
 contain any number of elements. This is a more succinct representation and will

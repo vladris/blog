@@ -121,7 +121,8 @@ function call <code>add(2, 3)</code> as the S-expression <code>(add . (2 . (3 . 
 <p>Note we can have any number of arguments as we grow the right subtrees: <code>sum(2,
 3, 4, 5)</code> can be represented as <code>(sum . (2 . (3 . (4 . (5 . ())))))</code>. If we want
 to pass the result of another function as an argument, say <code>sum(2, sum(3, 4),
-5)</code>, we can represent this as <code>(sum . (2 . ((sum . (3 . (4 . ())) . 5)))</code>.</p>
+5)</code>, we can represent this as <code>(sum . (2 . ((sum . (3 . (4 . ()))) . (5 . ()))
+))</code>.</p>
 
 <p>We saw in the previous post that we can represent pretty much anything using
 functions. An if expression is a function <code>if(condition, true-branch,
@@ -144,7 +145,7 @@ associative array <code>{ 1: 2, 2: 3, 3: 5 }</code> as <code>((1 . 2) . ((2 . 3)
 losing any meaning.</p>
 
 <p>Similarly, <code>(add . (2 . (3 . ())))</code> becomes <code>(add 2 3)</code> and <code>(sum . (2 . ((sum .
-(3 . (4 . ())) . 5)))</code> becomes <code>(sum 2 (sum 3 4) 5)</code>.</p>
+(3 . (4 . ()))) . (5 . ()))))</code> becomes <code>(sum 2 (sum 3 4) 5)</code>.</p>
 
 <p>In our implementation, we will represent S-expressions as lists which can
 contain any number of elements. This is a more succinct representation and will
@@ -936,7 +937,7 @@ all lambda terms, and the \(Y\) combinator which enables recursion.</li>
 <p>In the <a href="https://vladris.com/blog/2022/07/31/computability-part-6-von-neumann-architecture.html">previous
 post</a>
 we covered the von Neumann architecture and even built a small VM
-implementing the different components. Such naïve implementation does
+implementing the different components. Such naÃ¯ve implementation does
 make for a very inefficient machine though. In this post, we'll dive a
 bit deeper into machine architectures (virtual and physical) and discuss
 some of the implementation details. We'll talk about processing:
@@ -3635,7 +3636,7 @@ automata.</p>
       <description><![CDATA[<h1>Computability Part 1: A Short History</h1>
 
 <blockquote>
-<p>An algorithm (/ˈælɡərɪðəm/ ) is a finite sequence of well-defined
+<p>An algorithm (/ËÃ¦lÉ¡ÉrÉªÃ°Ém/ ) is a finite sequence of well-defined
 instructions, typically used to solve a class of specific problems or
 to perform a computation.</p>
 </blockquote>
@@ -3717,14 +3718,14 @@ on page 379 of volume 1.</p>
 
 <p><img src="https://vladris.com/blog/2022/02/12/proof.png" alt="image"/></p>
 
-<p>Kurt Gödel (1906-1978) proves, with his incompleteness theorem (1930),
+<p>Kurt GÃ¶del (1906-1978) proves, with his incompleteness theorem (1930),
 that a formal system powerful enough to describe arithmetic cannot be
 both consistent and complete. In other words, starting from a set of
 axioms, if these are consistent (no contradictions can be derived), they
 cannot be complete (there will be true statements that cannot be derived
 from these axioms).</p>
 
-<p>Building upon this work, in 1933, Gödel develops general recursive
+<p>Building upon this work, in 1933, GÃ¶del develops general recursive
 functions as a model of computability (more on this later).</p>
 
 <h2>Entscheidungsproblem and models of computability</h2>
@@ -3732,7 +3733,7 @@ functions as a model of computability (more on this later).</p>
 <p>David Hilbert proposes another challenge in 1928: the decision problem.
 The problem asks for an algorithm that takes a statement as an input and
 decides whether the statement is provable within the considered set of
-axioms. Note that Gödel's incompleteness theorem shows that some true
+axioms. Note that GÃ¶del's incompleteness theorem shows that some true
 statements cannot be proved from a consistent set of axioms. That
 doesn't mean there isn't an algorithm that can decide whether a
 statement is provable or not. Hilbert believed such an algorithm exists.</p>
@@ -3769,7 +3770,7 @@ the same computability power.</p>
 makes it <em>Turing complete</em>, meaning capable of computing anything that
 is computable.</p>
 
-<p>Gödel's general recursive functions are also shown to be an equivalent
+<p>GÃ¶del's general recursive functions are also shown to be an equivalent
 model of computation (these are the functions that Turing machines can
 compute).</p>
 
@@ -5152,7 +5153,7 @@ on the table (nobody sees what order the cards are in).</p>
 
 <p>With Fluid Framework, data is replicated across all clients. Assuming
 we're playing a game of high stakes poker, we can't trust any other
-client not to cheat. So a naïve solution of sending the whole game state
+client not to cheat. So a naÃ¯ve solution of sending the whole game state
 (cards each player holds in their hand) to all clients and trust clients
 not to peek won't work. We should assume that even if the game code
 only shows a client their own cards, the client can cheat and use a
@@ -6711,7 +6712,7 @@ sense all around the world.</p>
 which the feature ships. From a developer perspective, UI layout is
 important here: in some languages, words are on average longer than in
 English, so text might overflow its boundaries when translated. For
-example, <q>Add job</q> in English becomes <q>Auftrag hinzufügen</q> in
+example, <q>Add job</q> in English becomes <q>Auftrag hinzufÃ¼gen</q> in
 German.</p>
 
 <p>We also have right-to-left languages like Arabic and Hebrew. We need to
@@ -12179,17 +12180,17 @@ metadata).</p>
 
 <p>With this view, a <code>Point</code> instance is a pair of values <code>X</code> and <code>Y</code>. Any
 particular instance of <code>Point</code> is a member of the set
-<code>{ (X, Y) : X ∈ double, Y ∈ double }</code>. The function <code>distanceToOrigin</code>
+<code>{ (X, Y) : X â double, Y â double }</code>. The function <code>distanceToOrigin</code>
 can be viewed as a function from this set (from the implicit <code>this</code>
 argument) to a <code>double</code> value.</p>
 
-<p><code>disntaceToOrigin : { (X, Y) : X ∈ double, Y ∈ double } → double.</code></p>
+<p><code>disntaceToOrigin : { (X, Y) : X â double, Y â double } â double.</code></p>
 
 <h2>Operations and Closures</h2>
 
 <p>A function that takes two arguments of type <code>Point</code> is called a binary
 operation on the set. We can represent it as a function
-<code>f(Point, Point)</code> or, equivalently, as an operation <code>Point ⊙ Point</code>. If
+<code>f(Point, Point)</code> or, equivalently, as an operation <code>Point â Point</code>. If
 the codomain of the function is also a <code>Point</code>, for example let's take a
 function like <code>Point midPoint(Point x, Point y)</code>, which computes the
 middle point between two given points, we call the operation <em>closed</em>
@@ -12280,7 +12281,7 @@ whether we concatenate <code>bar</code> with <code>baz</code> first, then prepen
 </pre></div>
 
 <p>More formally, an opeartion is associative if, for any <code>a</code>, <code>b</code>, and
-<code>c</code>, <code>(a ⊙ b) ⊙ c == a ⊙ (b ⊙ c)</code>. That being said, that's not enough
+<code>c</code>, <code>(a â b) â c == a â (b â c)</code>. That being said, that's not enough
 to make our right fold redundant:</p>
 <div class="highlight"><pre><span/><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">elems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">"foo"</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="s">"bar"</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="s">"baz"</span><span class="n">s</span><span class="w"> </span><span class="p">};</span><span class="w"/>
 
@@ -12318,7 +12319,7 @@ have such a default, called the <em>identity</em> of the opeartion. This value,
 combined with any other value using the operation, leaves the other
 value unchanged. For string concatenation, the identity is the empty
 string. For addition, the identity is <code>0</code>. In general, we have
-<code>a ⊙ id == id ⊙ a == a</code> for any <code>a</code>. This is what makes <code>id</code> an
+<code>a â id == id â a == a</code> for any <code>a</code>. This is what makes <code>id</code> an
 identity.</p>
 
 <p>A semigroup with an identity is a <em>monoid</em>. That's a set with an
@@ -12384,17 +12385,17 @@ becomes <code>0</code>. On the other hand, if we do have a default identity, the
 only associative, without necessarily being commutative. That's
 because, if our initial value is an identity, it doesn't matter whether
 it is a left or right argument to our operation. By definition,
-<code>a ⊙ id == id ⊙ a == a</code> so for a set of values like <code>a</code>, <code>b</code>, and <code>c</code>,
+<code>a â id == id â a == a</code> so for a set of values like <code>a</code>, <code>b</code>, and <code>c</code>,
 we get:</p>
-<div class="highlight"><pre><span/>((id ⊙ a) ⊙ b) ⊙ c == (a ⊙ b) ⊙ c
+<div class="highlight"><pre><span/>((id â a) â b) â c == (a â b) â c
 </pre></div>
 
 <p>From associativity, we get:</p>
-<div class="highlight"><pre><span/>(a ⊙ b) ⊙ c == a ⊙ (b ⊙ c)
+<div class="highlight"><pre><span/>(a â b) â c == a â (b â c)
 </pre></div>
 
-<p>We can add another identity in there, since <code>c == c ⊙ id</code>:</p>
-<div class="highlight"><pre><span/>a ⊙ (b ⊙ c) == (a ⊙ (b ⊙ (c ⊙ id)))
+<p>We can add another identity in there, since <code>c == c â id</code>:</p>
+<div class="highlight"><pre><span/>a â (b â c) == (a â (b â (c â id)))
 </pre></div>
 
 <p>We started with how <code>fold</code> evaluates and ended up with how <code>fold_right</code>
@@ -12415,11 +12416,11 @@ get different results.</p>
 <p>Wihout going into too many details, we can also divide &amp; conquer a fold
 operation, fold subsets in parallel, then merge the results.
 Associativity allows us to do so, as we can split the set of values <code>a</code>,
-<code>b</code>, <code>c</code>, and <code>d</code> into <code>left_half = a ⊙ b</code> and <code>right_half = c ⊙ d</code>,
+<code>b</code>, <code>c</code>, and <code>d</code> into <code>left_half = a â b</code> and <code>right_half = c â d</code>,
 then combine the two halves for the final result
-<code>left_half ⊙ right_half</code>. This is the same thing as <code>(a ⊙ b) ⊙ (c ⊙ d)</code>.
+<code>left_half â right_half</code>. This is the same thing as <code>(a â b) â (c â d)</code>.
 As long as the operation is associative, this is the same as
-<code>((a ⊙ b) ⊙ c) ⊙ d</code> or <code>a ⊙ (b ⊙ (c ⊙ d))</code>.</p>
+<code>((a â b) â c) â d</code> or <code>a â (b â (c â d))</code>.</p>
 
 <p>Not all operations are associative though, as we saw before. Subtraction
 isn't for example. <code>(1 - 2) - (3 - 4)</code> is <code>0</code>. <code>((1 - 2) - 3) - 4</code> is
@@ -12545,7 +12546,7 @@ character set contains all characters on a typewriter.</p>
 0x30 to 0x39 - digits - 0 1 2 3 4 5 6 7 8 9
 0x3A to 0x40 - symbols - : ; &lt; = &gt; ? @
 0x41 to 0x5A - uppercase letters - A to Z
-0x5B to 0x60 - symbols – [ \ ] ^ _ `
+0x5B to 0x60 - symbols â [ \ ] ^ _ `
 0x61 to 0x7A - lowercase letters - a to z
 0x7B to 0x7E - symbols - { | } ~
 0x7F - "delete" control character - DEL
@@ -12569,7 +12570,7 @@ while the remaining 7 bits have an even number of bits set to 1 - it
 means that the data is corrupted.</p>
 
 <p>This encoding was enough for English, but lacked other letters common in
-European languages, for example accented letters like é or ć. It also
+European languages, for example accented letters like Ã© or Ä. It also
 could not encode any other alphabets, like Arabic, Cyrillic, Hebrew and
 so on.</p>
 
@@ -12584,14 +12585,14 @@ multiple such extensions, these were distinguished by code pages. A code
 page defined what the <code>0x80</code> to <code>0xFF</code> characters are.</p>
 
 <p>IBM PC systems came with the popular <strong>code page 437</strong> which includes
-characters for box-drawing like <code>║</code>, <code>╗</code>, and <code>╝</code>. Text-based user
+characters for box-drawing like <code>â</code>, <code>â</code>, and <code>â</code>. Text-based user
 interface could simulate windows, buttons and so on using these
 characters:</p>
-<div class="highlight"><pre><span/>╔════════════════════════════════════╗
-║ Box-drawn window with progress bar ║
-╟────────────────────────────────────╢
-║  ██████████████████▓▒░░░░░░░░░░░░  ║
-╚════════════════════════════════════╝
+<div class="highlight"><pre><span/>ââââââââââââââââââââââââââââââââââââââ
+â Box-drawn window with progress bar â
+ââââââââââââââââââââââââââââââââââââââ¢
+â  ââââââââââââââââââââââââââââââââ  â
+ââââââââââââââââââââââââââââââââââââââ
 </pre></div>
 
 <p>Another set of extensions was the <strong>ISO/IEC 8859</strong> standard consisting
@@ -12633,26 +12634,26 @@ string <code>"\u0061"</code>.</p>
 
 <p>Not only does Unicode support a huge range of code points, it also
 defines combining characters which, combined with other character,
-create new characters. For example, ́ (<code>U+0301</code>) is the combining acute
+create new characters. For example, Ì (<code>U+0301</code>) is the combining acute
 accent. Combining this with <q>a</q> (<code>U+0061</code>) by appending it after the
-letter (the string <code>"\u0061\u0301"</code>) results in the character <q>á</q>
+letter (the string <code>"\u0061\u0301"</code>) results in the character <q>aÌ</q>
 while combining it with <q>e</q> (<code>U+0065</code>) in the string <code>"\u0065\u0301"</code>
-results in the character <q>é</q>.</p>
+results in the character <q>eÌ</q>.</p>
 
-<p>Similarly, a skin tone modifier like dark skin tone, 🏿 (<code>U+1F3FF</code>) can
-be appended to an emoji like the baby emoji 👶 (<code>U+1F476</code>) to get a baby
-with a dark skin tone 👶🏿.</p>
+<p>Similarly, a skin tone modifier like dark skin tone, ð¿ (<code>U+1F3FF</code>) can
+be appended to an emoji like the baby emoji ð¶ (<code>U+1F476</code>) to get a baby
+with a dark skin tone ð¶ð¿.</p>
 
 <h3>Graphemes</h3>
 
 <p>A grapheme is a graphical symbol that a user sees on the screen. Text
 rendering is done through graphemes. Some graphemes correspond to a
 single code point, like <q>a</q> corresponding to <code>U+0061</code>. Other graphemes
-correspond to a sequence of code points, like 👶🏿, which corresponds to
+correspond to a sequence of code points, like ð¶ð¿, which corresponds to
 <code>U+1F476</code> then <code>U+1F3FF</code>. There are also graphemes which can be obtained
-in multiple ways. The accented <q>e</q> in the example above, <q>é</q>, can be
+in multiple ways. The accented <q>e</q> in the example above, <q>eÌ</q>, can be
 obtained by combining the letter <q>e</q> with the acute accent (<code>U+0065</code>
-then <code>U+0301</code>), but there is also an accented <q>e</q> character <q>é</q>
+then <code>U+0301</code>), but there is also an accented <q>e</q> character <q>Ã©</q>
 represented by the code point <code>U+00E9</code>. Both <code>U+0065 U+0301</code> and
 <code>U+00E9</code> resolve to the same grapheme.</p>
 
@@ -12662,23 +12663,23 @@ representation. There are several ways to achieve this, which we'll not
 cover in this blog post.</p>
 
 <p>Combining and modifying characters can be stacked one after the other.
-For example, the 👨‍❤️‍👨 emoji showing two man with a heart above is a single
+For example, the ð¨ââ¤ï¸âð¨ emoji showing two man with a heart above is a single
 grapheme but consists of the following sequence of code points:
 <code>U+1F468 U+200D U+2764 U+FE0F U+200D U+1F468</code>. This is a combination of:</p>
 
 <ul>
-<li>The man emoji 👨 (<code>U+1F468</code>)</li>
+<li>The man emoji ð¨ (<code>U+1F468</code>)</li>
 <li>The zero-width joiner (<code>U+200D</code>) which does not have a stand-alone
 representation but combines two emojis into a single one</li>
-<li>The heavy black heart symbol ❤ (<code>U+2764</code>) - depending on which OS
+<li>The heavy black heart symbol â¤ (<code>U+2764</code>) - depending on which OS
 you are reading this, it might or might not render as an emoji</li>
 <li>The Variation Selector-16 character (<code>U+2764</code>) which also doesn't
 have a stand-alone representation but can be applied to code points
 which have both a text and an emoji representation to select the
 emoji representation. This ensures the heavy black heart symbol gets
-the emoji representation ❤️.</li>
+the emoji representation â¤ï¸.</li>
 <li>Another zero-width joiner (<code>U+200D</code>)</li>
-<li>Another man emoji 👨 (<code>U+1F468</code>)</li>
+<li>Another man emoji ð¨ (<code>U+1F468</code>)</li>
 </ul>
 
 <p>The whole sequence results in a single grapheme.</p>
@@ -12713,7 +12714,7 @@ thus representing a code point using 4 bytes.</p>
 of a code point in a string, but it is also very space-inefficient. The
 leading bits are always 0 and not only that, the code points
 representing common characters and alphabets appear in the lower planes,
-so while an emoji like the woman emoji 👩 (<code>U+1F469</code>) in binary is
+so while an emoji like the woman emoji ð© (<code>U+1F469</code>) in binary is
 <code>0b11111010001101001</code>, thus requiring at least 17 bits to represent, the
 code point for the letter <q>a</q> is <code>U+0061</code>, same as the old ASCII
 representation. That is <code>0b1100001</code> in binary, requiring only 7 bits.</p>
@@ -12745,7 +12746,7 @@ point. The last 10 bits are added to <code>0xDC00</code>, resulting in a value i
 the range <code>0xDC00</code> to <code>0xDFFF</code>. This is represented in the second 16-bit
 code point.</p>
 
-<p>Let's take as an example the woman emoji 👩 (<code>U+1F469</code>). The UTF-16
+<p>Let's take as an example the woman emoji ð© (<code>U+1F469</code>). The UTF-16
 encoding goes as follows:</p>
 
 <ul>
@@ -12757,7 +12758,7 @@ which gives us <code>0xD83D</code>.</li>
 <code>0xDC00</code>, giving <code>0xDC69</code>.</li>
 </ul>
 
-<p>The two 16-bit code units for 👩 are <code>0xD83D</code> and <code>0xDC69</code>, or the byte
+<p>The two 16-bit code units for ð© are <code>0xD83D</code> and <code>0xDC69</code>, or the byte
 sequence <code>0xD8 0x3D 0xDC 0x69</code>.</p>
 
 <p><strong>Surrogate pairs</strong></p>
@@ -12783,7 +12784,7 @@ remaining 10 bits of a code point in another plane after subtracting
 
 <p>Note that these ranges are disjoint - a value can appear in only one of
 them, so each 16-bit code unit can unambiguously be identified, in
-isolation. For code points like 👩, encoded as two 16-bit code units,
+isolation. For code points like ð©, encoded as two 16-bit code units,
 the code units are called a <em>surrogate pair</em>. The first code unit, in
 the range <code>0xD800</code> to <code>0xDBFF</code> is called the <em>high surrogate</em> while the
 second code unit, in the range <code>0xDC00</code> to <code>0xDFFF</code> is called the <em>low
@@ -12859,8 +12860,8 @@ first byte in a sequence, rather at a byte inside a sequence.</li>
 in the prefix coincides with the number of bytes used to encode the code
 point.</p>
 
-<p>As an example, let's take the same 👩 emoji and see how its encoding
-looks like in UTF-8. 👩 is the code point <code>U+1F469</code>, so it requires 4
+<p>As an example, let's take the same ð© emoji and see how its encoding
+looks like in UTF-8. ð© is the code point <code>U+1F469</code>, so it requires 4
 bytes. <code>0x1F469</code> represented in binary with 21 bits is
 <code>0b000011111010001101001</code>.</p>
 
@@ -15083,7 +15084,7 @@ Fibonacci number</em>.</p>
 <p>The first few values of the sequence are 0, 1, 1, 2, 3, 5, 8, 13, 21,
 34, 55, 89, 144, ....</p>
 
-<h2>A Naïve Algorithm</h2>
+<h2>A NaÃ¯ve Algorithm</h2>
 
 <p>Directly translating the definition above into an algorithm to compute
 the n-th Fibonacci number yields:</p>
@@ -15475,7 +15476,7 @@ large Ns.</p>
 <p>This blog post covered:</p>
 
 <ul>
-<li>Algorithms to generate Fibonacci numbers: naïve recursive
+<li>Algorithms to generate Fibonacci numbers: naÃ¯ve recursive
 (exponential), bottom-up (linear), matrix exponentiation (linear or
 logarithmic, depending on the matrix exponentiation algorithm).</li>
 <li>Ancient Egyptian multiplication and fast matrix exponentiation are
@@ -15752,22 +15753,22 @@ much sense. A non-OOP implementation would look like this:</p>
 <span class="p">{</span><span class="w"/>
 <span class="w">    </span><span class="c1">// Open, Close, Send, Receive etc.</span>
 <span class="p">};</span><span class="w"/>
-<span class="w"> </span>
+<span class="w">Â </span>
 <span class="n">Connection</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">Make</span><span class="p">();</span><span class="w"/>
 <span class="kt">void</span><span class="w"> </span><span class="nf">CloseAll</span><span class="p">();</span><span class="w"/>
-<span class="w"> </span>
+<span class="w">Â </span>
 <span class="c1">// In .cpp file</span>
 <span class="k">namespace</span><span class="w"/>
 <span class="p">{</span><span class="w"/>
 <span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Connection</span><span class="o">&gt;</span><span class="w"> </span><span class="n">connections</span><span class="p">;</span><span class="w"/>
 <span class="p">}</span><span class="w"/>
-<span class="w"> </span>
+<span class="w">Â </span>
 <span class="n">Connection</span><span class="o">&amp;</span><span class="w"> </span><span class="n">Make</span><span class="p">()</span><span class="w"/>
 <span class="p">{</span><span class="w"/>
 <span class="w">    </span><span class="n">connections</span><span class="p">.</span><span class="n">emplace_back</span><span class="p">(</span><span class="n">Connection</span><span class="p">{});</span><span class="w"/>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">connections</span><span class="p">.</span><span class="n">back</span><span class="p">();</span><span class="w"/>
 <span class="p">}</span><span class="w"/>
-<span class="w"> </span>
+<span class="w">Â </span>
 <span class="kt">void</span><span class="w"> </span><span class="n">CloseAll</span><span class="p">()</span><span class="w"/>
 <span class="p">{</span><span class="w"/>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">connections</span><span class="p">)</span><span class="w"/>
@@ -16033,14 +16034,14 @@ first odd once, then we just increment after each swap:</p>
 <span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">numbers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"/>
 <span class="w">        </span><span class="o">++</span><span class="n">i</span><span class="p">;</span><span class="w"/>
 
-<span class="w">    </span><span class="c1">// If we reached the end we’re done</span>
+<span class="w">    </span><span class="c1">// If we reached the end weâre done</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"/>
 <span class="w">        </span><span class="k">return</span><span class="p">;</span><span class="w"/>
 
 <span class="w">    </span><span class="c1">// Start after the first odd and until we reach the end</span>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">j</span><span class="p">)</span><span class="w"/>
 <span class="w">    </span><span class="p">{</span><span class="w"/>
-<span class="w">        </span><span class="c1">// If it’s an even number</span>
+<span class="w">        </span><span class="c1">// If itâs an even number</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">numbers</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"/>
 <span class="w">        </span><span class="p">{</span><span class="w"/>
 <span class="w">            </span><span class="c1">// Swap with the first odd</span>
@@ -18832,7 +18833,7 @@ unreachable, so regardless of how executing code accesses other objects
 on the heap, there is no way to access this resource - which means the
 memory can be safely deallocated.</p>
 
-<p>For example, a naïve tracing garbage collection algorithm,
+<p>For example, a naÃ¯ve tracing garbage collection algorithm,
 <em>mark-and-sweep</em>, involves adding an <q>in-use</q> bit to each memory
 resource allocated then, during collection, following all references
 starting from the stack and marking each as <q>in-use</q>. Once all used
@@ -19791,7 +19792,7 @@ anything. All instances of such a struct are equivalent:</p>
 <p>Here, things get a bit more interesting: a <code>sum type</code> is a type which
 can represent a value from any of the types it sums. So given type <code>A</code>
 and type <code>B</code>, the type <code>S</code> summing up <code>A</code> and <code>B</code> is
-<code>S = { i : i ∈ A U B }</code>. So a variable of type <code>S</code> could have any value
+<code>S = { i : i â A U B }</code>. So a variable of type <code>S</code> could have any value
 in <code>A</code> or any value in <code>B</code>. <code>S</code> is called a sum type because its
 cardinality is the sum of the cardinalities of <code>A</code> and <code>B</code>,
 <code>|S| = |A| + |B|</code>.</p>
@@ -19960,7 +19961,7 @@ major improvement.</p>
 <p>With sum types out of the way, the remaining interesting category is
 that of <em>product types</em>. Product types combine the values of several
 other types into one. For types <code>A</code> and <code>B</code>, we have
-<code>P = { (a, b) : a ∈ A, b ∈ B }</code>, so <code>|P| = |A| x |B|</code>.</p>
+<code>P = { (a, b) : a â A, b â B }</code>, so <code>|P| = |A| x |B|</code>.</p>
 
 <p>In Haskell, the anonymous version of product types is represented by
 tuples, while the named version is represented by records. An example of
@@ -22289,7 +22290,7 @@ cover writing stateless code and writing readable code.</p>
 <h2>Write Stateless Code</h2>
 
 <blockquote>
-<p>A <strong>pure function</strong> is a <strong>function</strong> where the return value is
+<p>AÂ <strong>pure function</strong>Â is aÂ <strong>function</strong>Â where the return value is
 only determined by its input values, without observable side effects.
 This is how <strong>functions</strong> in math work: <code>Math.cos(x)</code> will, for the
 same value of <code>x</code>, always return the same result.</p>
@@ -22421,7 +22422,7 @@ remove the constraint when mutability is explicitly needed</li>
 <h2>Write Readable Code</h2>
 
 <blockquote>
-<p>In computer science, the <strong>expressive power</strong> (also called
+<p>In computer science, theÂ <strong>expressiveÂ power</strong> (also called
 <strong>expressiveness</strong> or expressivity) of a language is the breadth of
 ideas that can be represented and communicated in that language
 [...]</p>
@@ -22624,7 +22625,7 @@ should be applicable to any object-oriented or multi-paradigm language.</p>
 <blockquote>
 <p>The number of defects found in open source projects was 0.45
 defects/1,000 lines of code, while the industry's average is around 1
-defect per 1,000 lines of code for companies not using automated
+defect perÂ 1,000 lines of code for companies not using automated
 testing such as static analysis.</p>
 
 <p><em>Source:</em>
@@ -22840,14 +22841,14 @@ write this?</q></em></p>
 <p>First, a few notes on cyclomatic complexity from Wikipedia:</p>
 
 <blockquote>
-<p>Cyclomatic complexity is a software metric (measurement), used to
-indicate the complexity of a program. It is a quantitative measure of
+<p>Cyclomatic complexityÂ is a software metric (measurement), used to
+indicate theÂ complexityÂ of a program. It is a quantitative measure of
 the number of linearly independent paths through a program's source
 code.</p>
 
 <p>The complexity M is then defined as</p>
 
-<p><em>M = E − N + 2P</em></p>
+<p><em>M = E â N + 2P</em></p>
 
 <p>where</p>
 
