@@ -106,7 +106,8 @@ function call `add(2, 3)` as the S-expression `(add . (2 . (3 . ())))`.
 Note we can have any number of arguments as we grow the right subtrees: `sum(2,
 3, 4, 5)` can be represented as `(sum . (2 . (3 . (4 . (5 . ())))))`. If we want
 to pass the result of another function as an argument, say `sum(2, sum(3, 4),
-5)`, we can represent this as `(sum . (2 . ((sum . (3 . (4 . ())) . 5)))`.
+5)`, we can represent this as `(sum . (2 . ((sum . (3 . (4 . ()))) . (5 . ()))
+))`.
 
 We saw in the previous post that we can represent pretty much anything using
 functions. An if expression is a function `if(condition, true-branch,
@@ -129,7 +130,7 @@ associative array `{ 1: 2, 2: 3, 3: 5 }` as `((1 . 2) . ((2 . 3) . ((3 . 5) .
 losing any meaning.
 
 Similarly, `(add . (2 . (3 . ())))` becomes `(add 2 3)` and `(sum . (2 . ((sum .
-(3 . (4 . ())) . 5)))` becomes `(sum 2 (sum 3 4) 5)`.
+(3 . (4 . ()))) . (5 . ()))))` becomes `(sum 2 (sum 3 4) 5)`.
 
 In our implementation, we will represent S-expressions as lists which can
 contain any number of elements. This is a more succinct representation and will
