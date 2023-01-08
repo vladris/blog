@@ -207,7 +207,7 @@ the matching <code>)</code>.</li>
             <span class="k">return</span> <span class="p">[</span><span class="n">parse</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">pop_rpar</span><span class="p">(</span><span class="n">tokens</span><span class="p">)]</span>
         <span class="k">case</span> <span class="s1">&#39;)&#39;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unexpected )&#39;</span><span class="p">)</span>
-        <span class="k">case</span> <span class="k">_</span><span class="p">:</span>
+        <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">atom</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </pre></div>
 
@@ -298,22 +298,22 @@ enhance our implementation with Boolean support.</p>
 </pre></div>
 
 <p>We can try a few simple commands (shown below with the corresponding output):</p>
-<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="mi">40</span><span class="p">)</span><span class="w"></span>
-<span class="nv">None</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"></span>
-<span class="nv">None</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">b</span><span class="p">)</span><span class="w"></span>
-<span class="mi">42</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
-<span class="mi">1</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">4</span><span class="p">))</span><span class="w"></span>
-<span class="mi">9</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nb">list</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">()))))</span><span class="w"></span>
-<span class="nv">None</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nb">car</span><span class="w"> </span><span class="nb">list</span><span class="p">)</span><span class="w"></span>
-<span class="mi">1</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nb">cdr</span><span class="w"> </span><span class="nb">list</span><span class="p">)</span><span class="w"></span>
-<span class="nv">[2,</span><span class="w"> </span><span class="nv">3]</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="mi">40</span><span class="p">)</span>
+<span class="nv">None</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<span class="nv">None</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">b</span><span class="p">)</span>
+<span class="mi">42</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="mi">1</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">4</span><span class="p">))</span>
+<span class="mi">9</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">def</span><span class="w"> </span><span class="nb">list</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">(</span><span class="nb">cons</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">()))))</span>
+<span class="nv">None</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nb">car</span><span class="w"> </span><span class="nb">list</span><span class="p">)</span>
+<span class="mi">1</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nb">cdr</span><span class="w"> </span><span class="nb">list</span><span class="p">)</span>
+<span class="nv">[2,</span><span class="w"> </span><span class="nv">3]</span>
 </pre></div>
 
 <h3>Custom functions</h3>
@@ -381,17 +381,17 @@ arguments.</p>
 we use our function factory.</p>
 
 <p>We can run our REPL again and try out the new capability:</p>
-<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">deffun</span><span class="w"> </span><span class="nv">myadd</span><span class="w"> </span><span class="p">(</span><span class="nv">x</span><span class="w"> </span><span class="nv">y</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="nv">y</span><span class="p">))</span><span class="w"></span>
-<span class="nv">None</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">myadd</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"></span>
-<span class="mi">5</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">deffun</span><span class="w"> </span><span class="nv">myadd</span><span class="w"> </span><span class="p">(</span><span class="nv">x</span><span class="w"> </span><span class="nv">y</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="nv">y</span><span class="p">))</span>
+<span class="nv">None</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">myadd</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span>
+<span class="mi">5</span>
 </pre></div>
 
 <p>Here is a Fibonacci implementation, using <code>deffun</code> and recursion:</p>
-<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">deffun</span><span class="w"> </span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">n</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">eq</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">eq</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">sub</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">sub</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">2</span><span class="p">))))))</span><span class="w"></span>
-<span class="nv">None</span><span class="w"></span>
-<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"></span>
-<span class="mi">21</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">deffun</span><span class="w"> </span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">n</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">eq</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">eq</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">(</span><span class="nv">add</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">sub</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="p">(</span><span class="nv">sub</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="mi">2</span><span class="p">))))))</span>
+<span class="nv">None</span>
+<span class="nb">&gt;</span><span class="w"> </span><span class="p">(</span><span class="nv">fib</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span>
+<span class="mi">21</span>
 </pre></div>
 
 <p>If <code>n</code> is 0, return <code>0</code> else if <code>n</code> is 1, return <code>1</code>, else recursively call
@@ -448,6 +448,8 @@ evaluation function, and a REPL.</li>
 
 <div id="prev"><span>« <a href="../../../2022/10/14/computability-part-8-lambda-calculus.html">Computability Part 8: Lambda Calculus</a></span></div>
 
+
+<div id="next"><span><a href="../../../2023/01/07/notes-on-advent-of-code-2022.html">Notes on Advent of Code 2022</a> »</span></div>
 
 </nav>
 <footer><span>By Vlad Rișcuția | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>

@@ -34,21 +34,21 @@ NASA expected momentum as Newton seconds.</p>
 
 <p>We can image the component developed by NASA being something like this:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Will not disintegrate as long as momentum &gt;= 2 N s</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">trajectory_correction</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">momentum</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="cm">/* N s */</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">disintegrate</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* ... */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">trajectory_correction</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">momentum</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="cm">/* N s */</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">disintegrate</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="cm">/* ... */</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>We can also imagine the Lockheed component calling into the above with:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="mf">1.5</span><span class="w"> </span><span class="cm">/* lbf s */</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="mf">1.5</span><span class="w"> </span><span class="cm">/* lbf s */</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>A pound-force second (lbfs) is about 4.448222 Newton seconds (Ns). So
@@ -69,47 +69,47 @@ the above. Representing zip codes as numbers, telephone numbers as
 strings, Ns and lbfs as <code>double</code> are all examples of this.</p>
 
 <p>A more type safe solution would have defined a simple <code>Ns</code> type:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Ns</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Ns</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="kt">bool</span><span class="w"> </span><span class="k">operator</span><span class="o">&lt;</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">value</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="k">operator</span><span class="o">&lt;</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">value</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>We can similarly define a simple <code>lbfs</code> type:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">lbfs</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">lbfs</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="kt">bool</span><span class="w"> </span><span class="k">operator</span><span class="o">&lt;</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">lbfs</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">lbfs</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">value</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="k">operator</span><span class="o">&lt;</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">lbfs</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">lbfs</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">value</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Now we can implement a type safe <code>trajectory_correction</code>:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Will not disintegrate as long as momentum &gt;= 2 N s</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">trajectory_correction</span><span class="p">(</span><span class="n">Ns</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">momentum</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">})</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">disintegrate</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* ... */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">trajectory_correction</span><span class="p">(</span><span class="n">Ns</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">momentum</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">})</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">disintegrate</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="cm">/* ... */</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Calling this with <code>lbfs</code> as below fails to compile as the types are
 incompatible:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">lbfs</span><span class="p">{</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">lbfs</span><span class="p">{</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">});</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Note how the meaning of the values, which used to be specified in
@@ -118,23 +118,23 @@ and expressed in code (<code>Ns{ 2 }</code>, <code>lbfs{ 1.5 }</code>).</p>
 
 <p>We can, of course, provide casting from <code>lbfs</code> to <code>Ns</code> as an explicit
 operator:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">lbfs</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">lbfs</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
 
-<span class="w">    </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Ns</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">4.448222</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="n">Ns</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">4.448222</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>Equipped with this, we can call <code>trajectory_correction</code> via a static
 cast:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">Ns</span><span class="o">&gt;</span><span class="p">(</span><span class="n">lbfs</span><span class="p">{</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">}));</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">Ns</span><span class="o">&gt;</span><span class="p">(</span><span class="n">lbfs</span><span class="p">{</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">}));</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This does the right thing of multiplying by the ratio. The cast can also
@@ -169,14 +169,14 @@ of them, our program can be in any of their combined states.</p>
 
 <p>This gets more interesting when we look at functions that initialize
 values:</p>
-<div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">get_momentum</span><span class="p">(</span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">some_condition</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">get_momentum</span><span class="p">(</span><span class="n">Ns</span><span class="o">&amp;</span><span class="w"> </span><span class="n">momentum</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">some_condition</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">momentum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="n">momentum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">};</span>
 
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>In the above example we take a <code>Ns</code> by reference and initialize it if
@@ -191,35 +191,35 @@ if the function returns <code>false</code>, then <code>momentum</code> was not s
 still in any one of the possible <code>Ns</code> values, but it is not a valid
 value. Often times we have bugs where we accidentally propagate such
 invalid state:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Ns</span><span class="w"> </span><span class="n">momenum</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Ns</span><span class="w"> </span><span class="n">momenum</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">get_momentum</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">get_momentum</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span>
 
-<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>What we should have done instead is:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Ns</span><span class="w"> </span><span class="n">momentum</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Ns</span><span class="w"> </span><span class="n">momentum</span><span class="p">;</span>
 
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">get_momentum</span><span class="p">(</span><span class="n">momentum</span><span class="p">))</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">get_momentum</span><span class="p">(</span><span class="n">momentum</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="n">momentum</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>There is a better way though, where this can be enforced:</p>
-<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">Ns</span><span class="o">&gt;</span><span class="w"> </span><span class="n">get_momentum</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">some_condition</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">nullopt</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">Ns</span><span class="o">&gt;</span><span class="w"> </span><span class="n">get_momentum</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">some_condition</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">nullopt</span><span class="p">;</span>
 
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_optional</span><span class="p">(</span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_optional</span><span class="p">(</span><span class="n">Ns</span><span class="p">{</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">});</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Using an <code>optional</code>, this version of the function has a significantly
@@ -229,15 +229,15 @@ absence of a value. Now it becomes impossible to have an invalid <code>Ns</code>
 that gets propagated throughout the system. We can also no longer
 <em>forget</em> to check the return value as an <code>optional&lt;Ns&gt;</code> is not
 implicitly convertible to an <code>Ns</code> - we need to explicitly unpack it:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">maybeMomentum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_momentum</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">maybeMomentum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_momentum</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">maybeMomentum</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="o">*</span><span class="n">maybeMomentum</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">maybeMomentum</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">trajectory_correction</span><span class="p">(</span><span class="o">*</span><span class="n">maybeMomentum</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>In general, we want our functions to return <strong>result or error</strong> not
@@ -264,39 +264,39 @@ means executing some form of free, delete, close etc. on the resource.</p>
 <p>Since these resources are external, they are not directly expressed into
 our type system. For example if we allocate some heap memory, we get a
 pointer on which we have to call <code>delete</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{};</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span>
 
-<span class="w">    </span><span class="cm">/* Use foo */</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* Use foo */</span>
 
-<span class="w">    </span><span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>But what happens if we forget or something prevents us from calling
 <code>delete</code>?</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>In this case we no longer call <code>delete</code> and we leak the resource. In
 general, we don&#39;t want to perform such manual cleanup. For heap memory,
 we actually have <code>unique_ptr</code> to help us manage it:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>The <code>unique_ptr</code> is a stack object so whenever it goes out of scope

@@ -17,11 +17,11 @@
 
 <p>For efficiency reasons, C++ had a myriad of ways to pass data around. A
 function can take arguments in several forms:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="p">);</span><span class="w"></span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">*</span><span class="p">);</span><span class="w"></span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;</span><span class="p">);</span><span class="w"></span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">**</span><span class="p">);</span><span class="w"></span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;&amp;</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">*</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">**</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;&amp;</span><span class="p">);</span>
 </pre></div>
 
 <p>No to mention adding <code>const</code> and smart pointers into the mix.</p>
@@ -47,10 +47,10 @@ be allocated, owned, and passed around.</p>
 
 <p>The simplest, clearest thing to do is allocate objects on the stack. A
 stack object doesn&#39;t involve any pointers:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>The variable <code>bar</code> of type <code>Bar</code> is created on the stack. Once the stack
@@ -69,11 +69,11 @@ objects are better kept on the heap to avoid overflow.</p>
 value:</p>
 <div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_suff</span><span class="p">(</span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"> </span><span class="c1">// hands bar off to some other object</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span>
+<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">bar</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Let&#39;s assume for this example that <code>do_suff</code> takes the argument and
@@ -92,11 +92,11 @@ them.</p>
 semantics:</p>
 <div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_suff</span><span class="p">(</span><span class="n">Bar</span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"> </span><span class="c1">// hands bar off to some other object</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">bar</span><span class="p">));</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span>
+<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">bar</span><span class="p">));</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>With move semantics, the resource is actually <em>moved</em> into the <code>do_suff</code>
@@ -120,11 +120,11 @@ meaning the object we pass to <code>do_stuff</code> won&#39;t have to outlive th
 function call, we can pass by reference:</p>
 <div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_suff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"> </span><span class="c1">// bar is only used within do_suff</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span>
+<span class="w">    </span><span class="n">do_suff</span><span class="p">(</span><span class="n">bar</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Note the <code>const</code> above - this means <code>do_suff</code> will use <code>bar</code> but won&#39;t
@@ -139,13 +139,13 @@ because as soon as <code>foo</code> returns, the reference becomes invalid.</p>
 <h3>Pass by pointer</h3>
 
 <p>A pointer argument would look like this:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">*</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">*</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Bar</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span>
+<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bar</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>A good rule of thumb is to not do this. The difference between passing
@@ -190,9 +190,9 @@ deleted. This responsibility should be with the <em>owner</em> of the object.</p
 <p>A unique pointer (<code>std::unique_ptr</code>) is a wrapper around a raw pointer
 which will automatically delete the heap object when it goes out of
 scope itself:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span>
 <span class="p">}</span><span class="w"> </span><span class="c1">// ptrBar goes out of scope =&gt; heap object gets deleted</span>
 </pre></div>
 
@@ -203,8 +203,8 @@ heap object is also deleted.</p>
 
 <p>Unique pointers cannot be copied, so we can never accidentally have more
 than one single <code>unique_ptr</code> pointing to the same heap object:</p>
-<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="p">...</span>
 <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">;</span><span class="w"> </span><span class="c1">// Won&#39;t compile</span>
 </pre></div>
 
@@ -212,7 +212,7 @@ than one single <code>unique_ptr</code> pointing to the same heap object:</p>
 <code>ptrBar</code> using <code>get()</code> and we can initialize a <code>unique_ptr</code> from a raw
 pointer -</p>
 <div class="highlight"><pre><span></span><span class="c1">// Please don&#39;t do this</span>
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar2</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">.</span><span class="n">get</span><span class="p">())</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar2</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">.</span><span class="n">get</span><span class="p">())</span>
 </pre></div>
 
 <p>but this is very bad - now both pointers think they have sole ownership
@@ -230,16 +230,16 @@ a new shared pointer is created for that particular heap object, the
 reference count is incremented. Whenever a shared pointer for that heap
 object goes out of scope, the reference count is decremented. Once the
 last shared pointer goes out of scope, the heap object is deleted.</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span>
 <span class="w">    </span><span class="c1">// one pointer to a Bar object on the heap (ref count = 1)</span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar2</span><span class="p">(</span><span class="n">ptrBar1</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar2</span><span class="p">(</span><span class="n">ptrBar1</span><span class="p">);</span>
 <span class="w">        </span><span class="c1">// second shared pointer (ref count = 2)</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
 <span class="w">    </span><span class="c1">// ptrBar2 goes out of scope (ref count = 1)</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 <span class="c1">// ptrBar1 goes out of scope (ref count = 0) =&gt; heap object is deleted</span>
 </pre></div>
 
@@ -340,13 +340,13 @@ to summarize:</p>
 <p>Rather than forcing callers to use <code>unique_ptr</code> or <code>shared_ptr</code> by
 specifying the smart pointer type (which makes assumptions about
 ownership), just ask for a reference to the pointed-to-type:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="o">*</span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="o">*</span><span class="n">ptrBar</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Herb also mentions raw pointer to the underlying type if the argument
@@ -362,24 +362,24 @@ blog where he disagrees with this and argues that arguments of move-only
 types should be specified as <code>&amp;&amp;</code>:</p>
 <div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"> </span><span class="c1">// sink</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">));</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">));</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Passing a <code>shared_ptr</code> by value implies the function wants to partake in
 the ownership - in other words, will keep somewhere a reference to the
 object after the function returns, but unlike the above <code>unique_ptr</code>
 example, it won&#39;t have exclusive ownership of the resource:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span>
 <span class="w">    </span><span class="n">do_stuff</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">);</span><span class="w"> </span><span class="c1">// copy-constructs another shared_ptr which shares ownership of the heap object</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <h3>Pass smart pointer by reference</h3>
@@ -388,14 +388,14 @@ example, it won&#39;t have exclusive ownership of the resource:</p>
 going to modify the smart pointer itself (eg. by making it point to a
 different object). In my experience, this is a rare occurrence.</p>
 <div class="highlight"><pre><span></span><span class="c1">// Implies this function modifies the pointer itself.</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span>
 </pre></div>
 
 <p>There is no good reason to expect a <code>const&amp;</code> to a <code>unique_ptr</code>, just
 reference the underlying type:</p>
 <div class="highlight"><pre><span></span><span class="c1">// void do_stuff(const unique_ptr&lt;Bar&gt;&amp; ptrBar);</span>
 <span class="c1">// No reason to use the above as opposed to</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span>
 </pre></div>
 
 <p>Expect <code>const&amp;</code> to <code>shared_ptr</code> only if the function <em>might</em> create a
@@ -403,13 +403,13 @@ copy of the smart pointer. If the function would never create a copy of
 the pointer, simply use <code>&amp;</code> to underlying type. If the function would
 always copy the pointer, expect <code>shared_ptr</code> by value.</p>
 <div class="highlight"><pre><span></span><span class="c1">// Might or might not share ownership</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span>
 
 <span class="c1">// Will never share ownership</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Bar</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bar</span><span class="p">);</span>
 
 <span class="c1">// Will always share ownership</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">do_stuff</span><span class="p">(</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">);</span>
 </pre></div>
 
 <h3>Summary</h3>

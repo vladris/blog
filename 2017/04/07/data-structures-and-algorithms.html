@@ -145,12 +145,12 @@ that works with forward iterators.</p>
 
 <p><code>IEnumerator&lt;T&gt;</code> in C# models a forward iterator. The (simplified)
 interface is:</p>
-<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IEnumerator</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">T</span><span class="w"> </span><span class="n">Current</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">MoveNext</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">Reset</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IEnumerator</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">T</span><span class="w"> </span><span class="n">Current</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">MoveNext</span><span class="p">();</span>
+<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">Reset</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This allows us to advance the iterator and to reset it to the initial

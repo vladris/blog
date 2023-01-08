@@ -24,43 +24,43 @@ through a very simple C# implementation.</p>
 dependency injection and lifetime management of other components<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>.
 Assume we have some well componentized code where classes work against
 interfaces:</p>
-<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IFoo</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">DoFoo</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IFoo</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">DoFoo</span><span class="p">();</span>
+<span class="p">}</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IFoo</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">DoFoo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IFoo</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">DoFoo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Bar</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Bar</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// Coded against IFoo interface, so decoupled from</span>
 <span class="w">    </span><span class="c1">// concrete Foo implementation</span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Bar</span><span class="p">(</span><span class="n">IFoo</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">foo</span><span class="p">.</span><span class="n">DoFoo</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Bar</span><span class="p">(</span><span class="n">IFoo</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">foo</span><span class="p">.</span><span class="n">DoFoo</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>In order to create an instance of <code>Bar</code>, we need to pass it some <code>IFoo</code>
 object. We could do it by <code>new</code>-ing up a <code>Foo</code> object at the call site
 of <code>Bar</code>&#39;s constructor:</p>
-<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Bar</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">());</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Bar</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">());</span>
 </pre></div>
 
 <p>This doesn&#39;t scale very well though. Most classes require more than one
 dependency, so we can&#39;t realistically litter the code with:</p>
-<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">C</span><span class="p">(),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">D</span><span class="p">()),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">E</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">D</span><span class="p">()));</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">C</span><span class="p">(),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">D</span><span class="p">()),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">E</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">D</span><span class="p">()));</span>
 </pre></div>
 
 <p>Factory functions address part of the problem. We can have, for example:</p>
-<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="n">IA</span><span class="w"> </span><span class="nf">MakeIA</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">A</span><span class="p">(</span><span class="n">MakeIB</span><span class="p">(),</span><span class="w"> </span><span class="n">MakeIE</span><span class="p">());</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="n">IA</span><span class="w"> </span><span class="nf">MakeIA</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">A</span><span class="p">(</span><span class="n">MakeIB</span><span class="p">(),</span><span class="w"> </span><span class="n">MakeIE</span><span class="p">());</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Another advantage of using factory functions instead of directly calling
@@ -76,35 +76,35 @@ types they are implementing, because having a static <code>MakeIA</code> on clas
 Since these factories become the only places in the system where
 knowledge of which type resolves to which interface, it makes sense to
 keep them together:</p>
-<div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Factories</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">IA</span><span class="w"> </span><span class="nf">MakeIA</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">A</span><span class="p">(</span><span class="n">MakeIB</span><span class="p">(),</span><span class="w"> </span><span class="n">MakeIE</span><span class="p">());</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Factories</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">IA</span><span class="w"> </span><span class="nf">MakeIA</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">A</span><span class="p">(</span><span class="n">MakeIB</span><span class="p">(),</span><span class="w"> </span><span class="n">MakeIE</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">IB</span><span class="w"> </span><span class="nf">MakeIB</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">B</span><span class="p">(</span><span class="n">MakeIC</span><span class="p">(),</span><span class="w"> </span><span class="n">MakeID</span><span class="p">());</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">IB</span><span class="w"> </span><span class="nf">MakeIB</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">B</span><span class="p">(</span><span class="n">MakeIC</span><span class="p">(),</span><span class="w"> </span><span class="n">MakeID</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">IC</span><span class="w"> </span><span class="nf">MakeIC</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">C</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">IC</span><span class="w"> </span><span class="nf">MakeIC</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">C</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">ID</span><span class="w"> </span><span class="nf">MakeID</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">D</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">ID</span><span class="w"> </span><span class="nf">MakeID</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">D</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">IE</span><span class="w"> </span><span class="nf">MakeIE</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">E</span><span class="p">(</span><span class="n">MakeID</span><span class="p">());</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">IE</span><span class="w"> </span><span class="nf">MakeIE</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nf">E</span><span class="p">(</span><span class="n">MakeID</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
 
 <span class="w">    </span><span class="c1">// ...</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This works pretty well: changing which concrete type binds to an
@@ -117,88 +117,88 @@ automated, which is what an IoC container does.</p>
 <p>A very basic container would be able to bind a concrete implementation
 against an interface and return an instance of the concrete
 implementation when asked for an interface:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="cm">/* ... */</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Container</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="c1">// ...</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="c1">// ...</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>The simplest possible thing to pass to <code>Register</code> is a factory function,
 in which case our container would have to maintain a mapping from type
 to factory:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Dictionary</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Dictionary</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;&gt;();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Container</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Dictionary</span><span class="o">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Dictionary</span><span class="o">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;&gt;</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span><span class="w"> </span><span class="n">factory</span><span class="p">)</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">class</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">factory</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Func</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">factory</span><span class="p">)</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">class</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factory</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This is how it can be used:</p>
-<div class="highlight"><pre><span></span><span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IA</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IB</span><span class="p">&gt;(),</span><span class="w"> </span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IE</span><span class="p">&gt;()));</span><span class="w"></span>
-<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IB</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IC</span><span class="p">&gt;(),</span><span class="w"> </span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">ID</span><span class="p">&gt;()));</span><span class="w"></span>
-<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IC</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">C</span><span class="p">());</span><span class="w"></span>
-<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">ID</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">D</span><span class="p">());</span><span class="w"></span>
-<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IE</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">E</span><span class="p">(</span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">ID</span><span class="p">&gt;()));</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">IA</span><span class="o">&gt;</span><span class="p">(()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">IB</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">IE</span><span class="o">&gt;</span><span class="p">()));</span>
+<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">IB</span><span class="o">&gt;</span><span class="p">(()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">IC</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">ID</span><span class="o">&gt;</span><span class="p">()));</span>
+<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">IC</span><span class="o">&gt;</span><span class="p">(()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">C</span><span class="p">());</span>
+<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">ID</span><span class="o">&gt;</span><span class="p">(()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">D</span><span class="p">());</span>
+<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">IE</span><span class="o">&gt;</span><span class="p">(()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">E</span><span class="p">(</span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">ID</span><span class="o">&gt;</span><span class="p">()));</span>
 
 <span class="c1">// ...</span>
 
-<span class="kt">var</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IA</span><span class="p">&gt;();</span><span class="w"></span>
+<span class="kt">var</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">IA</span><span class="o">&gt;</span><span class="p">();</span>
 </pre></div>
 
 <p>This is fine, but still requires a lot of hand-maintenance. One of the
 main features of a container is the ability to use reflection and
 resolve some of these dependencies automatically. Given a type, we can
 find its first public constructor by calling <code>GetConstructor</code> on it:</p>
-<div class="highlight"><pre><span></span><span class="k">foreach</span><span class="w"> </span><span class="p">(</span><span class="kt">var</span><span class="w"> </span><span class="n">param</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">typeof</span><span class="p">(</span><span class="n">A</span><span class="p">).</span><span class="n">GetConstructors</span><span class="p">().</span><span class="n">First</span><span class="p">().</span><span class="n">GetParameters</span><span class="p">())</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">param</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">foreach</span><span class="w"> </span><span class="p">(</span><span class="kt">var</span><span class="w"> </span><span class="n">param</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">typeof</span><span class="p">(</span><span class="n">A</span><span class="p">).</span><span class="n">GetConstructors</span><span class="p">().</span><span class="n">First</span><span class="p">().</span><span class="n">GetParameters</span><span class="p">())</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">param</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>So given a type, we should be able to generate a factory function for
 it. A simple way of doing it is by calling <code>Invoke</code> on the retrieved
 constructor and attempting to retrieve all its arguments from the
 container:</p>
-<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">Type</span><span class="w"> </span><span class="n">type</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">constructor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">type</span><span class="p">.</span><span class="n">GetConstructors</span><span class="p">().</span><span class="n">First</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Type</span><span class="w"> </span><span class="n">type</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">constructor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">type</span><span class="p">.</span><span class="n">GetConstructors</span><span class="p">().</span><span class="n">First</span><span class="p">();</span>
 
-<span class="w">    </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">constructor</span><span class="p">.</span><span class="n">Invoke</span><span class="p">(</span><span class="n">constructor</span><span class="p">.</span><span class="n">GetParameters</span><span class="p">().</span><span class="n">Select</span><span class="p">(</span><span class="w"></span>
-<span class="w">            </span><span class="n">param</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">]()</span><span class="w"></span>
-<span class="w">        </span><span class="p">).</span><span class="n">ToArray</span><span class="p">());</span><span class="w"></span>
-<span class="w">    </span><span class="p">};</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">constructor</span><span class="p">.</span><span class="n">Invoke</span><span class="p">(</span><span class="n">constructor</span><span class="p">.</span><span class="n">GetParameters</span><span class="p">().</span><span class="n">Select</span><span class="p">(</span>
+<span class="w">            </span><span class="n">param</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">]()</span>
+<span class="w">        </span><span class="p">).</span><span class="n">ToArray</span><span class="p">());</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Now registering the interfaces becomes a lot easier:</p>
-<div class="highlight"><pre><span></span><span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IA</span><span class="p">&gt;(</span><span class="k">typeof</span><span class="p">(</span><span class="n">A</span><span class="p">));</span><span class="w"></span>
-<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IB</span><span class="p">&gt;(</span><span class="k">typeof</span><span class="p">(</span><span class="n">B</span><span class="p">));</span><span class="w"></span>
-<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IC</span><span class="p">&gt;(</span><span class="k">typeof</span><span class="p">(</span><span class="n">C</span><span class="p">));</span><span class="w"></span>
-<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">ID</span><span class="p">&gt;(</span><span class="k">typeof</span><span class="p">(</span><span class="n">D</span><span class="p">));</span><span class="w"></span>
-<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IE</span><span class="p">&gt;(</span><span class="k">typeof</span><span class="p">(</span><span class="n">E</span><span class="p">));</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">IA</span><span class="o">&gt;</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">A</span><span class="p">));</span>
+<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">IB</span><span class="o">&gt;</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">B</span><span class="p">));</span>
+<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">IC</span><span class="o">&gt;</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">C</span><span class="p">));</span>
+<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">ID</span><span class="o">&gt;</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">D</span><span class="p">));</span>
+<span class="n">Container</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">IE</span><span class="o">&gt;</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">E</span><span class="p">));</span>
 
 <span class="c1">// ...</span>
 
-<span class="kt">var</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IA</span><span class="p">&gt;();</span><span class="w"></span>
+<span class="kt">var</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Container</span><span class="p">.</span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">IA</span><span class="o">&gt;</span><span class="p">();</span>
 </pre></div>
 
 <p>It&#39;s usually a good idea to support registration by both type and
@@ -212,21 +212,21 @@ registered with the container.</p>
 are several strategies to make this invocation faster. One of them is by
 using <code>System.Linq.Expressions</code>, which are a set of types that help
 declare and compile lambdas at runtime:</p>
-<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">Type</span><span class="w"> </span><span class="n">type</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">constructor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">type</span><span class="p">.</span><span class="n">GetConstructors</span><span class="p">().</span><span class="n">First</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Type</span><span class="w"> </span><span class="n">type</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">constructor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">type</span><span class="p">.</span><span class="n">GetConstructors</span><span class="p">().</span><span class="n">First</span><span class="p">();</span>
 
-<span class="w">    </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;)</span><span class="n">Expression</span><span class="p">.</span><span class="n">Lambda</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="n">Expression</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">constructor</span><span class="p">,</span><span class="w"> </span><span class="n">constructor</span><span class="p">.</span><span class="n">GetParameters</span><span class="p">().</span><span class="n">Select</span><span class="p">(</span><span class="w"></span>
-<span class="w">            </span><span class="n">param</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"></span>
-<span class="w">            </span><span class="p">{</span><span class="w"></span>
-<span class="w">                </span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;</span><span class="w"> </span><span class="n">resolve</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">]();</span><span class="w"></span>
-<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="n">Expression</span><span class="p">.</span><span class="n">Convert</span><span class="p">(</span><span class="w"></span>
-<span class="w">                    </span><span class="n">Expression</span><span class="p">.</span><span class="n">Call</span><span class="p">(</span><span class="n">Expression</span><span class="p">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">resolve</span><span class="p">.</span><span class="n">Target</span><span class="p">),</span><span class="w"> </span><span class="n">resolve</span><span class="p">.</span><span class="n">Method</span><span class="p">),</span><span class="w"></span>
-<span class="w">                    </span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">);</span><span class="w"></span>
-<span class="w">            </span><span class="p">}</span><span class="w"></span>
-<span class="w">        </span><span class="p">))).</span><span class="n">Compile</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="p">)</span><span class="n">Expression</span><span class="p">.</span><span class="n">Lambda</span><span class="p">(</span>
+<span class="w">        </span><span class="n">Expression</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">constructor</span><span class="p">,</span><span class="w"> </span><span class="n">constructor</span><span class="p">.</span><span class="n">GetParameters</span><span class="p">().</span><span class="n">Select</span><span class="p">(</span>
+<span class="w">            </span><span class="n">param</span><span class="w"> </span><span class="o">=&gt;</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">resolve</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">]();</span>
+<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="n">Expression</span><span class="p">.</span><span class="n">Convert</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">Expression</span><span class="p">.</span><span class="n">Call</span><span class="p">(</span><span class="n">Expression</span><span class="p">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">resolve</span><span class="p">.</span><span class="n">Target</span><span class="p">),</span><span class="w"> </span><span class="n">resolve</span><span class="p">.</span><span class="n">Method</span><span class="p">),</span>
+<span class="w">                    </span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">))).</span><span class="n">Compile</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>The above implementation compiles a lambda which is equivalent to the
@@ -237,11 +237,11 @@ resolution is done lazily or not. The above implementation is lazy,
 resolving each constructor parameter does not require an entry for it in
 the container when this particular lambda is compiled. The relevant line
 is:</p>
-<div class="highlight"><pre><span></span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;</span><span class="w"> </span><span class="n">resolve</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">]();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">resolve</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">]();</span>
 </pre></div>
 
 <p>If we were to replace this with:</p>
-<div class="highlight"><pre><span></span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;</span><span class="w"> </span><span class="n">resolve</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">];</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">resolve</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">];</span>
 </pre></div>
 
 <p>it would fail to compile the lambda when registering <code>A</code> unless all
@@ -261,19 +261,19 @@ non-instance lifetime is singleton, which means a unique instance during
 the lifetime of the app. Let&#39;s extend our container to also support
 resolving singletons. First we need a way to wrap a factory into a
 function that only calls it once, then caches the result:</p>
-<div class="highlight"><pre><span></span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;</span><span class="w"> </span><span class="n">SingletonDecorator</span><span class="p">(</span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;</span><span class="w"> </span><span class="n">factory</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Lazy</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;(</span><span class="n">factory</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">instance</span><span class="p">.</span><span class="n">Value</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SingletonDecorator</span><span class="p">(</span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">factory</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Lazy</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="p">(</span><span class="n">factory</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">instance</span><span class="p">.</span><span class="n">Value</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This relies on <code>Lazy</code> to ensure uniqueness. Now we can enable singleton
 registrations for factories and types:</p>
-<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">MarkSingleton</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">SingletonDecorator</span><span class="p">(</span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">MarkSingleton</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SingletonDecorator</span><span class="p">(</span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This effectively decorated the registered factory with the singleton
@@ -298,47 +298,47 @@ time (as opposed to on-demand at a later time).</p>
 <h2>Resources</h2>
 
 <p>The complete source code for the container in this blog post is:</p>
-<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Dictionary</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Dictionary</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;&gt;();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Container</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Dictionary</span><span class="o">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Dictionary</span><span class="o">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;&gt;</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span><span class="w"> </span><span class="n">factory</span><span class="p">)</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">class</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">factory</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Func</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">factory</span><span class="p">)</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">class</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factory</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">Type</span><span class="w"> </span><span class="n">type</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">constructor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">type</span><span class="p">.</span><span class="n">GetConstructors</span><span class="p">().</span><span class="n">First</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">Register</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Type</span><span class="w"> </span><span class="n">type</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">constructor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">type</span><span class="p">.</span><span class="n">GetConstructors</span><span class="p">().</span><span class="n">First</span><span class="p">();</span>
 
-<span class="w">        </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;)</span><span class="n">Expression</span><span class="p">.</span><span class="n">Lambda</span><span class="p">(</span><span class="w"></span>
-<span class="w">            </span><span class="n">Expression</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">constructor</span><span class="p">,</span><span class="w"> </span><span class="n">constructor</span><span class="p">.</span><span class="n">GetParameters</span><span class="p">().</span><span class="n">Select</span><span class="p">(</span><span class="w"></span>
-<span class="w">                </span><span class="n">param</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"></span>
-<span class="w">                </span><span class="p">{</span><span class="w"></span>
-<span class="w">                    </span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;</span><span class="w"> </span><span class="n">resolve</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">]();</span><span class="w"></span>
-<span class="w">                    </span><span class="k">return</span><span class="w"> </span><span class="n">Expression</span><span class="p">.</span><span class="n">Convert</span><span class="p">(</span><span class="w"></span>
-<span class="w">                        </span><span class="n">Expression</span><span class="p">.</span><span class="n">Call</span><span class="p">(</span><span class="n">Expression</span><span class="p">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">resolve</span><span class="p">.</span><span class="n">Target</span><span class="p">),</span><span class="w"> </span><span class="n">resolve</span><span class="p">.</span><span class="n">Method</span><span class="p">),</span><span class="w"></span>
-<span class="w">                        </span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">);</span><span class="w"></span>
-<span class="w">                </span><span class="p">}</span><span class="w"></span>
-<span class="w">            </span><span class="p">))).</span><span class="n">Compile</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="p">)</span><span class="n">Expression</span><span class="p">.</span><span class="n">Lambda</span><span class="p">(</span>
+<span class="w">            </span><span class="n">Expression</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">constructor</span><span class="p">,</span><span class="w"> </span><span class="n">constructor</span><span class="p">.</span><span class="n">GetParameters</span><span class="p">().</span><span class="n">Select</span><span class="p">(</span>
+<span class="w">                </span><span class="n">param</span><span class="w"> </span><span class="o">=&gt;</span>
+<span class="w">                </span><span class="p">{</span>
+<span class="w">                    </span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">resolve</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">]();</span>
+<span class="w">                    </span><span class="k">return</span><span class="w"> </span><span class="n">Expression</span><span class="p">.</span><span class="n">Convert</span><span class="p">(</span>
+<span class="w">                        </span><span class="n">Expression</span><span class="p">.</span><span class="n">Call</span><span class="p">(</span><span class="n">Expression</span><span class="p">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">resolve</span><span class="p">.</span><span class="n">Target</span><span class="p">),</span><span class="w"> </span><span class="n">resolve</span><span class="p">.</span><span class="n">Method</span><span class="p">),</span>
+<span class="w">                        </span><span class="n">param</span><span class="p">.</span><span class="n">ParameterType</span><span class="p">);</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">))).</span><span class="n">Compile</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">MarkSingleton</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">SingletonDecorator</span><span class="p">(</span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="n">MarkSingleton</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SingletonDecorator</span><span class="p">(</span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]);</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="n">Resolve</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="n">_registeredTypes</span><span class="p">[</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">)]();</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;</span><span class="w"> </span><span class="n">SingletonDecorator</span><span class="p">(</span><span class="n">Func</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;</span><span class="w"> </span><span class="n">factory</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Lazy</span><span class="p">&lt;</span><span class="kt">object</span><span class="p">&gt;(</span><span class="n">factory</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">instance</span><span class="p">.</span><span class="n">Value</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SingletonDecorator</span><span class="p">(</span><span class="n">Func</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">factory</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Lazy</span><span class="o">&lt;</span><span class="kt">object</span><span class="o">&gt;</span><span class="p">(</span><span class="n">factory</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">instance</span><span class="p">.</span><span class="n">Value</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>I also recently open-sourced a minimal container

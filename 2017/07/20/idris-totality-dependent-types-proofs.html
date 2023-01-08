@@ -42,24 +42,24 @@ converges to a halting branch.</p>
 <p>Natural numbers are defined in Idris using Peano axioms, so it is easy
 to prove things about them. Here is a minimal definition of natural
 numbers<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup>:</p>
-<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">|</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">|</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="kt">Nat&#39;</span>
 </pre></div>
 
 <p>This defines <code>Nat&#39;</code> as a data type which can be constructed either as
 <code>Z</code> (zero) or <code>S Nat&#39;</code> (successor of another natural number). With this
 definition, the compiler can easily determine the following function is
 total:</p>
-<div class="highlight"><pre><span></span><span class="nf">f</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">()</span><span class="w"></span>
-f<span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="ow">()</span><span class="w"></span>
-f<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>f<span class="w"> </span>k<span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">f</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">()</span>
+f<span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="ow">()</span>
+f<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>f<span class="w"> </span>k
 </pre></div>
 
 <p>This function return a unit given <code>Z</code>, otherwise it recursively takes
 the predecessor of the argument. This converges to the <code>Z</code> case. The
 following function, on the other hand, is correctly identified as
 potentially non-terminating:</p>
-<div class="highlight"><pre><span></span><span class="nf">g</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">()</span><span class="w"></span>
-g<span class="w"> </span>n<span class="w"> </span><span class="ow">=</span><span class="w"> </span>g<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>n<span class="ow">)</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">g</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">()</span>
+g<span class="w"> </span>n<span class="w"> </span><span class="ow">=</span><span class="w"> </span>g<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>n<span class="ow">)</span>
 </pre></div>
 
 <p>These are trivial examples, but in general, having a compile-time check
@@ -75,16 +75,16 @@ but without employing a different syntax.</p>
 
 <p>Before an example, we first need to define addition on naturals as
 follows:</p>
-<div class="highlight"><pre><span></span><span class="ow">(+)</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"></span>
-<span class="ow">(+)</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span>r<span class="w"> </span><span class="ow">=</span><span class="w"> </span>r<span class="w"></span>
-<span class="ow">(+)</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>l<span class="ow">)</span><span class="w"> </span>r<span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="ow">(</span>l<span class="w"> </span><span class="ow">+</span><span class="w"> </span>r<span class="ow">)</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="ow">(+)</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Nat&#39;</span>
+<span class="ow">(+)</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span>r<span class="w"> </span><span class="ow">=</span><span class="w"> </span>r
+<span class="ow">(+)</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>l<span class="ow">)</span><span class="w"> </span>r<span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="ow">(</span>l<span class="w"> </span><span class="ow">+</span><span class="w"> </span>r<span class="ow">)</span>
 </pre></div>
 
 <p>Now we can declare a vector type consisting of a size (<code>Nat&#39;</code>) and a
 type argument:</p>
-<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Type</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Type</span><span class="w"> </span><span class="kr">where</span><span class="w"></span>
-<span class="w">     </span><span class="nf">Nil</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span>a<span class="w"></span>
-<span class="w">     </span><span class="ow">(::)</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">:</span><span class="w"> </span>a<span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">(</span>xs<span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>k<span class="w"> </span>a<span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span>a<span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Type</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Type</span><span class="w"> </span><span class="kr">where</span>
+<span class="w">     </span><span class="nf">Nil</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="kt">Z</span><span class="w"> </span>a
+<span class="w">     </span><span class="ow">(::)</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">:</span><span class="w"> </span>a<span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="ow">(</span>xs<span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>k<span class="w"> </span>a<span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span>a
 </pre></div>
 
 <p>Here <code>a</code> is a type argument. <code>Vect&#39;</code> has two constructors: <code>Nil</code>,
@@ -95,9 +95,9 @@ vector of size <code>k</code> of <code>a</code> and produces a vector of size <c
 
 <p>Now to see dependent types in action, we can define <code>append&#39;</code>, a
 function that appends a vector to another vector:</p>
-<div class="highlight"><pre><span></span><span class="nf">append&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>m<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span>n<span class="w"> </span><span class="ow">+</span><span class="w"> </span>m<span class="ow">)</span><span class="w"> </span>a<span class="w"></span>
-append&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span>ys<span class="w"> </span><span class="ow">=</span><span class="w"> </span>ys<span class="w"></span>
-append&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span>ys<span class="w"> </span><span class="ow">=</span><span class="w"> </span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>append&#39;<span class="w"> </span>xs<span class="w"> </span>ys<span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">append&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>m<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span>n<span class="w"> </span><span class="ow">+</span><span class="w"> </span>m<span class="ow">)</span><span class="w"> </span>a
+append&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span>ys<span class="w"> </span><span class="ow">=</span><span class="w"> </span>ys
+append&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span>ys<span class="w"> </span><span class="ow">=</span><span class="w"> </span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>append&#39;<span class="w"> </span>xs<span class="w"> </span>ys
 </pre></div>
 
 <p>The interesting part is the function signature - given a vector of size
@@ -110,9 +110,9 @@ is indeed true for a given pair of arguments.</p>
 
 <p>We can also attempt to define a <code>reverse&#39;</code> function, which recursively
 appends the head of the vector to the reversed tail:</p>
-<div class="highlight"><pre><span></span><span class="nf">reverse&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"></span>
-reverse&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nil</span><span class="w"></span>
-reverse&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>append&#39;<span class="w"> </span><span class="ow">(</span>reverse&#39;<span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">[</span>x<span class="ow">]</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">reverse&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a
+reverse&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nil</span>
+reverse&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>append&#39;<span class="w"> </span><span class="ow">(</span>reverse&#39;<span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">[</span>x<span class="ow">]</span>
 </pre></div>
 
 <p>This doesn&#39;t compile though. We get the following error message:</p>
@@ -138,9 +138,9 @@ case, the problem is that the compiler expects an <code>S k</code> but finds an
 <code>k + S Z</code>. We need to prove that these are indeed equal
 (<code>successor of k</code> is the same as <code>k + successor of Z</code>). Here is the
 proof:</p>
-<div class="highlight"><pre><span></span><span class="nf">addOneProof</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="ow">(</span>n<span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span>n<span class="w"> </span><span class="ow">=</span><span class="w"> </span>n<span class="w"> </span><span class="ow">+</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="kt">Z</span><span class="w"></span>
-addOneProof<span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Refl</span><span class="w"></span>
-addOneProof<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>cong<span class="w"> </span><span class="ow">(</span>addOneProof<span class="w"> </span>k<span class="ow">)</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">addOneProof</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="ow">(</span>n<span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Nat&#39;</span><span class="ow">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span>n<span class="w"> </span><span class="ow">=</span><span class="w"> </span>n<span class="w"> </span><span class="ow">+</span><span class="w"> </span><span class="kt">S</span><span class="w"> </span><span class="kt">Z</span>
+addOneProof<span class="w"> </span><span class="kt">Z</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Refl</span>
+addOneProof<span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>cong<span class="w"> </span><span class="ow">(</span>addOneProof<span class="w"> </span>k<span class="ow">)</span>
 </pre></div>
 
 <p>Proofs are functions. There are a few things worth noting here: first,
@@ -157,8 +157,8 @@ our case, we are saying that if <code>addOneProof k</code> holds, then so does
 
 <p>We now have a proof that <code>S n = n + S Z</code>. With this, we can prove that
 the type <code>Vect (k + (S Z)) a</code> can be rewritten as <code>Vect (S k) a</code>:</p>
-<div class="highlight"><pre><span></span><span class="nf">reverseProof</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span>k<span class="w"> </span><span class="ow">+</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span><span class="kt">Z</span><span class="ow">))</span><span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span>a<span class="w"></span>
-reverseProof<span class="w"> </span><span class="ow">{</span>k<span class="ow">}</span><span class="w"> </span>result<span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">rewrite</span><span class="w"> </span>addOneProof<span class="w"> </span>k<span class="w"> </span><span class="kr">in</span><span class="w"> </span>result<span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">reverseProof</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span>k<span class="w"> </span><span class="ow">+</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span><span class="kt">Z</span><span class="ow">))</span><span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span><span class="ow">(</span><span class="kt">S</span><span class="w"> </span>k<span class="ow">)</span><span class="w"> </span>a
+reverseProof<span class="w"> </span><span class="ow">{</span>k<span class="ow">}</span><span class="w"> </span>result<span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">rewrite</span><span class="w"> </span>addOneProof<span class="w"> </span>k<span class="w"> </span><span class="kr">in</span><span class="w"> </span>result
 </pre></div>
 
 <p>There is some Idris-specific syntax here: <code>{k}</code> brings <code>k</code> from the
@@ -169,9 +169,9 @@ case effectively rewriting <code>Vect (k + (S Z)) a</code> to <code>Vect (S k) a
 these proofs are evaluated at compile time and simply provide
 information to the type checker. With this proof, we can implement
 reverse like this:</p>
-<div class="highlight"><pre><span></span><span class="nf">reverse&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"></span>
-reverse&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nil</span><span class="w"></span>
-reverse&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>reverseProof<span class="w"> </span><span class="ow">(</span>append&#39;<span class="w"> </span><span class="ow">(</span>reverse&#39;<span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">[</span>x<span class="ow">])</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">reverse&#39;</span><span class="w"> </span><span class="ow">:</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a<span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Vect&#39;</span><span class="w"> </span>n<span class="w"> </span>a
+reverse&#39;<span class="w"> </span><span class="kt">Nil</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nil</span>
+reverse&#39;<span class="w"> </span><span class="ow">(</span>x<span class="w"> </span><span class="ow">::</span><span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span>reverseProof<span class="w"> </span><span class="ow">(</span>append&#39;<span class="w"> </span><span class="ow">(</span>reverse&#39;<span class="w"> </span>xs<span class="ow">)</span><span class="w"> </span><span class="ow">[</span>x<span class="ow">])</span>
 </pre></div>
 
 <p>This is similar to the previous implementation, we just apply

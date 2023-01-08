@@ -26,51 +26,51 @@ like this:</p>
 <p><em>V8Engine.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">();</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Start</span><span class="p">();</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">();</span>
+<span class="p">};</span>
 </pre></div>
 
 <p><em>V8Engine.cpp</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;V8Engine.h&quot;</span>
 
-<span class="n">V8Engine</span><span class="o">::</span><span class="n">Start</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="n">V8Engine</span><span class="o">::</span><span class="n">Start</span><span class="p">()</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// start the engine</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 
-<span class="n">V8Engine</span><span class="o">::</span><span class="n">Stop</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="n">V8Engine</span><span class="o">::</span><span class="n">Stop</span><span class="p">()</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// stop the engine</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p><em>Car.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 <span class="cp">##include &quot;V8Engine.h&quot;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">();</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">();</span>
 
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">V8Engine</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">V8Engine</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p><em>Car.cpp</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span>
 <span class="w">    </span><span class="c1">// drive</span>
-<span class="w">    </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <h2>Dependency Injection with Interfaces</h2>
@@ -86,58 +86,58 @@ work against that:</p>
 <p><em>IEngine.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">IEngine</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">IEngine</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">IEngine</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">IEngine</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Engine</span><span class="p">();</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Engine</span><span class="p">();</span>
 </pre></div>
 
 <p><em>V8Engine.cpp</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;IEngine.h&quot;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* start the engine */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* stop the engine */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* start the engine */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* stop the engine */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Engine</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Engine</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p><em>Car.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 <span class="cp">##include &quot;IEngine.h&quot;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">Car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="n">m_engine</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="n">Car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="n">m_engine</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">();</span><span class="w"></span>
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">();</span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p><em>Car.cpp</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span>
 <span class="w">    </span><span class="c1">// drive</span>
-<span class="w">    </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">End</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">End</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <h2>Notes</h2>
@@ -172,12 +172,12 @@ compiler might generate a default one.</p>
 which tells the compiler not to generate a vtable for pure abstract
 classes. This reduces code size. Below is the <code>IEngine</code> declaration with
 this attribute:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">__declspec</span><span class="p">(</span><span class="n">novtable</span><span class="p">)</span><span class="w"> </span><span class="n">IEngine</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">IEngine</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">__declspec</span><span class="p">(</span><span class="n">novtable</span><span class="p">)</span><span class="w"> </span><span class="n">IEngine</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">IEngine</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>I won&#39;t include it in the code samples in this post, but it&#39;s worth
@@ -188,9 +188,9 @@ keeping in mind when working with MSVC.</p>
 <p>When working with interfaces as opposed to concrete types, we use
 factory functions to get object instances. Below is a possible naming
 convention, taking object ownership into account:</p>
-<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IFoo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeFoo</span><span class="p">();</span><span class="w"></span>
-<span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">();</span><span class="w"></span>
-<span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">IFoo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">GetFoo</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IFoo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeFoo</span><span class="p">();</span>
+<span class="n">IFoo</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseFoo</span><span class="p">();</span>
+<span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">IFoo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">GetFoo</span><span class="p">();</span>
 </pre></div>
 
 <p>The first function, <code>MakeFoo</code>, returns a unique pointer, passing
@@ -203,11 +203,11 @@ is owned by someone else, with the guarantee that it will outlive the
 caller. In that case, there is no need for pointers and we can simply
 return a reference to the object. This can be used, for example, for
 singletons. Below is an example of a singleton <code>Engine</code>:</p>
-<div class="highlight"><pre><span></span><span class="n">IEngine</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseEngine</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Engine</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">*</span><span class="n">instance</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">IEngine</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">UseEngine</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Engine</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">*</span><span class="n">instance</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>The third function, <code>GetFoo</code>, implies shared ownership - we get an
@@ -223,18 +223,18 @@ mock the engine:</p>
 <p><em>Test.cpp</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">Test</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Car</span><span class="w"> </span><span class="n">car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">MockEngine</span><span class="o">&gt;</span><span class="p">());</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">Test</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Car</span><span class="w"> </span><span class="n">car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">MockEngine</span><span class="o">&gt;</span><span class="p">());</span>
 
 <span class="w">    </span><span class="c1">// Test Car without a real Engine</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p>We can also expose <code>Car</code> as a simple interface, hiding its
@@ -245,58 +245,58 @@ following:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 <span class="cp">##include &quot;IEngine.h&quot;</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">ICar</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Drive</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">ICar</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">ICar</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Drive</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">ICar</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">engine</span><span class="p">);</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">engine</span><span class="p">);</span>
 </pre></div>
 
 <p><em>Car.cpp</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;ICar.h&quot;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">Car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
-<span class="w">         </span><span class="o">:</span><span class="w"> </span><span class="n">m_engine</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="n">Car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span>
+<span class="w">         </span><span class="o">:</span><span class="w"> </span><span class="n">m_engine</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">         </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"> </span><span class="k">override</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">         </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span>
 <span class="w">         </span><span class="c1">// drive</span>
-<span class="w">         </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Stop</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">         </span><span class="n">m_engine</span><span class="o">-&gt;</span><span class="n">Stop</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">));</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">));</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Test would become:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;ICar.h&quot;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">Test</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">car</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">MockEngine</span><span class="o">&gt;</span><span class="p">());</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">Test</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">car</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">MockEngine</span><span class="o">&gt;</span><span class="p">());</span>
 
 <span class="w">    </span><span class="c1">// Test ICar without a real Engine</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Note this allows the caller to pass in any <code>IEngine</code>. We provide an
@@ -314,41 +314,41 @@ internal Car.h header:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 <span class="cp">##include &quot;ICar.h&quot;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">Car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
-<span class="w">         </span><span class="o">:</span><span class="w"> </span><span class="n">m_engine</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="n">Car</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span>
+<span class="w">         </span><span class="o">:</span><span class="w"> </span><span class="n">m_engine</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="p">;</span>
 
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p><em>Car.cpp</em> becomes:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span>
 <span class="w">    </span><span class="c1">// drive</span>
-<span class="w">    </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span>
+<span class="p">}</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">));</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">IEngine</span><span class="o">&gt;&amp;&amp;</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">engine</span><span class="p">));</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Now we can include the internal header, and, while not necessarily
 recommended, we can cast <code>ICar</code> to <code>Car</code> inside the component:</p>
-<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">icar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">MakeV8Engine</span><span class="p">());</span><span class="w"></span>
-<span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">car</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&amp;&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">car</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">icar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MakeCar</span><span class="p">(</span><span class="n">MakeV8Engine</span><span class="p">());</span>
+<span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">car</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&amp;&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">car</span><span class="p">);</span>
 </pre></div>
 
 <p>Another trick if needing access to internals (again, not something
@@ -373,45 +373,45 @@ to be available when templates get instantiated:</p>
 <p><em>V8Engine.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">();</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Start</span><span class="p">();</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">();</span>
+<span class="p">};</span>
 </pre></div>
 
 <p><em>V8Engine.cpp</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;V8Engine.h&quot;</span>
 
-<span class="n">V8Engine</span><span class="o">::</span><span class="n">Start</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="n">V8Engine</span><span class="o">::</span><span class="n">Start</span><span class="p">()</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// start the engine</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 
-<span class="n">V8Engine</span><span class="o">::</span><span class="n">Stop</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="n">V8Engine</span><span class="o">::</span><span class="n">Stop</span><span class="p">()</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// stop the engine</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p><em>Car.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 
-<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TEngine</span><span class="o">&gt;</span><span class="w"></span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TEngine</span><span class="o">&gt;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span>
 <span class="w">        </span><span class="c1">// drive</span>
-<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">TEngine</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">TEngine</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>Note <code>Car</code> is implemented in the header and <code>V8Engine</code> is also a
@@ -420,26 +420,26 @@ this:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;V8Engine.h&quot;</span>
 <span class="cp">##include &quot;Car.h&quot;</span>
 
-<span class="p">...</span><span class="w"></span>
+<span class="p">...</span>
 
-<span class="n">Car</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">car</span><span class="p">;</span><span class="w"></span>
+<span class="n">Car</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">car</span><span class="p">;</span>
 </pre></div>
 
 <p>Mocking the engine in test code would look like this:</p>
 <div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* mock logic */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">Test</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Car</span><span class="o">&lt;</span><span class="n">MockEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">car</span><span class="p">;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">Test</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Car</span><span class="o">&lt;</span><span class="n">MockEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">car</span><span class="p">;</span>
 
 <span class="w">    </span><span class="c1">// Test Car without a real Engine</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p>With this approach we are able to:</p>
@@ -465,34 +465,34 @@ to consumers. In that case we could have something like this:</p>
 <p><em>ICar.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">ICar</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Drive</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">ICar</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">ICar</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Drive</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">ICar</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Car</span><span class="p">();</span><span class="w"></span>
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV6Car</span><span class="p">();</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Car</span><span class="p">();</span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV6Car</span><span class="p">();</span>
 </pre></div>
 
 <p><em>Car.h (internal)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
 <span class="cp">##include &quot;ICar.h&quot;</span>
 
-<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TEngine</span><span class="o">&gt;</span><span class="w"></span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span><span class="w"></span>
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TEngine</span><span class="o">&gt;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Drive</span><span class="p">()</span><span class="w"> </span><span class="k">override</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span>
 <span class="w">        </span><span class="c1">// drive</span>
-<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">m_engine</span><span class="p">.</span><span class="n">Stop</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">TEngine</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">TEngine</span><span class="w"> </span><span class="n">m_engine</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p><em>Car.cpp</em>:</p>
@@ -500,15 +500,15 @@ to consumers. In that case we could have something like this:</p>
 <span class="cp">##include &quot;V8Engine.h&quot;</span>
 <span class="cp">##include &quot;V6Engine.h&quot;</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Car</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;&gt;</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Car</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;&gt;</span><span class="p">();</span>
+<span class="p">}</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV6Car</span><span class="p">();</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&lt;</span><span class="n">V6Engine</span><span class="o">&gt;&gt;</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV6Car</span><span class="p">();</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Car</span><span class="o">&lt;</span><span class="n">V6Engine</span><span class="o">&gt;&gt;</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Test would remain the same as in the example above, where we worked

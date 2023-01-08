@@ -29,30 +29,30 @@ duck.</p>
 </blockquote>
 
 <p>Let&#39;s say we have a <code>Duck</code> class. A <code>Duck</code> quacks and waddles:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Duck</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Quack</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Waddle</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Duck</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Quack</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Waddle</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>We have a function that uses a duck:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">Duck</span><span class="o">&amp;</span><span class="w"> </span><span class="n">duck</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">duck</span><span class="p">.</span><span class="n">Quack</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="n">duck</span><span class="p">.</span><span class="n">Waddle</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">Duck</span><span class="o">&amp;</span><span class="w"> </span><span class="n">duck</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">duck</span><span class="p">.</span><span class="n">Quack</span><span class="p">();</span>
+<span class="w">    </span><span class="n">duck</span><span class="p">.</span><span class="n">Waddle</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>The object-oriented way to implement subtyping is to inherit from the
 base class:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">UglyDuckling</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">Duck</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">UglyDuckling</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">Duck</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span>
 
 <span class="c1">// ...</span>
 
-<span class="n">UglyDuckling</span><span class="w"> </span><span class="n">uglyDuckling</span><span class="p">;</span><span class="w"></span>
-<span class="n">foo</span><span class="p">(</span><span class="n">uglyDuckling</span><span class="p">);</span><span class="w"></span>
+<span class="n">UglyDuckling</span><span class="w"> </span><span class="n">uglyDuckling</span><span class="p">;</span>
+<span class="n">foo</span><span class="p">(</span><span class="n">uglyDuckling</span><span class="p">);</span>
 </pre></div>
 
 <p>We can call <code>foo</code> on an <code>UglyDuckling</code> since <code>UglyDuckling</code> inherits
@@ -66,51 +66,51 @@ complicated: what if we need something that waddles, but we don&#39;t care
 about quacking? Do we separate our duck into two different interfaces?
 In general, do we add an interface for each behavior and then pull
 groups of interfaces together to form more refined types?</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">IQuack</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Quack</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">IQuack</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Quack</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">IWaddle</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Waddle</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">IWaddle</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">Waddle</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Duck</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">IQuack</span><span class="p">,</span><span class="w"> </span><span class="n">IWaddle</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Quack</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Waddle</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Duck</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">IQuack</span><span class="p">,</span><span class="w"> </span><span class="n">IWaddle</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Quack</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Waddle</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Penguin</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">IWaddle</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Waddle</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Penguin</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">IWaddle</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Waddle</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>This works, but has combinatorial complexity and we end up with deep
 hierarchies which are difficult to reason about. There is another way to
 achieve this though, using generic programming:</p>
 <div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">UglyDuckling</span><span class="w"> </span><span class="c1">// No inheritance</span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Quack</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Waddle</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Quack</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Waddle</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Duck</span><span class="o">&gt;</span><span class="w"></span>
-<span class="kt">void</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="n">Duck</span><span class="o">&amp;</span><span class="w"> </span><span class="n">duck</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">duck</span><span class="p">.</span><span class="n">Quack</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="n">duck</span><span class="p">.</span><span class="n">Waddle</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Duck</span><span class="o">&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="n">Duck</span><span class="o">&amp;</span><span class="w"> </span><span class="n">duck</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">duck</span><span class="p">.</span><span class="n">Quack</span><span class="p">();</span>
+<span class="w">    </span><span class="n">duck</span><span class="p">.</span><span class="n">Waddle</span><span class="p">();</span>
+<span class="p">}</span>
 
 <span class="c1">// ...</span>
 
-<span class="n">UglyDuckling</span><span class="w"> </span><span class="n">uglyDuckling</span><span class="p">;</span><span class="w"></span>
-<span class="n">foo</span><span class="p">(</span><span class="n">uglyDuckling</span><span class="p">);</span><span class="w"></span>
+<span class="n">UglyDuckling</span><span class="w"> </span><span class="n">uglyDuckling</span><span class="p">;</span>
+<span class="n">foo</span><span class="p">(</span><span class="n">uglyDuckling</span><span class="p">);</span>
 </pre></div>
 
 <p><code>foo</code> here is a templated function which only cares that the type passed
@@ -131,22 +131,22 @@ inheritance. A mixin is a type that provides some behavior which is
 <em>mixed in</em> or <em>included</em> into another type. For example, if we use
 intrusive reference counting, we can isolate the reference-counting
 behavior into its own type:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RefCounted</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">AddRef</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">++</span><span class="n">m_refCount</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Release</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">--</span><span class="n">m_refCount</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">delete</span><span class="w"> </span><span class="k">this</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RefCounted</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">AddRef</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">++</span><span class="n">m_refCount</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Release</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">--</span><span class="n">m_refCount</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">delete</span><span class="w"> </span><span class="k">this</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">RefCounted</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">RefCounted</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
 
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">atomic</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_refCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">atomic</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_refCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>Then we can have other types for which we want intrusive reference
 counting simply mixing in this behavior:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">RefCounted</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">RefCounted</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span>
 </pre></div>
 
 <p>Now <code>Foo</code> has <code>AddRef</code> and <code>Release</code> functions which can be called by a
@@ -159,17 +159,17 @@ include behavior defined across multiple other types.</p>
 <h2>The Case for Free Functions</h2>
 
 <p>What is the difference between the following two <code>Print</code> functions?</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Print</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">Data</span><span class="p">();</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">Data</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Print</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">Data</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">Data</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">Print</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">foo</span><span class="p">.</span><span class="n">Data</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">Print</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">foo</span><span class="p">.</span><span class="n">Data</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>The first is a member function, called with an implicit <code>this</code> argument
@@ -190,23 +190,23 @@ implement a function that operates on a type without having to access
 its private member, that function should not belong to the type.
 Depending on the language, we have several options. We could put such
 functions in <q>helper</q> types:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">FooPrinter</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Print</span><span class="p">(</span><span class="n">Foo</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">FooPrinter</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Print</span><span class="p">(</span><span class="n">Foo</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>C# provides extension methods as syntax sugar for this, which allow us
 to call <code>foo.Print()</code> even though we implement the <code>Print</code> function as
 an extension method:</p>
-<div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">FooPrinter</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Print</span><span class="p">(</span><span class="k">this</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">FooPrinter</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Print</span><span class="p">(</span><span class="k">this</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Still, the simplest thing to do is have a free function:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">Print</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">Print</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 
 <p>Being forced to group everything inside classes yields messy code. Steve
@@ -224,38 +224,38 @@ classes, both being horrible replacements for free-standing functions.</p>
 problem space but we need to implement a set of operations on said
 object model. Managers tend to be singletons. For example, we have a
 <code>Connection</code> type that models a connection to a peer:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Connection</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Connection</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// Open, Close, Send, Receive etc.</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p>We also want someone to open new connections and close all opened
 connections. Here is a purely object oriented <code>ConnectionManager</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ConnectionManager</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">ConnectionManager</span><span class="w"> </span><span class="n">_instance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConnectionManager</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nf">ConnectionManager</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ConnectionManager</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">ConnectionManager</span><span class="w"> </span><span class="n">_instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConnectionManager</span><span class="p">();</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nf">ConnectionManager</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">ConnectionManager</span><span class="w"> </span><span class="nf">GetInstance</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">_instance</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">ConnectionManager</span><span class="w"> </span><span class="nf">GetInstance</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">_instance</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">List</span><span class="p">&lt;</span><span class="n">Connection</span><span class="p">&gt;</span><span class="w"> </span><span class="n">_connections</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="p">&lt;</span><span class="n">Connection</span><span class="p">&gt;();</span><span class="w"></span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Connection</span><span class="o">&gt;</span><span class="w"> </span><span class="n">_connections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Connection</span><span class="o">&gt;</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Connection</span><span class="w"> </span><span class="nf">Make</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Connection</span><span class="p">();</span><span class="w"></span>
-<span class="w">        </span><span class="n">_connections</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">connection</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">connection</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Connection</span><span class="w"> </span><span class="nf">Make</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Connection</span><span class="p">();</span>
+<span class="w">        </span><span class="n">_connections</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">connection</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">connection</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">CloseAll</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">_connections</span><span class="p">.</span><span class="n">ForEach</span><span class="p">(</span><span class="n">connection</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">connection</span><span class="p">.</span><span class="n">Close</span><span class="p">());</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">CloseAll</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">_connections</span><span class="p">.</span><span class="n">ForEach</span><span class="p">(</span><span class="n">connection</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">connection</span><span class="p">.</span><span class="n">Close</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This maintains the list of connections and can close all of them with
@@ -264,33 +264,33 @@ a call to <code>CloseAll()</code>. Besides being verbose to use
 <code>ConnectionManager.GetInstance().Close()</code>), this class does not make
 much sense. A non-OOP implementation would look like this:</p>
 <div class="highlight"><pre><span></span><span class="c1">// In .h file</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Connection</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Connection</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// Open, Close, Send, Receive etc.</span>
-<span class="p">};</span><span class="w"></span>
+<span class="p">};</span>
 <span class="w"> </span>
-<span class="n">Connection</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">Make</span><span class="p">();</span><span class="w"></span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">CloseAll</span><span class="p">();</span><span class="w"></span>
+<span class="n">Connection</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">Make</span><span class="p">();</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">CloseAll</span><span class="p">();</span>
 <span class="w"> </span>
 <span class="c1">// In .cpp file</span>
-<span class="k">namespace</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Connection</span><span class="o">&gt;</span><span class="w"> </span><span class="n">connections</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">namespace</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Connection</span><span class="o">&gt;</span><span class="w"> </span><span class="n">connections</span><span class="p">;</span>
+<span class="p">}</span>
 <span class="w"> </span>
-<span class="n">Connection</span><span class="o">&amp;</span><span class="w"> </span><span class="n">Make</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">connections</span><span class="p">.</span><span class="n">emplace_back</span><span class="p">(</span><span class="n">Connection</span><span class="p">{});</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">connections</span><span class="p">.</span><span class="n">back</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">Connection</span><span class="o">&amp;</span><span class="w"> </span><span class="n">Make</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">connections</span><span class="p">.</span><span class="n">emplace_back</span><span class="p">(</span><span class="n">Connection</span><span class="p">{});</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">connections</span><span class="p">.</span><span class="n">back</span><span class="p">();</span>
+<span class="p">}</span>
 <span class="w"> </span>
-<span class="kt">void</span><span class="w"> </span><span class="n">CloseAll</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">connections</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">connection</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="n">CloseAll</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">connections</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">connection</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p><code>Make()</code> and <code>CloseAll()</code> do not need to be group in some manager.
@@ -304,11 +304,11 @@ coupled to the type it <q>manages</q>, <q>Utils</q> classes end up being
 dumping grounds of functions that don&#39;t seem to belong anywhere else.
 The biggest problem is that each of these functions usually depends on
 some other component:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">FooUtils</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">DoBar</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Dependency on Bar */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">DoBaz</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Dependency on Baz */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">FooUtils</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">DoBar</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Dependency on Bar */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">DoBaz</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Dependency on Baz */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Now whoever takes a dependency on <code>FooUtils</code>, transitively takes a
@@ -339,34 +339,34 @@ let&#39;s assume we have separate <em>day</em>, <em>month</em>, and <em>year</em
 type should maintain an invariant that it represents a valid date, so we
 can&#39;t have, for example, a June 31st. It&#39;s hard to enforce the
 invariant with:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Date</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">day</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">month</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">year</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Date</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">day</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">month</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">year</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>Alternately, we can implement a class with a constructor which ensures
 only valid dates can be created:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Date</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">Date</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">year</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">month</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">day</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">month</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">month</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">12</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"></span>
-<span class="w">        </span><span class="cm">/* Additional checks to ensure a valid date... */</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Date</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="n">Date</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">year</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">month</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">day</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">month</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">month</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">12</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="cm">/* ... */</span>
+<span class="w">        </span><span class="cm">/* Additional checks to ensure a valid date... */</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">year</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">m_year</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">month</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">m_month</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">day</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">m_day</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">year</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">m_year</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">month</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">m_month</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">day</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">m_day</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">m_day</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">m_month</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">m_year</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">m_day</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">m_month</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">m_year</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>If we want to add an <code>AddDays</code> function, we would create a member
@@ -377,11 +377,11 @@ having a valid date is enforced.</p>
 
 <p>On the other hand, a type which doesn&#39;t need to maintain an invariant,
 say a point in the plane, should not be implemented as a class:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Point</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Point</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">x</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">y</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <h2>Summary</h2>

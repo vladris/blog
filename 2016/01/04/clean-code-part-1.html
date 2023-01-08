@@ -55,40 +55,40 @@ open-source, that already does what needs to be done. Case in point, we
 refactored some code for a project (C#), extracted some interfaces,
 componentized things, and wrote a bunch of unit tests. All of this was
 great, except we ended up with a bunch of handcrafted stub classes: for</p>
-<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IMyComponent</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">Foo</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">Bar</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">Baz</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IMyComponent</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">Foo</span><span class="p">();</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">Bar</span><span class="p">();</span>
+<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">Baz</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>we had</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyComponentStub</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IMyComponent</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Foo</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyComponentStub</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IMyComponent</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Foo</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">Bar</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="m">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">Bar</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="m">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Baz</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
-<span class="kt">var</span><span class="w"> </span><span class="n">myComponentStub</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MyComponentStub</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Baz</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+<span class="p">...</span>
+<span class="kt">var</span><span class="w"> </span><span class="n">myComponentStub</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MyComponentStub</span><span class="p">();</span>
 </pre></div>
 
 <p>and so on. Implementing these stubs was tedious, needless work - we
 integrated <a href="https://github.com/Moq/moq4">Moq</a> , a mocking library, and
 the above code turned into:</p>
-<div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="nn">Moq</span><span class="p">;</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
-<span class="kt">var</span><span class="w"> </span><span class="n">myComponentStub</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Mock</span><span class="p">.</span><span class="n">Of</span><span class="p">&lt;</span><span class="n">IMyComponent</span><span class="p">&gt;();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="nn">Moq</span><span class="p">;</span>
+<span class="p">...</span>
+<span class="kt">var</span><span class="w"> </span><span class="n">myComponentStub</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Mock</span><span class="p">.</span><span class="n">Of</span><span class="o">&lt;</span><span class="n">IMyComponent</span><span class="o">&gt;</span><span class="p">();</span>
 </pre></div>
 
 <p>Moq uses reflection to stub out interfaces at run-time, so simply
@@ -105,137 +105,137 @@ Seasoning</a>
 talk, one of the best tech talks I&#39;ve seen. The example he gives in the
 talk (from the Chrome codebase) shows how a couple of lines of STL code
 can be used instead of a whole convoluted function:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PanelBar::RepositionExpandedPanels</span><span class="p">(</span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">fixed_panel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="n">CHECK</span><span class="p">(</span><span class="n">fixed_panel</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PanelBar::RepositionExpandedPanels</span><span class="p">(</span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">fixed_panel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">CHECK</span><span class="p">(</span><span class="n">fixed_panel</span><span class="p">);</span>
 
 <span class="w">  </span><span class="c1">// First, find the index of the fixed panel.</span>
-<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GetPanelIndex</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">fixed_panel</span><span class="p">);</span><span class="w"></span>
-<span class="w">  </span><span class="n">CHECK_LT</span><span class="p">(</span><span class="n">fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">());</span><span class="w"></span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GetPanelIndex</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">fixed_panel</span><span class="p">);</span>
+<span class="w">  </span><span class="n">CHECK_LT</span><span class="p">(</span><span class="n">fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
 
 <span class="w">  </span><span class="c1">// Next, check if the panel has moved to the other side of another panel.</span>
-<span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">center_x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fixed_panel</span><span class="o">-&gt;</span><span class="n">cur_panel_center</span><span class="p">();</span><span class="w"></span>
-<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">get</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">center_x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_panel_center</span><span class="p">()</span><span class="w"> </span><span class="o">||</span><span class="w"></span>
-<span class="w">        </span><span class="n">i</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">fixed_panel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">center_x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fixed_panel</span><span class="o">-&gt;</span><span class="n">cur_panel_center</span><span class="p">();</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">get</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">center_x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_panel_center</span><span class="p">()</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="n">i</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">fixed_panel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="c1">// If it has, then we reorder the panels.</span>
-<span class="w">        </span><span class="n">ref_ptr</span><span class="o">&lt;</span><span class="n">Panel</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">fixed_index</span><span class="p">];</span><span class="w"></span>
-<span class="w">        </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">          </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">          </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">ref</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">      </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">ref_ptr</span><span class="o">&lt;</span><span class="n">Panel</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">fixed_index</span><span class="p">];</span>
+<span class="w">        </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">ref</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
 
 <span class="w">  </span><span class="c1">// Find the total width of the panels to the left of the fixed panel.</span>
-<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">total_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">());</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">get</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">fixed_panel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">      </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">;</span><span class="w"></span>
-<span class="w">      </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="n">total_width</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">();</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">total_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">  </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">());</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">get</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">fixed_panel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<span class="w">      </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">total_width</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
 
-<span class="w">  </span><span class="n">CHECK_NE</span><span class="p">(</span><span class="n">fixed_index</span><span class="p">,</span><span class="w"> </span><span class="mi">-1</span><span class="p">);</span><span class="w"></span>
-<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">CHECK_NE</span><span class="p">(</span><span class="n">fixed_index</span><span class="p">,</span><span class="w"> </span><span class="mi">-1</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">;</span>
 
 <span class="w">  </span><span class="c1">// Move panels over to the right of the fixed panel until all of the ones</span>
 <span class="w">  </span><span class="c1">// on the left will fit.</span>
-<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">avail_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">fixed_panel</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
-<span class="w">  </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">total_width</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">avail_width</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">new_fixed_index</span><span class="o">--</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">CHECK_GE</span><span class="p">(</span><span class="n">new_fixed_index</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="n">total_width</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">new_fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">();</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">avail_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">fixed_panel</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">  </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">total_width</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">avail_width</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">new_fixed_index</span><span class="o">--</span><span class="p">;</span>
+<span class="w">    </span><span class="n">CHECK_GE</span><span class="p">(</span><span class="n">new_fixed_index</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">total_width</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">new_fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
 
 <span class="w">  </span><span class="c1">// Reorder the fixed panel if its index changed.</span>
-<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">new_fixed_index</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Panels</span><span class="o">::</span><span class="n">iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">ref_ptr</span><span class="o">&lt;</span><span class="n">Panel</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">it</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">it</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">new_fixed_index</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Panels</span><span class="o">::</span><span class="n">iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ref_ptr</span><span class="o">&lt;</span><span class="n">Panel</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">it</span><span class="p">;</span>
+<span class="w">    </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">it</span><span class="p">);</span>
+<span class="w">    </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">);</span>
+<span class="w">    </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
 
 <span class="w">  </span><span class="c1">// Now find the width of the panels to the right, and move them to the</span>
 <span class="w">  </span><span class="c1">// left as needed.</span>
-<span class="w">  </span><span class="n">total_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Panels</span><span class="o">::</span><span class="n">iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
-<span class="w">          </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">total_width</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">it</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">();</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
-<span class="w">  </span><span class="n">avail_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">wm_</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">fixed_panel</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">total_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Panels</span><span class="o">::</span><span class="n">iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">          </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">total_width</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">it</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="n">avail_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">wm_</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">fixed_panel</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
 
-<span class="w">  </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">total_width</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">avail_width</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">new_fixed_index</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">CHECK_LT</span><span class="p">(</span><span class="n">new_fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">());</span><span class="w"></span>
-<span class="w">    </span><span class="n">total_width</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">new_fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">();</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">total_width</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">avail_width</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">new_fixed_index</span><span class="o">++</span><span class="p">;</span>
+<span class="w">    </span><span class="n">CHECK_LT</span><span class="p">(</span><span class="n">new_fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<span class="w">    </span><span class="n">total_width</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">new_fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
 
 <span class="w">  </span><span class="c1">// Do the reordering again.</span>
-<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">new_fixed_index</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Panels</span><span class="o">::</span><span class="n">iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">ref_ptr</span><span class="o">&lt;</span><span class="n">Panel</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">it</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">it</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">new_fixed_index</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Panels</span><span class="o">::</span><span class="n">iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ref_ptr</span><span class="o">&lt;</span><span class="n">Panel</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">it</span><span class="p">;</span>
+<span class="w">    </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">it</span><span class="p">);</span>
+<span class="w">    </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">);</span>
+<span class="w">    </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
 
 <span class="w">  </span><span class="c1">// Finally, push panels to the left and the right so they don&#39;t overlap.</span>
-<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Panels</span><span class="o">::</span><span class="n">reverse_iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Panels</span><span class="o">::</span><span class="n">reverse_iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span>
 <span class="w">       </span><span class="c1">// Start at the panel to the left of &#39;new_fixed_index&#39;.</span>
-<span class="w">       </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">rbegin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">);</span><span class="w"></span>
-<span class="w">       </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">rend</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">boundary</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">      </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">Move</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span><span class="w"> </span><span class="n">kAnimMs</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">      </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">Move</span><span class="p">(</span><span class="n">min</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">),</span><span class="w"> </span><span class="n">kAnimMs</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
-<span class="w">  </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span><span class="w"></span>
+<span class="w">       </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">rbegin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">);</span>
+<span class="w">       </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">rend</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">boundary</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">Move</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span><span class="w"> </span><span class="n">kAnimMs</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">Move</span><span class="p">(</span><span class="n">min</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">),</span><span class="w"> </span><span class="n">kAnimMs</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span>
 
-<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Panels</span><span class="o">::</span><span class="n">iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
-<span class="w">       </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">boundary</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">      </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">Move</span><span class="p">(</span><span class="n">boundary</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">(),</span><span class="w"> </span><span class="n">kAnimMs</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">wm_</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">      </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">Move</span><span class="p">(</span><span class="n">max</span><span class="p">(</span><span class="n">boundary</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">(),</span><span class="w"></span>
-<span class="w">                  </span><span class="n">wm_</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">),</span><span class="w"></span>
-<span class="w">                  </span><span class="n">kAnimMs</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Panels</span><span class="o">::</span><span class="n">iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">       </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">boundary</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">Move</span><span class="p">(</span><span class="n">boundary</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">(),</span><span class="w"> </span><span class="n">kAnimMs</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">wm_</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">Move</span><span class="p">(</span><span class="n">max</span><span class="p">(</span><span class="n">boundary</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">panel_width</span><span class="p">(),</span>
+<span class="w">                  </span><span class="n">wm_</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">),</span>
+<span class="w">                  </span><span class="n">kAnimMs</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">panel</span><span class="o">-&gt;</span><span class="n">cur_right</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>becomes:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PanelBar::RepositionExpandedPanels</span><span class="p">(</span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">fixed_panel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="n">CHECK</span><span class="p">(</span><span class="n">fixed_panel</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PanelBar::RepositionExpandedPanels</span><span class="p">(</span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">fixed_panel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">CHECK</span><span class="p">(</span><span class="n">fixed_panel</span><span class="p">);</span>
 
 <span class="w">  </span><span class="c1">// First, find the index of the fixed panel.</span>
-<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GetPanelIndex</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">fixed_panel</span><span class="p">);</span><span class="w"></span>
-<span class="w">  </span><span class="n">CHECK_LT</span><span class="p">(</span><span class="n">fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">());</span><span class="w"></span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GetPanelIndex</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">fixed_panel</span><span class="p">);</span>
+<span class="w">  </span><span class="n">CHECK_LT</span><span class="p">(</span><span class="n">fixed_index</span><span class="p">,</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
 
 <span class="w">  </span><span class="c1">// Next, check if the panel has moved to the left side of another panel.</span>
-<span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">begin</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">;</span><span class="w"></span>
-<span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lower_bound</span><span class="p">(</span><span class="n">begin</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">),</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="n">center_x</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">ref_ptr</span><span class="o">&lt;</span><span class="n">Panel</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">e</span><span class="o">-&gt;</span><span class="n">cur_panel_center</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">begin</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fixed_index</span><span class="p">;</span>
+<span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lower_bound</span><span class="p">(</span><span class="n">begin</span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">),</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="n">center_x</span><span class="p">,</span>
+<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">ref_ptr</span><span class="o">&lt;</span><span class="n">Panel</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">e</span><span class="o">-&gt;</span><span class="n">cur_panel_center</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"> </span><span class="p">});</span>
 
 <span class="w">  </span><span class="c1">// If it has, then we reorder the panels.</span>
-<span class="w">  </span><span class="n">rotate</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="n">rotate</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Code snippets borrowed from Sean Parent&#39;s slides, I highly recommend
@@ -293,54 +293,54 @@ the Windows API&#39;s <code>HRESULT</code>:</p>
 <div class="highlight"><pre><span></span><span class="n">HRESULT</span><span class="w"> </span><span class="nf">foo</span><span class="p">();</span><span class="w"> </span><span class="c1">// Does some work and returns an HRESULT</span>
 <span class="n">HRESULT</span><span class="w"> </span><span class="nf">bar</span><span class="p">();</span><span class="w"> </span><span class="c1">// Does some work and returns an HRESULT</span>
 
-<span class="n">HRESULT</span><span class="w"> </span><span class="nf">baz</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">HRESULT</span><span class="w"> </span><span class="n">hr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">S_OK</span><span class="p">;</span><span class="w"></span>
+<span class="n">HRESULT</span><span class="w"> </span><span class="nf">baz</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">HRESULT</span><span class="w"> </span><span class="n">hr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">S_OK</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">hr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">FAILED</span><span class="p">(</span><span class="n">hr</span><span class="p">))</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">hr</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">hr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">FAILED</span><span class="p">(</span><span class="n">hr</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">hr</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">hr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baz</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">FAILED</span><span class="p">(</span><span class="n">hr</span><span class="p">))</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">hr</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">hr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baz</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">FAILED</span><span class="p">(</span><span class="n">hr</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">hr</span><span class="p">;</span>
 
 <span class="w">    </span><span class="p">...</span><span class="w"> </span><span class="c1">// Some more work here which might fail</span>
 
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">hr</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">hr</span><span class="p">;</span>
+<span class="p">}</span>
 
-<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">SUCCEEDED</span><span class="p">(</span><span class="n">baz</span><span class="p">()))</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">SUCCEEDED</span><span class="p">(</span><span class="n">baz</span><span class="p">()))</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// :)</span>
-<span class="p">}</span><span class="w"></span>
-<span class="k">else</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="p">}</span>
+<span class="k">else</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// :(</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This can be replaced with the more concise and much easier to read:</p>
 <div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">();</span><span class="w"> </span><span class="c1">// Does some work, might throw</span>
 <span class="kt">void</span><span class="w"> </span><span class="nf">bar</span><span class="p">();</span><span class="w"> </span><span class="c1">// Does some work, might throw</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">baz</span><span class="p">()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">foo</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="n">baz</span><span class="p">();</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">baz</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">foo</span><span class="p">();</span>
+<span class="w">    </span><span class="n">baz</span><span class="p">();</span>
 
 <span class="w">    </span><span class="p">...</span><span class="w"> </span><span class="c1">// Some more work here which might fail (and throw)</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 
-<span class="k">try</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">baz</span><span class="p">();</span><span class="w"></span>
+<span class="k">try</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">baz</span><span class="p">();</span>
 <span class="w">    </span><span class="c1">// :)</span>
-<span class="p">}</span><span class="w"></span>
-<span class="k">catch</span><span class="w"> </span><span class="p">(...)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
+<span class="p">}</span>
+<span class="k">catch</span><span class="w"> </span><span class="p">(...)</span>
+<span class="p">{</span>
 <span class="w">    </span><span class="c1">// :(</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Error code return values come from the old days when exceptions didn&#39;t
@@ -357,40 +357,40 @@ pattern</a> instead of
 checking for null. For example, take an <code>IActivity</code> interface on which
 we can log success or failure, and an <code>ActivityScope</code> which can retrieve
 the current activity from a context:</p>
-<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IActivity</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">LogSuccess</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">LogFailure</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IActivity</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">LogSuccess</span><span class="p">();</span>
+<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">LogFailure</span><span class="p">();</span>
+<span class="p">}</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">ActivityScope</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ActivityScope</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">IActivity</span><span class="w"> </span><span class="nf">GetCurrentActivity</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(!</span><span class="n">_context</span><span class="p">.</span><span class="n">HasCurrentActivity</span><span class="p">())</span><span class="w"></span>
-<span class="w">        </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">null</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">_context</span><span class="p">.</span><span class="n">GetActivity</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">IActivity</span><span class="w"> </span><span class="nf">GetCurrentActivity</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">_context</span><span class="p">.</span><span class="n">HasCurrentActivity</span><span class="p">())</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">null</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">_context</span><span class="p">.</span><span class="n">GetActivity</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>With this implementation, all clients of the API have to make sure
 <code>GetCurrentActivity()</code> returns an object as opposed to null. All callers
 look like this:</p>
-<div class="highlight"><pre><span></span><span class="n">ActivityScope</span><span class="w"> </span><span class="n">activityScope</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ActivityScope</span><span class="p">();</span><span class="w"></span>
-<span class="n">activityScope</span><span class="p">.</span><span class="n">CreateActivity</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">ActivityScope</span><span class="w"> </span><span class="n">activityScope</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ActivityScope</span><span class="p">();</span>
+<span class="n">activityScope</span><span class="p">.</span><span class="n">CreateActivity</span><span class="p">();</span>
 
 <span class="p">...</span><span class="w"> </span><span class="c1">// Do a bunch of stuff</span>
 
-<span class="kt">var</span><span class="w"> </span><span class="n">activity</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">activityScope</span><span class="p">.</span><span class="n">GetCurrentActivity</span><span class="p">();</span><span class="w"></span>
-<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">activity</span><span class="w"> </span><span class="p">!=</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">activity</span><span class="p">.</span><span class="n">LogSuccess</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">var</span><span class="w"> </span><span class="n">activity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">activityScope</span><span class="p">.</span><span class="n">GetCurrentActivity</span><span class="p">();</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">activity</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">activity</span><span class="p">.</span><span class="n">LogSuccess</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>While there is a single <code>ActivityScope</code> implementation, there are
@@ -399,57 +399,57 @@ null check. The Null Object alternative for this is to provide a
 <code>NullActivity</code>, for which <code>LogSuccess</code> and <code>LogFailure</code> don&#39;t do
 anything. <code>ActivityScope</code> can return <code>NullActivity</code> instead of null if
 there is no <code>Activity</code> in the context:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">NullActivity</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IActivity</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">LogSuccess</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">LogFailure</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">NullActivity</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IActivity</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">LogSuccess</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">LogFailure</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">ActivityScope</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">NullActivity</span><span class="w"> </span><span class="n">_nullActivity</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NullActivity</span><span class="p">();</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ActivityScope</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">NullActivity</span><span class="w"> </span><span class="n">_nullActivity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NullActivity</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">IActivity</span><span class="w"> </span><span class="nf">GetCurrentActivity</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(!</span><span class="n">_context</span><span class="p">.</span><span class="n">HasCurrentActivity</span><span class="p">())</span><span class="w"></span>
-<span class="w">        </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">_nullActivity</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">_context</span><span class="p">.</span><span class="n">GetActivity</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">IActivity</span><span class="w"> </span><span class="nf">GetCurrentActivity</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">_context</span><span class="p">.</span><span class="n">HasCurrentActivity</span><span class="p">())</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">_nullActivity</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">_context</span><span class="p">.</span><span class="n">GetActivity</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Now callers don&#39;t need to worry about getting back a null, and can use
 the API like this:</p>
-<div class="highlight"><pre><span></span><span class="n">activityScope</span><span class="p">.</span><span class="n">GetCurrentActivity</span><span class="p">().</span><span class="n">LogSuccess</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">activityScope</span><span class="p">.</span><span class="n">GetCurrentActivity</span><span class="p">().</span><span class="n">LogSuccess</span><span class="p">();</span>
 </pre></div>
 
 <p>Yet another way to reduce branching is when it used for mapping between
 two types:</p>
-<div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Foo</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&quot;Foo string&quot;</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-<span class="k">else</span><span class="w"> </span><span class="nf">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Bar</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&quot;Bar string&quot;</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-<span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Foo</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo string&quot;</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">else</span><span class="w"> </span><span class="nf">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Bar</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Bar string&quot;</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">...</span>
 </pre></div>
 
 <p>A pattern like this (which can also take the form of a big switch/case
 statement) can usually be replaced with indexing into an array or
 looking up the corresponding value in a hash map:</p>
-<div class="highlight"><pre><span></span><span class="n">Dictionary</span><span class="p">&lt;</span><span class="n">IdType</span><span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="p">&gt;</span><span class="w"> </span><span class="n">IdTypeToStringMap</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Dictionary</span><span class="p">&lt;</span><span class="n">IdType</span><span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="p">&gt;()</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Bar</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bar&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
-<span class="n">b</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">IdTypeToStringMap</span><span class="p">[</span><span class="n">a</span><span class="p">];</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">Dictionary</span><span class="o">&lt;</span><span class="n">IdType</span><span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">IdTypeToStringMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Dictionary</span><span class="o">&lt;</span><span class="n">IdType</span><span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Bar</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bar&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">};</span>
+<span class="p">...</span>
+<span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IdTypeToStringMap</span><span class="p">[</span><span class="n">a</span><span class="p">];</span>
 </pre></div>
 
 <p>This is, again, easier to maintain, since it is declarative - the
@@ -461,7 +461,7 @@ of if/else).</p>
 <p>This goes back to the C++ Seasoning talk, namely the <em>No Raw Loops</em>
 guideline. Here&#39;s a C# example: given a list of numbers, we want to get
 the square of all the odd numbers in the list.</p>
-<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">numbers</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="m">6</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="m">7</span><span class="p">,</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">4</span><span class="p">,</span><span class="w"> </span><span class="m">9</span><span class="p">,</span><span class="w"> </span><span class="m">5</span><span class="p">,</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">numbers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="m">6</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="m">7</span><span class="p">,</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">4</span><span class="p">,</span><span class="w"> </span><span class="m">9</span><span class="p">,</span><span class="w"> </span><span class="m">5</span><span class="p">,</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="p">};</span>
 
 <span class="c1">// Get the squares of all odd numbers</span>
 </pre></div>
@@ -470,46 +470,46 @@ the square of all the odd numbers in the list.</p>
 list, check if numbers are odd, and if so, square them and add them to
 the list:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Get the squares of all odd numbers</span>
-<span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">SquareOdds</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;();</span><span class="w"></span>
+<span class="n">IEnumerable</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SquareOdds</span><span class="p">(</span><span class="n">IEnumerable</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">foreach</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="p">!=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="n">squares</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">number</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">foreach</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="n">squares</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">number</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">squares</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">squares</span><span class="p">;</span>
+<span class="p">}</span>
 
-<span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">SquareOdds</span><span class="p">(</span><span class="n">numbers</span><span class="p">);</span><span class="w"></span>
+<span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SquareOdds</span><span class="p">(</span><span class="n">numbers</span><span class="p">);</span>
 </pre></div>
 
 <p>A neater way to do this is to use a generator instead of manually
 maintaining the list of squares:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Get the squares of all odd numbers</span>
-<span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">SquareOdds</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">foreach</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="p">!=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="k">yield</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">number</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">IEnumerable</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SquareOdds</span><span class="p">(</span><span class="n">IEnumerable</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">foreach</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="k">yield</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">number</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 
-<span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">SquareOdds</span><span class="p">(</span><span class="n">numbers</span><span class="p">);</span><span class="w"></span>
+<span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SquareOdds</span><span class="p">(</span><span class="n">numbers</span><span class="p">);</span>
 </pre></div>
 
 <p>That being said, what I would actually recommend is using Linq:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Get the squares of all odd numbers</span>
-<span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">numbers</span><span class="p">.</span><span class="w"></span>
-<span class="w">                </span><span class="n">Where</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="p">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="p">!=</span><span class="w"> </span><span class="m">0</span><span class="p">).</span><span class="w"></span>
-<span class="w">                </span><span class="n">Select</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">number</span><span class="p">);</span><span class="w"></span>
+<span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">numbers</span><span class="p">.</span>
+<span class="w">                </span><span class="n">Where</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="m">0</span><span class="p">).</span>
+<span class="w">                </span><span class="n">Select</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">number</span><span class="p">);</span>
 </pre></div>
 
 <p>Fewer lines of code and no branching whatsoever<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>. <code>Where</code> and

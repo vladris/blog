@@ -215,7 +215,7 @@ integers, we will encode them as integers: <code>AT = 0</code>, <code>SET = 1</c
             <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp</span><span class="p">()</span>
         <span class="k">case</span> <span class="mi">7</span><span class="p">:</span> <span class="c1"># OUT</span>
             <span class="n">out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]])</span>
-        <span class="k">case</span> <span class="k">_</span><span class="p">:</span> 
+        <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span> 
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unknown instruction&quot;</span><span class="p">)</span>
 </pre></div>
 
@@ -276,7 +276,7 @@ to be consumed by the <code>inp()</code> function:</p>
                 <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp</span><span class="p">()</span>
             <span class="k">case</span> <span class="mi">7</span><span class="p">:</span> <span class="c1"># OUT</span>
                 <span class="n">out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]])</span>
-            <span class="k">case</span> <span class="k">_</span><span class="p">:</span> 
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span> 
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unknown instruction&quot;</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -326,8 +326,8 @@ to 26 to the values of the characters in <q>Hello</q> (as returned by
 </pre></div>
 
 <p>We can then use our VM to run the program like this:</p>
-<div class="highlight"><pre><span></span>touch input
-python3 vn.py hello.vn input
+<div class="highlight"><pre><span></span>touch<span class="w"> </span>input
+python3<span class="w"> </span>vn.py<span class="w"> </span>hello.vn<span class="w"> </span>input
 </pre></div>
 
 <p>We&#39;re also creating a blank <code>input</code> file since <q>Hello world!</q> isn&#39;t
@@ -503,7 +503,7 @@ op code.</li>
 <p>We can now save our assembly <q>Hello world!</q> (listed above) to a file,
 let&#39;s call it <code>hello.asm</code> and use the assembler to convert it to a
 program our VM can execute:</p>
-<div class="highlight"><pre><span></span>python3 asm.py hello.asm hello.vn
+<div class="highlight"><pre><span></span>python3<span class="w"> </span>asm.py<span class="w"> </span>hello.asm<span class="w"> </span>hello.vn
 </pre></div>
 
 <p>The resulting <code>hello.vn</code> should have the same content as our
@@ -514,7 +514,7 @@ is:</p>
 </pre></div>
 
 <p>We can run this using:</p>
-<div class="highlight"><pre><span></span>python3 vn.py hello.vn input
+<div class="highlight"><pre><span></span>python3<span class="w"> </span>vn.py<span class="w"> </span>hello.vn<span class="w"> </span>input
 </pre></div>
 
 <p>We are again using an empty input file since we don&#39;t need input. As a
@@ -598,8 +598,8 @@ COUNTER: 6
 </pre></div>
 
 <p>We can save this as <code>hello2.asm</code>, then assemble and run it:</p>
-<div class="highlight"><pre><span></span>python3 asm.py hello2.asm hello2.vn
-python3 vn.py hello2.vn
+<div class="highlight"><pre><span></span>python3<span class="w"> </span>asm.py<span class="w"> </span>hello2.asm<span class="w"> </span>hello2.vn
+python3<span class="w"> </span>vn.py<span class="w"> </span>hello2.vn
 </pre></div>
 
 <h3>Notes</h3>
@@ -888,8 +888,8 @@ program to run - <q>Hello world</q>:</p>
 
 <p>We will save this as <code>hello.bf</code>. Now we can compile our BF interpreter
 and run it using our VM:</p>
-<div class="highlight"><pre><span></span>python3 asm.py bf.asm bf.vn
-python3 vn.py bf.vn hello.bf
+<div class="highlight"><pre><span></span>python3<span class="w"> </span>asm.py<span class="w"> </span>bf.asm<span class="w"> </span>bf.vn
+python3<span class="w"> </span>vn.py<span class="w"> </span>bf.vn<span class="w"> </span>hello.bf
 </pre></div>
 
 <p>This should output <q>Hello world!</q>.</p>

@@ -43,18 +43,18 @@ compiler enforce that. A good rule of thumb is to mark things as <code>const</co
 mutable only when truly needed<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>.</p>
 
 <p>A simple example:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">StringUtil</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat1</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">str2</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">StringUtil</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat1</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">str2</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat2</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">str2</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat2</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">str2</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>Both <code>StringUtil::Concat1</code> and <code>StringUtil::Concat2</code> return the same
@@ -65,18 +65,18 @@ consequences down the line.</p>
 
 <p>A simple way to address this is by explicitly marking the arguments as
 <code>const</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">StringUtil</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat1</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">         </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">str2</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">StringUtil</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat1</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">         </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">str2</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat2</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat2</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
 <span class="w">         </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">str2</span><span class="p">);</span><span class="w"> </span><span class="c1">// Won&#39;t compile - can&#39;t call append on str1</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>In this case, <code>Concat2</code> won&#39;t compile, so we can rely on the compiler
@@ -84,20 +84,20 @@ to eliminate this type of unintended behavior.</p>
 
 <p>Another example: a simple <code>UpCase</code> function which calls <code>toupper</code> on
 each character of the given string, upcasing it in place:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">UpCase</span><span class="p">(</span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">string</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">string</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="o">*</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">toupper</span><span class="p">(</span><span class="o">*</span><span class="n">string</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="n">string</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">UpCase</span><span class="p">(</span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">string</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="o">*</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">toupper</span><span class="p">(</span><span class="o">*</span><span class="n">string</span><span class="p">);</span>
+<span class="w">        </span><span class="n">string</span><span class="o">++</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>Calling it with</p>
-<div class="highlight"><pre><span></span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="p">;</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
-<span class="n">UpCase</span><span class="p">(</span><span class="n">myString</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="p">;</span>
+<span class="p">...</span>
+<span class="n">UpCase</span><span class="p">(</span><span class="n">myString</span><span class="p">);</span>
 </pre></div>
 
 <p>will lead to a crash at runtime - the function will try to call
@@ -107,8 +107,8 @@ read-only data segment of the binary. This cannot be modified.</p>
 
 <p>To catch this type of errors at compile-time, we again only need to mark
 the immutable data as such:</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="p">;</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="p">;</span>
+<span class="p">...</span>
 <span class="n">UpCase</span><span class="p">(</span><span class="n">myString</span><span class="p">);</span><span class="w"> </span><span class="c1">// Won&#39;t compile - can&#39;t call UpCase on myString</span>
 </pre></div>
 
@@ -129,9 +129,9 @@ attributes of that instance)<sup id="fnref2"><a href="#fn2" rel="footnote">2</a>
 algorithms and predicates rather than implementing raw loops. In many
 cases, traversal state is encapsulated in the library algorithm or in an
 iterator, and predicates ideally don&#39;t have side-effects.</p>
-<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">numbers</span><span class="p">.</span><span class="w"></span>
-<span class="w">                </span><span class="n">Where</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="p">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="p">!=</span><span class="w"> </span><span class="m">0</span><span class="p">).</span><span class="w"></span>
-<span class="w">                </span><span class="n">Select</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">number</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">squares</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">numbers</span><span class="p">.</span>
+<span class="w">                </span><span class="n">Where</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="m">0</span><span class="p">).</span>
+<span class="w">                </span><span class="n">Select</span><span class="p">(</span><span class="n">number</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">number</span><span class="p">);</span>
 </pre></div>
 
 <p>Above code (also from Part 1) doesn&#39;t hold any state: traversal is
@@ -195,11 +195,11 @@ it as C# etc.</p>
 address needs, so in general modern syntax introduces simpler, better
 ways to implement things than old syntax. Take object allocation and
 initialization in C++ as an example:</p>
-<div class="highlight"><pre><span></span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Foo</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Foo</span><span class="p">));</span><span class="w"></span>
-<span class="n">init</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
-<span class="n">deinit</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span><span class="w"></span>
-<span class="n">free</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Foo</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Foo</span><span class="p">));</span>
+<span class="n">init</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span>
+<span class="p">...</span>
+<span class="n">deinit</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span>
+<span class="n">free</span><span class="p">(</span><span class="n">foo</span><span class="p">);</span>
 </pre></div>
 
 <p>This is the C way of allocating and initializing a structure on the
@@ -211,9 +211,9 @@ omitting the <code>init</code> call), or accidental double-initialization,
 double-deinitialization, double-free etc.</p>
 
 <p>C++ introduced classes, and the following syntax:</p>
-<div class="highlight"><pre><span></span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
-<span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">Foo</span><span class="o">*</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">();</span>
+<span class="p">...</span>
+<span class="k">delete</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span>
 </pre></div>
 
 <p><code>new</code> both allocates memory and calls the constructor, while <code>delete</code>
@@ -223,14 +223,14 @@ resource by omitting the <code>delete</code> call, and the issue of calling
 <code>delete</code> twice on the same memory address.</p>
 
 <p>To address these issues, smart pointers were introduced in the language:</p>
-<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">());</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Foo</span><span class="p">());</span>
 </pre></div>
 
 <p>Smart pointers encapsulate reference counting (how many <code>shared_ptr</code>
 objects point to the same memory address), and automatically release the
 resource when the last reference goes away. This gets rid of most
 problems, but there is an even better way of allocating heap objects:</p>
-<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">();</span>
 </pre></div>
 
 <p><code>make_shared</code> has the advantage of improved performance, by allocating

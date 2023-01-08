@@ -25,31 +25,31 @@ can be added or removed at runtime.</p>
 <p>In practice though, maps are often used to convert a value of one type
 into a value of a different type. It is not uncommon to have very small
 maps like</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="p">...</span><span class="w"></span>
+<span class="p">...</span>
 
-<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span><span class="w"></span>
+<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span>
 </pre></div>
 
 <p>Here it is useful to make a distinction between the pattern and the data
 structure. The coding pattern itself is great - mapping a value from a
 type to a value of another type should definitely be declarative. Below
 is a counterexample of non-declarative mapping:</p>
-<div class="highlight"><pre><span></span><span class="n">Bar</span><span class="w"> </span><span class="nf">barFromFoo</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo1</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar1</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo2</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar2</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo3</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar3</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">Bar</span><span class="w"> </span><span class="nf">barFromFoo</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Foo</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo1</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo2</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar2</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo3</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bar3</span><span class="p">;</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This is really ugly. As I mentioned in
@@ -96,30 +96,30 @@ append) but <code>O(N)</code> lookup (linear search)</li>
 
 <p>For very small-sized lookups, the cost of hashing itself might
 out-weight a linear traversal, so for a small N</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="p">...</span><span class="w"></span>
+<span class="p">...</span>
 
-<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span><span class="w"></span>
+<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span>
 </pre></div>
 
 <p>performs worse than</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}};</span>
 
-<span class="p">...</span><span class="w"></span>
+<span class="p">...</span>
 
-<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">find_if</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">fooBarMap</span><span class="p">.</span><span class="n">cbegin</span><span class="p">(),</span><span class="w"></span>
-<span class="w">    </span><span class="n">fooBarMap</span><span class="p">.</span><span class="n">cend</span><span class="p">(),</span><span class="w"></span>
-<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">elem</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">elem</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">find_if</span><span class="p">(</span>
+<span class="w">    </span><span class="n">fooBarMap</span><span class="p">.</span><span class="n">cbegin</span><span class="p">(),</span>
+<span class="w">    </span><span class="n">fooBarMap</span><span class="p">.</span><span class="n">cend</span><span class="p">(),</span>
+<span class="w">    </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">elem</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">elem</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">foo</span><span class="p">;</span><span class="w"> </span><span class="p">});</span>
 </pre></div>
 
 <p>On my machine (using MSVC 2015 STL implementation), for an N of 5,
@@ -137,11 +137,11 @@ much better suited container for cases when the key-values are known at
 compile time, as <code>std::array</code> simply wraps a regular array which is not
 allocated on the heap. So a more efficient (in terms of initialization
 cost) way of declaring such a look up is</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">arrray</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">arrray</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}};</span>
 </pre></div>
 
 <p>We can still apply the <code>std::find_if</code> algorithm on this array, but we
@@ -151,20 +151,20 @@ trivial<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup>). For example,
 vector, wraps a heap-allocated <code>char*</code> and constructing it requires heap
 allocations. <code>const char*</code> to a string literal on the other hand is just
 a pointer to the <code>.rodata</code> segment. So this</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}};</span>
 </pre></div>
 
 <p>performs three heap allocations (for <code>&quot;foo1&quot;</code>, <code>&quot;foo2&quot;</code>, and <code>&quot;foo3&quot;</code>),
 while the (mostly) equivalent</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}};</span>
 </pre></div>
 
 <p>shouldn&#39;t perform any allocations.</p>
@@ -178,37 +178,37 @@ efficiency of an array with the nice lookup semantics of an
 <code>unordered_map</code> conatiner.</p>
 
 <p>I propose a generic container of the following shape:</p>
-<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="w"></span>
-<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">TKey</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">KeyEqual</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">key_equal</span><span class="o">&lt;</span><span class="n">TKey</span><span class="o">&gt;&gt;</span><span class="w"></span>
-<span class="k">struct</span><span class="w"> </span><span class="nc">associative_array</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">TKey</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_array</span><span class="p">[</span><span class="n">N</span><span class="p">];</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">TKey</span><span class="p">,</span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">N</span><span class="p">,</span>
+<span class="w">    </span><span class="k">typename</span><span class="w"> </span><span class="nc">KeyEqual</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">key_equal</span><span class="o">&lt;</span><span class="n">TKey</span><span class="o">&gt;&gt;</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">associative_array</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">TKey</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m_array</span><span class="p">[</span><span class="n">N</span><span class="p">];</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">};</span>
 </pre></div>
 
 <p><code>keq_equal</code> should simply resolve to <code>==</code> for most types, but be
 specialized for strings types (to use <code>strcmp</code>, <code>wcscmp</code> etc.) and allow
 clients to specialize their own <code>key_equal</code> when needed.</p>
-<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_equal</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">operator</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">lhs</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">rhs</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_equal</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">operator</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">lhs</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">rhs</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">template</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_equal</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">*&gt;</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">operator</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">strcmp</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_equal</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">*&gt;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">operator</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">strcmp</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="n">rhs</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+<span class="p">...</span>
 <span class="c1">// specializations for wchar_t and const variations of the above</span>
 </pre></div>
 
@@ -216,32 +216,32 @@ clients to specialize their own <code>key_equal</code> when needed.</p>
 return <code>N</code>, iterators over the member array are trivial to implement
 etc.), the only interesting methods are <code>find()</code>, <code>at()</code>, and
 <code>operator[]</code>:</p>
-<div class="highlight"><pre><span></span><span class="p">...</span><span class="w"></span>
-<span class="k">struct</span><span class="w"> </span><span class="nc">associative_array</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
-<span class="w">    </span><span class="n">iterator</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">find_if</span><span class="p">(</span><span class="w"></span>
-<span class="w">            </span><span class="n">begin</span><span class="p">(),</span><span class="w"></span>
-<span class="w">            </span><span class="n">end</span><span class="p">(),</span><span class="w"></span>
-<span class="w">            </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">elem</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">KeyEqual</span><span class="p">{}(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">elem</span><span class="p">.</span><span class="n">first</span><span class="p">);</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="p">...</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">associative_array</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="w">    </span><span class="n">iterator</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">find_if</span><span class="p">(</span>
+<span class="w">            </span><span class="n">begin</span><span class="p">(),</span>
+<span class="w">            </span><span class="n">end</span><span class="p">(),</span>
+<span class="w">            </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">elem</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">KeyEqual</span><span class="p">{}(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">elem</span><span class="p">.</span><span class="n">first</span><span class="p">);</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">at</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">it</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">end</span><span class="p">())</span><span class="w"></span>
-<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">out_of_range</span><span class="p">(</span><span class="s">&quot;...&quot;</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">at</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">it</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">end</span><span class="p">())</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">out_of_range</span><span class="p">(</span><span class="s">&quot;...&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">TKey</span><span class="o">&amp;</span><span class="w"> </span><span class="n">key</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">};</span>
 </pre></div>
 
 <p><code>find()</code> wraps <code>std::find_if</code> leveraging <code>KeyEqual</code> (with default
@@ -252,15 +252,15 @@ above are also needed (identical except returning <code>const T&amp;</code>).</p
 <p>Such a container would have similar semantics to <code>std::unordered_map</code>
 (minus the ability to add elements given a key not already present in
 the container) and the same performance profile of <code>std::array</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">associative_array</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">}};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">associative_array</span><span class="o">&lt;</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fooBarMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo1</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo2</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">foo3</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}};</span>
 
-<span class="p">...</span><span class="w"></span>
+<span class="p">...</span>
 
-<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span><span class="w"></span>
+<span class="k">auto</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fooBarMap</span><span class="p">[</span><span class="n">foo</span><span class="p">];</span>
 </pre></div>
 
 <p>Note the only syntax difference between above and <code>unordered_map</code> is the

@@ -28,11 +28,11 @@ various programming languages:</p>
 so if a function was declared as only accepting a certain type <code>T</code> but
 we attempt to pass it an unrelated type <code>U</code>, the program is considered
 invalid. This is invalid C++:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">sqr</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">sqr</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">...</span>
 <span class="n">sqr</span><span class="p">(</span><span class="s">&quot;not an int&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// does not compile</span>
 </pre></div>
 
@@ -114,9 +114,9 @@ language will not accept code that attempts to do this.</p>
 </pre></div>
 
 <p>It works just fine in JavaScript though:</p>
-<div class="highlight"><pre><span></span><span class="kd">var</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;foo&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo&quot;</span><span class="w"></span>
-<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot; bar&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo bar&quot;</span><span class="w"></span>
-<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">5</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo bar5&quot;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kd">var</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;foo&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo&quot;</span>
+<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot; bar&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo bar&quot;</span>
+<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">5</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo bar5&quot;</span>
 </pre></div>
 
 <p>Note type strength is not an either/or - C++, while considered strongly
@@ -129,32 +129,32 @@ implicitly, others less so.</p>
 <p>Another difference to note is between static and dynamic polymorphism.
 Dynamic polymorphism happens at runtime, when calling a function on a
 base type gets resolved to the actual function of the deriving type:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">base</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">base</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">base</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">base</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="k">override</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">bar</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">base</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">bar</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">base</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="k">override</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">call_func</span><span class="p">(</span><span class="n">base</span><span class="o">&amp;</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">obj</span><span class="p">.</span><span class="n">func</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">call_func</span><span class="p">(</span><span class="n">base</span><span class="o">&amp;</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">obj</span><span class="p">.</span><span class="n">func</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="p">...</span>
 <span class="n">call_func</span><span class="p">(</span><span class="n">foo</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;foo&quot;</span>
 <span class="n">call_func</span><span class="p">(</span><span class="n">bar</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;bar&quot;</span>
 </pre></div>
@@ -166,27 +166,27 @@ v-table jump to the actual implementation of the function, which is
 different between the inheriting types <code>foo</code> and <code>bar</code>.</p>
 
 <p>Contrast this with the static alternative:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">bar</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">bar</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">call_func</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">obj</span><span class="p">.</span><span class="n">func</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-<span class="p">...</span><span class="w"></span>
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">call_func</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">obj</span><span class="p">.</span><span class="n">func</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="p">...</span>
 <span class="n">call_func</span><span class="p">(</span><span class="n">foo</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;foo&quot;</span>
 <span class="n">call_func</span><span class="p">(</span><span class="n">bar</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;bar&quot;</span>
 </pre></div>
@@ -239,7 +239,7 @@ to have a function that returns <code>Void</code> - the same way it doesn&#39;t 
 sense to define a mathematical function with the empty set as its
 codomain. We do have an <code>absurd</code> function though, which maps the empty
 set to any value:</p>
-<div class="highlight"><pre><span></span><span class="nf">absurd</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Void</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">absurd</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Void</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span>
 </pre></div>
 
 <p>This function cannot be called though.</p>
@@ -248,11 +248,11 @@ set to any value:</p>
 C++ is not purely functional, we can define functions that don&#39;t return
 anything. We can even say that a function does not take any arguments by
 putting a <code>void</code> between the parenthesis:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
 </pre></div>
 
 <p>This is the equivalent of:</p>
-<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">();</span>
 </pre></div>
 
 <p>Note though that we cannot have a <em>real</em> argument of type <code>void</code>, that
@@ -267,23 +267,23 @@ but not <code>foo(void arg)</code>, or even <code>foo(int arg, void)</code>.</p>
 such a type can only ever have a single possible value. In Haskell, the
 anonymous representation is the empty tuple <code>()</code>. Here is an example of
 a function that maps anything to this type:</p>
-<div class="highlight"><pre><span></span><span class="nf">unit</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="nb">()</span><span class="w"></span>
-<span class="nf">unit</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="nb">()</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">unit</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="nb">()</span>
+<span class="nf">unit</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="nb">()</span>
 </pre></div>
 
 <p>Of course, we can declare our own singleton types. Below is a custom
 <code>Singleton</code> type and an equivalent unit function:</p>
-<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"></span>
-<span class="nf">unit</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"></span>
-<span class="nf">unit</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Singleton</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Singleton</span>
+<span class="nf">unit</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Singleton</span>
+<span class="nf">unit</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Singleton</span>
 </pre></div>
 
 <p>In C++, the anonymous representation of a singleton is an empty
 <code>std::tuple</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">unit</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">unit</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>As can be seen from the above, Haskell makes it easier to define a
@@ -292,12 +292,12 @@ sugar for type parameters (<code>a</code> in our example). In C++, the equivalen
 declaration involves a template, but they boil down to the same thing.
 The non-anonymous C++ representation is a struct which doesn&#39;t contain
 anything. All instances of such a struct are equivalent:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">singleton</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">singleton</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span>
 
-<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">singleton</span><span class="w"> </span><span class="n">unit</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">singleton</span><span class="w"> </span><span class="n">unit</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span>
+<span class="p">}</span>
 </pre></div>
 
 <h3>Sum Types</h3>
@@ -316,11 +316,11 @@ complex types out of them by summing them. For example, a boolean type
 which can be either <code>true</code> or <code>false</code> can be thought of as the sum of
 the singleton <code>true</code> type and the singleton <code>false</code> type. In Haskell, a
 boolean is defined as:</p>
-<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Bool</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">True</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">False</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Bool</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">True</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">False</span>
 </pre></div>
 
 <p>Similarly, a <code>Weekday</code> type can be defined as:</p>
-<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Weekday</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Monday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Tuesday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Wednesday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Thursday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Friday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Saturday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Sunday</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Weekday</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Monday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Tuesday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Wednesday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Thursday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Friday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Saturday</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Sunday</span>
 </pre></div>
 
 <p>Theoretically, numerical types could also be defined as huge sum types
@@ -330,17 +330,17 @@ other sum types, we don&#39;t have to treat them as a special case.</p>
 
 <p>In C++, an equivalent of the above is an <code>enum class</code>. <code>bool</code> is a
 built-in type with special syntax, but we could define an equivalent as:</p>
-<div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Boolean</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">True</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">False</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Boolean</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">True</span><span class="p">,</span>
+<span class="w">    </span><span class="n">False</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>It&#39;s easy to see how a <code>Weekday</code> definition would look like. Things get
 more interesting when we throw type parameters into the mix. In Haskell,
 we have the <code>Either</code> type, which is declared as follows:</p>
-<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span>
 </pre></div>
 
 <p>An instance of this could be either a <code>Left a</code>, where <code>a</code> is a type
@@ -348,9 +348,9 @@ itself, which means it can be any of the values of <code>a</code>, or it can be
 <code>Right b</code>, with any of the values of <code>b</code>. In Haskell we use
 pattern-matching to operate on such a type, so we can declare a simple
 function that tells us whether we were given a <code>Left a</code> like this:</p>
-<div class="highlight"><pre><span></span><span class="nf">isLeft</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="w"></span>
-<span class="nf">isLeft</span><span class="w"> </span><span class="p">(</span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">True</span><span class="w"></span>
-<span class="nf">isLeft</span><span class="w"> </span><span class="p">(</span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">False</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">isLeft</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+<span class="nf">isLeft</span><span class="w"> </span><span class="p">(</span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">True</span>
+<span class="nf">isLeft</span><span class="w"> </span><span class="p">(</span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">False</span>
 </pre></div>
 
 <p>This might not look like much, but of course we can compose more complex
@@ -359,65 +359,65 @@ and returns an <code>a</code>, a function <code>bar</code> that takes a <code>b<
 We can then write a <code>transform</code> function which takes an <code>Either a b</code>
 and, depending on the contained type, it applies the appropriate
 function:</p>
-<div class="highlight"><pre><span></span><span class="c1">-- Implementation of foo and bar not provided in this example</span><span class="w"></span>
-<span class="nf">foo</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"></span>
-<span class="nf">bar</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="c1">-- Implementation of foo and bar not provided in this example</span>
+<span class="nf">foo</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span>
+<span class="nf">bar</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">b</span>
 
-<span class="nf">transform</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"></span>
-<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Left</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
-<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Right</span><span class="w"> </span><span class="p">(</span><span class="n">bar</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
+<span class="nf">transform</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Either</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span>
+<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Left</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Left</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="n">a</span><span class="p">)</span>
+<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Right</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Right</span><span class="w"> </span><span class="p">(</span><span class="n">bar</span><span class="w"> </span><span class="n">b</span><span class="p">)</span>
 </pre></div>
 
 <p>This is way beyond the capabilities of a C++ <code>enum class</code>. The old way
 of implementing something like this in C++ was using a union and a tag
 enum to keep track of which is the actual type we&#39;re working with:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Declaration of A and B not provided in this example</span>
-<span class="k">struct</span><span class="w"> </span><span class="nc">A</span><span class="p">;</span><span class="w"></span>
-<span class="k">struct</span><span class="w"> </span><span class="nc">B</span><span class="p">;</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">A</span><span class="p">;</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">B</span><span class="p">;</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">Either</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Either</span><span class="p">(</span><span class="n">A</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">ab</span><span class="p">.</span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tag</span><span class="o">::</span><span class="n">isA</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Either</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Either</span><span class="p">(</span><span class="n">A</span><span class="w"> </span><span class="n">a</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ab</span><span class="p">.</span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="w">        </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tag</span><span class="o">::</span><span class="n">isA</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="n">Either</span><span class="p">(</span><span class="n">B</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">ab</span><span class="p">.</span><span class="n">right</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tag</span><span class="o">::</span><span class="n">isB</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">Either</span><span class="p">(</span><span class="n">B</span><span class="w"> </span><span class="n">b</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ab</span><span class="p">.</span><span class="n">right</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<span class="w">        </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tag</span><span class="o">::</span><span class="n">isB</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">union</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">A</span><span class="w"> </span><span class="n">left</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="n">B</span><span class="w"> </span><span class="n">right</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">ab</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">union</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">A</span><span class="w"> </span><span class="n">left</span><span class="p">;</span>
+<span class="w">        </span><span class="n">B</span><span class="w"> </span><span class="n">right</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">ab</span><span class="p">;</span>
 
-<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">tag</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">isA</span><span class="p">,</span><span class="w"></span>
-<span class="w">        </span><span class="n">isB</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">tag</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">tag</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">isA</span><span class="p">,</span>
+<span class="w">        </span><span class="n">isB</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">tag</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>Our implementation of transform would look like this:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Implementation of A and B not provided in this example</span>
-<span class="n">A</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">A</span><span class="p">);</span><span class="w"></span>
-<span class="n">B</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="n">B</span><span class="p">);</span><span class="w"></span>
+<span class="n">A</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">A</span><span class="p">);</span>
+<span class="n">B</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="n">B</span><span class="p">);</span>
 
-<span class="n">Either</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="n">Either</span><span class="w"> </span><span class="n">either</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">tag</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">Either</span><span class="o">::</span><span class="no">tag</span><span class="o">::</span><span class="no">isA</span><span class="p">:</span><span class="w"></span>
-<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">ab</span><span class="p">.</span><span class="n">left</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">Either</span><span class="o">::</span><span class="no">tag</span><span class="o">::</span><span class="no">isB</span><span class="p">:</span><span class="w"></span>
-<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">bar</span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">ab</span><span class="p">.</span><span class="n">right</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">Either</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="n">Either</span><span class="w"> </span><span class="n">either</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">tag</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">Either</span><span class="o">::</span><span class="no">tag</span><span class="o">::</span><span class="no">isA</span><span class="p">:</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">ab</span><span class="p">.</span><span class="n">left</span><span class="p">);</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">Either</span><span class="o">::</span><span class="no">tag</span><span class="o">::</span><span class="no">isB</span><span class="p">:</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">bar</span><span class="p">(</span><span class="n">either</span><span class="p">.</span><span class="n">ab</span><span class="p">.</span><span class="n">right</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Our <code>Either</code> type definition is obviously much more verbose than what we
@@ -434,15 +434,15 @@ in the type and respect it when accessing the value of the union.</p>
 <code>std::variant</code>. Variant takes any number of types as template arguments
 and stores an instance of any one of those types. Using variant, we can
 re-write the above as:</p>
-<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="o">&gt;</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="o">&gt;</span><span class="w"> </span><span class="n">either</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">visit</span><span class="p">([](</span><span class="k">auto</span><span class="w"> </span><span class="n">e</span><span class="o">&amp;&amp;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="k">constexpr</span><span class="w"> </span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">is_same_v</span><span class="o">&lt;</span><span class="k">decltype</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="w"> </span><span class="n">A</span><span class="o">&gt;</span><span class="p">)</span><span class="w"></span>
-<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="p">(</span><span class="n">e</span><span class="p">));</span><span class="w"></span>
-<span class="w">        </span><span class="k">else</span><span class="w"></span>
-<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">bar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="n">B</span><span class="o">&gt;</span><span class="p">(</span><span class="n">e</span><span class="p">));</span><span class="w"></span>
-<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="n">either</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="o">&gt;</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="o">&gt;</span><span class="w"> </span><span class="n">either</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">visit</span><span class="p">([](</span><span class="k">auto</span><span class="w"> </span><span class="n">e</span><span class="o">&amp;&amp;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="k">constexpr</span><span class="w"> </span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">is_same_v</span><span class="o">&lt;</span><span class="k">decltype</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="w"> </span><span class="n">A</span><span class="o">&gt;</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="p">(</span><span class="n">e</span><span class="p">));</span>
+<span class="w">        </span><span class="k">else</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">bar</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="n">B</span><span class="o">&gt;</span><span class="p">(</span><span class="n">e</span><span class="p">));</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="n">either</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This is a lot of new syntax, so let&#39;s break it down:
@@ -480,38 +480,38 @@ other types into one. For types <code>A</code> and <code>B</code>, we have
 tuples, while the named version is represented by records. An example of
 a <code>perimeter</code> function which computes the perimeter of a rectangle
 defined by two points, where each point is a tuple of numbers:</p>
-<div class="highlight"><pre><span></span><span class="nf">perimeter</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="p">(</span><span class="kt">Num</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">n</span><span class="w"></span>
-<span class="nf">perimeter</span><span class="w"> </span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="w"> </span><span class="n">y1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="n">x2</span><span class="p">,</span><span class="w"> </span><span class="n">y2</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">y1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y2</span><span class="p">))</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="nf">perimeter</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="p">(</span><span class="kt">Num</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">n</span>
+<span class="nf">perimeter</span><span class="w"> </span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="w"> </span><span class="n">y1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="n">x2</span><span class="p">,</span><span class="w"> </span><span class="n">y2</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">y1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y2</span><span class="p">))</span>
 </pre></div>
 
 <p>The named version would declare a <code>Point</code> type with <code>Int</code> coordinates
 and use that instead:</p>
-<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Int</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Int</span><span class="w"> </span><span class="p">}</span>
 
-<span class="nf">perimeter</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Int</span><span class="w"></span>
-<span class="nf">perimeter</span><span class="w"> </span><span class="p">(</span><span class="kt">Point</span><span class="w"> </span><span class="n">x1</span><span class="w"> </span><span class="n">y1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="kt">Point</span><span class="w"> </span><span class="n">x2</span><span class="w"> </span><span class="n">y2</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">y1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y2</span><span class="p">))</span><span class="w"></span>
+<span class="nf">perimeter</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Point</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Int</span>
+<span class="nf">perimeter</span><span class="w"> </span><span class="p">(</span><span class="kt">Point</span><span class="w"> </span><span class="n">x1</span><span class="w"> </span><span class="n">y1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="kt">Point</span><span class="w"> </span><span class="n">x2</span><span class="w"> </span><span class="n">y2</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">y1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y2</span><span class="p">))</span>
 </pre></div>
 
 <p>The C++ equivalents are <code>std::tuple</code> for anonymous product types and
 <code>struct</code> for named types:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Anonymous</span>
-<span class="kt">int</span><span class="w"> </span><span class="nf">perimeter</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p2</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">((</span><span class="n">abs</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p2</span><span class="p">))</span><span class="w"></span>
-<span class="w">        </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p2</span><span class="p">)));</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">perimeter</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">tuple</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p2</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">((</span><span class="n">abs</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p2</span><span class="p">))</span>
+<span class="w">        </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">p2</span><span class="p">)));</span>
+<span class="p">}</span>
 
 <span class="c1">// Named</span>
-<span class="k">struct</span><span class="w"> </span><span class="nc">point</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">point</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">y</span><span class="p">;</span>
+<span class="p">};</span>
 
-<span class="kt">int</span><span class="w"> </span><span class="nf">perimeter</span><span class="p">(</span><span class="n">point</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">point</span><span class="w"> </span><span class="n">p2</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">p1</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">p2</span><span class="p">.</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">p1</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">p2</span><span class="p">.</span><span class="n">y</span><span class="p">));</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">perimeter</span><span class="p">(</span><span class="n">point</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">point</span><span class="w"> </span><span class="n">p2</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">p1</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">p2</span><span class="p">.</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">p1</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">p2</span><span class="p">.</span><span class="n">y</span><span class="p">));</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>While sum types allow us to express values from multiple types into one,
@@ -528,34 +528,34 @@ and a singleton representing <q>doesn&#39;t hold a value</q>. In other words,
 the cardinality of an optional for a type <code>T</code> is <code>|O| = |T| + 1</code>.</p>
 
 <p>In Haskell, an optional is the famous <code>Maybe</code> type:</p>
-<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Just</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Nothing</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Just</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">Nothing</span>
 </pre></div>
 
 <p>A function that operates on <code>Maybe</code> could say <q>only apply <code>foo</code> if the
 optional contains an <code>a</code></q>:</p>
-<div class="highlight"><pre><span></span><span class="c1">-- Implementation of foo not provided in this example</span><span class="w"></span>
-<span class="nf">foo</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="c1">-- Implementation of foo not provided in this example</span>
+<span class="nf">foo</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span>
 
-<span class="nf">transform</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span><span class="w"></span>
-<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Just</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Just</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
-<span class="nf">transform</span><span class="w"> </span><span class="kt">Nothing</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nothing</span><span class="w"></span>
+<span class="nf">transform</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="n">a</span>
+<span class="nf">transform</span><span class="w"> </span><span class="p">(</span><span class="kt">Just</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Just</span><span class="w"> </span><span class="p">(</span><span class="n">foo</span><span class="w"> </span><span class="n">a</span><span class="p">)</span>
+<span class="nf">transform</span><span class="w"> </span><span class="kt">Nothing</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nothing</span>
 </pre></div>
 
 <p>The new C++17 equivalent is the <code>optional</code> type:</p>
 <div class="highlight"><pre><span></span><span class="c1">// Implementation of foo not provided in this example</span>
-<span class="n">A</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">A</span><span class="p">);</span><span class="w"></span>
+<span class="n">A</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">A</span><span class="p">);</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">nullopt</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">nullopt</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">nullopt</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">nullopt</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This might read a bit like the pointer implementation:</p>
-<div class="highlight"><pre><span></span><span class="n">A</span><span class="o">*</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="n">A</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">nullptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">A</span><span class="o">*</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="n">A</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">nullptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">foo</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>There is a key difference though: the type contained in the optional is

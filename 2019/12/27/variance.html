@@ -55,27 +55,27 @@ a <code>draw()</code> function which can draw a <code>Triangle</code>, a <code>S
 <code>Circle</code>. Can we pass a <code>Triangle</code> or <code>Square</code> to it? As you might have
 guessed, the answer is <q>yes</q>. We can check that such code compiles:</p>
 <div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">TriangleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"> </span>
-<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* Triangle members */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* Triangle members */</span>
+<span class="p">}</span>
 
-<span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">SquareType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"></span>
-<span class="kd">class</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">[</span><span class="nx">SquareType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* Square members */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">SquareType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">SquareType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* Square members */</span>
+<span class="p">}</span>
 
-<span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">CircleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"></span>
-<span class="kd">class</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">[</span><span class="nx">CircleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* Circle members */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">CircleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">CircleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* Circle members */</span>
+<span class="p">}</span>
 
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="p">;</span><span class="w"></span>
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Circle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="p">;</span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Circle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
 
-<span class="nx">draw</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">());</span><span class="w"></span>
+<span class="nx">draw</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">());</span>
 </pre></div>
 
 <p><code>makeShape()</code> returns a <code>Triangle</code> or a <code>Square</code> while <code>draw()</code> accepts
@@ -94,10 +94,10 @@ subtyping</a>.</p>
 or <code>Circle</code>, the compiler will complain because we might end up passing
 a <code>Circle</code> to the <code>draw()</code> function, which wouldn&#39;t know what to do
 with it. We can confirm that the below code doesn&#39;t compile:</p>
-<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Circle</span><span class="p">;</span><span class="w"></span>
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Circle</span><span class="p">;</span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Square</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
 
-<span class="nx">draw</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">());</span><span class="w"></span>
+<span class="nx">draw</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">());</span>
 </pre></div>
 
 <p>We flipped the types so <code>makeShape()</code> could also return a <code>Circle</code>,
@@ -116,10 +116,10 @@ than the subtype.</p>
 
 <p>Say we have an <code>EquilateralTriangle</code> which inherits from <code>Triangle</code>:</p>
 <div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">EquilateralTriangleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"> </span>
-<span class="kd">class</span><span class="w"> </span><span class="nx">EquilateralTriangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">[</span><span class="nx">EquilateralTriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* EquilateralTriangle members */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">EquilateralTriangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">EquilateralTriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* EquilateralTriangle members */</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>As an exercise, check what happens when we mix sum types with
@@ -134,20 +134,20 @@ and <code>draw()</code> accepting <code>Triangle | Square | Circle</code> work? 
 type. Let&#39;s start with arrays: can we pass an array of <code>Triangle</code>
 objects to a <code>draw()</code> function which accepts an array of <code>Shape</code>
 objects, if <code>Triangle</code> is a subtype of <code>Shape</code>?</p>
-<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* Shape members */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* Shape members */</span>
+<span class="p">}</span>
 
 <span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">TriangleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"> </span>
-<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* Triangle members */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* Triangle members */</span>
+<span class="p">}</span>
 
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangles</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">[];</span><span class="w"></span>
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shapes</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangles</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">[];</span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shapes</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
 
-<span class="nx">draw</span><span class="p">(</span><span class="nx">makeTriangles</span><span class="p">());</span><span class="w"></span>
+<span class="nx">draw</span><span class="p">(</span><span class="nx">makeTriangles</span><span class="p">());</span>
 </pre></div>
 
 <p><code>Triangle</code> is a subtype of <code>Shape</code>. <code>makeTriangles()</code> returns an array
@@ -164,24 +164,24 @@ expected, the code won&#39;t compile.</p>
 
 <p>Arrays are basic types that come out-of-the-box in many programming
 languages. What if we define a custom collection, say a <code>LinkedList&lt;T&gt;</code>?</p>
-<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="nx">next</span><span class="o">:</span><span class="w"> </span><span class="kt">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">next</span><span class="o">:</span><span class="w"> </span><span class="kt">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span>
 
-<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="nx">append</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">LinkedList</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">next</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="nx">append</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">LinkedList</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">next</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangles</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">Triangle</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shapes</span><span class="o">:</span><span class="w"> </span><span class="kt">LinkedList</span><span class="o">&lt;</span><span class="nx">Shape</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangles</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">LinkedList</span><span class="o">&lt;</span><span class="nx">Triangle</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">draw</span><span class="p">(</span><span class="nx">shapes</span><span class="o">:</span><span class="w"> </span><span class="kt">LinkedList</span><span class="o">&lt;</span><span class="nx">Shape</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
 
-<span class="nx">draw</span><span class="p">(</span><span class="nx">makeTriangles</span><span class="p">());</span><span class="w"></span>
+<span class="nx">draw</span><span class="p">(</span><span class="nx">makeTriangles</span><span class="p">());</span>
 </pre></div>
 
 <p><code>LinkedList&lt;T&gt;</code> is a generic linked list collection. <code>makeTriangle()</code>
@@ -240,15 +240,15 @@ which returns a <code>Shape</code> and a <code>makeTriangle()</code> which retur
 <p>We&#39;ll then implement a <code>useFactory()</code> function which takes a function
 of type <code>() =&gt; Shape</code> as argument and returns a <code>Shape</code>. We&#39;ll try
 passing <code>makeTriangle()</code> to it:</p>
-<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangle</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">;</span><span class="w"></span>
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangle</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">;</span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="p">;</span>
 
-<span class="kd">function</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">factory</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">factory</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">factory</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">factory</span><span class="p">();</span>
+<span class="p">}</span>
 
-<span class="kd">let</span><span class="w"> </span><span class="nx">shape1</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">);</span><span class="w"></span>
-<span class="kd">let</span><span class="w"> </span><span class="nx">shape2</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeTriangle</span><span class="p">);</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">shape1</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">);</span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">shape2</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeTriangle</span><span class="p">);</span>
 </pre></div>
 
 <p><code>useFactory()</code> takes a function with no arguments which returns a
@@ -265,15 +265,15 @@ value (a <code>Triangle</code>) is a subtype of <code>Shape</code>, so we can as
 <p>The opposite doesn&#39;t work: if we change our <code>useFactory()</code> to expect a
 <code>() =&gt; Triangle</code> argument and try to pass it <code>makeShape()</code>, the code
 won&#39;t compile:</p>
-<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangle</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">;</span><span class="w"></span>
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeTriangle</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">;</span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeShape</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="p">;</span>
 
-<span class="kd">function</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">factory</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">factory</span><span class="p">();</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">factory</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">factory</span><span class="p">();</span>
+<span class="p">}</span>
 
-<span class="kd">let</span><span class="w"> </span><span class="nx">shape1</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">);</span><span class="w"></span>
-<span class="kd">let</span><span class="w"> </span><span class="nx">shape2</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeTriangle</span><span class="p">);</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">shape1</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeShape</span><span class="p">);</span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">shape2</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFactory</span><span class="p">(</span><span class="nx">makeTriangle</span><span class="p">);</span>
 </pre></div>
 
 <p>We replaced <code>Shape</code> with <code>Triangle</code> in the <code>useFactory()</code> definition.
@@ -301,17 +301,17 @@ provides a <code>make()</code> method that returns a <code>Shape</code>, we can 
 a derived class <code>TriangleMaker</code> to return <code>Triangle</code> instead. The
 compiler will allow this, as calling either of the <code>make()</code> methods will
 give us a <code>Shape</code> object:</p>
-<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">ShapeMaker</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nx">make</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Shape</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">ShapeMaker</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">make</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Shape</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 
-<span class="kd">class</span><span class="w"> </span><span class="nx">TriangleMaker</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">ShapeMaker</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nx">make</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">TriangleMaker</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">ShapeMaker</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">make</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Triangle</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This is, again, allowed behavior in most mainstream programming
@@ -331,14 +331,14 @@ to one another?</p>
 <p>Let&#39;s introduce another function, <code>render()</code>, which takes as arguments
 a <code>Triangle</code> and an <code>(argument: Triangle) =&gt; void</code> function. It simply
 calls the given function with the given <code>Triangle</code>:</p>
-<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawShape</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawShape</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
 
-<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nx">drawFunc</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">argument</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nx">drawFunc</span><span class="p">(</span><span class="nx">triangle</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">argument</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="p">(</span><span class="nx">triangle</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p><code>drawShape()</code> takes a <code>Shape</code> argument, <code>drawTriangle()</code> takes a
@@ -386,38 +386,38 @@ runtime issues though. Let&#39;s look at an example. We&#39;ll first define a
 method <code>isRightAngled()</code> on our <code>Triangle</code> type, which would determine
 whether a given instance describes a right-angled triangle. The
 implementation of the method is not important:</p>
-<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* Shape members */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* Shape members */</span>
+<span class="p">}</span>
 
 <span class="kr">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">TriangleType</span><span class="o">:</span><span class="w"> </span><span class="kt">unique</span><span class="w"> </span><span class="nx">symbol</span><span class="p">;</span><span class="w"> </span>
-<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">Triangle</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">Shape</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">TriangleType</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
 
-<span class="w">    </span><span class="nx">isRightAngled</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="nx">isRightAngled</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
 
-<span class="w">        </span><span class="cm">/* Determine whether it is a right-angled triangle */</span><span class="w"></span>
+<span class="w">        </span><span class="cm">/* Determine whether it is a right-angled triangle */</span>
 
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span><span class="w"> </span>
 
-<span class="w">    </span><span class="cm">/* More Triangle members */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="cm">/* More Triangle members */</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Now let&#39;s reverse the drawing example and let&#39;s say our <code>render()</code>
 function expects a <code>Shape</code> instead of a <code>Triangle</code>, and a function which
 can draw shapes <code>(argument: Shape) =&gt; void</code> instead of a function which
 can only draw triangles <code>(argument: Triangle) =&gt; void</code>:</p>
-<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawShape</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
-<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawShape</span><span class="p">(</span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="kr">declare</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
 
-<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nx">drawFunc</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">argument</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nx">drawFunc</span><span class="p">(</span><span class="nx">shape</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">argument</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">drawFunc</span><span class="p">(</span><span class="nx">shape</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p><code>drawShape()</code> and <code>drawTriangle()</code> are just like before. <code>render()</code> now
@@ -431,18 +431,18 @@ to actually use something that is triangle-specific, like the
 <p>Now <code>drawTriangle()</code> will receive a <code>Shape</code> object and attempt to call
 <code>isRightAngled()</code> on it, but since the <code>Shape</code> is not a <code>Triangle</code>, this
 will cause an error:</p>
-<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">triangle</span><span class="p">.</span><span class="nx">isRightAngled</span><span class="p">());</span><span class="w"></span>
-<span class="w">    </span><span class="cm">/* ... */</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">(</span><span class="nx">triangle</span><span class="o">:</span><span class="w"> </span><span class="kt">Triangle</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">triangle</span><span class="p">.</span><span class="nx">isRightAngled</span><span class="p">());</span>
+<span class="w">    </span><span class="cm">/* ... */</span>
+<span class="p">}</span>
 
-<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span><span class="w"></span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">render</span><span class="p">(</span>
 <span class="w">    </span><span class="nx">shape</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">,</span><span class="w">    </span>
 <span class="w">    </span><span class="nx">drawFunc</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">argument</span><span class="o">:</span><span class="w"> </span><span class="kt">Shape</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span><span class="w">    </span>
 <span class="w">    </span><span class="nx">drawFunc</span><span class="p">(</span><span class="nx">shape</span><span class="p">);</span><span class="w">  </span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 
-<span class="nx">render</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">Shape</span><span class="p">(),</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">);</span><span class="w"></span>
+<span class="nx">render</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">Shape</span><span class="p">(),</span><span class="w"> </span><span class="nx">drawTriangle</span><span class="p">);</span>
 </pre></div>
 
 <p>We can pass a <code>Shape</code> and <code>drawTriangle()</code> to <code>render()</code>. This code will

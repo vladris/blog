@@ -61,102 +61,102 @@ should work against mocks.</p>
 
 <p>Let&#39;s take, as an example, a method which performs a GET request and
 logs to the console whether the request was successful:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Example</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HttpClient</span><span class="p">();</span><span class="w"></span>
-<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="w"></span>
-<span class="w">            </span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">).</span><span class="n">Result</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Example</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HttpClient</span><span class="p">();</span>
+<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span>
+<span class="w">            </span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">).</span><span class="n">Result</span><span class="p">;</span>
 
-<span class="w">        </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">IsSuccessStatusCode</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">IsSuccessStatusCode</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>In its current form, the method isn&#39;t really testable. Writing code
 without thinking about testability yields such methods. We can refactor
 this to be more testable. First, let&#39;s put all IO behind interfaces:</p>
-<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IHttpClient</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">Task</span><span class="p">&lt;</span><span class="n">HttpResponseMessage</span><span class="p">&gt;</span><span class="w"> </span><span class="n">GetAsync</span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="n">url</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">interface</span><span class="w"> </span><span class="n">IHttpClient</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Task</span><span class="o">&lt;</span><span class="n">HttpResponseMessage</span><span class="o">&gt;</span><span class="w"> </span><span class="n">GetAsync</span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="n">url</span><span class="p">);</span>
+<span class="p">}</span>
 
-<span class="k">interface</span><span class="w"> </span><span class="n">IOutput</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">WriteLine</span><span class="p">(</span><span class="kt">bool</span><span class="w"> </span><span class="k">value</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">interface</span><span class="w"> </span><span class="n">IOutput</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">void</span><span class="w"> </span><span class="nf">WriteLine</span><span class="p">(</span><span class="kt">bool</span><span class="w"> </span><span class="k">value</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>We can update our <code>Example</code> to use these interfaces instead of directly
 working with <code>HttpClient</code> and <code>Console</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Example</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">IHttpClient</span><span class="w"> </span><span class="n">client</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">IOutput</span><span class="w"> </span><span class="n">output</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Example</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">IHttpClient</span><span class="w"> </span><span class="n">client</span><span class="p">;</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">IOutput</span><span class="w"> </span><span class="n">output</span><span class="p">;</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Example</span><span class="p">(</span><span class="n">IHttpClient</span><span class="w"> </span><span class="n">client</span><span class="p">,</span><span class="w"> </span><span class="n">IOutput</span><span class="w"> </span><span class="n">output</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="n">client</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">client</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="n">output</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">output</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">Example</span><span class="p">(</span><span class="n">IHttpClient</span><span class="w"> </span><span class="n">client</span><span class="p">,</span><span class="w"> </span><span class="n">IOutput</span><span class="w"> </span><span class="n">output</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">;</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">output</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="w"></span>
-<span class="w">            </span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">).</span><span class="n">Result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span>
+<span class="w">            </span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">).</span><span class="n">Result</span><span class="p">;</span>
 
-<span class="w">        </span><span class="n">output</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">IsSuccessStatusCode</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">output</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">IsSuccessStatusCode</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>We add adapters between the interfaces and the actual implementations:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">HttpClientWrapper</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IHttpClient</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">HttpClient</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HttpClient</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">HttpClientWrapper</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IHttpClient</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="n">HttpClient</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HttpClient</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Task</span><span class="p">&lt;</span><span class="n">HttpResponseMessage</span><span class="p">&gt;</span><span class="w"> </span><span class="n">GetAsync</span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="n">url</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="n">url</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">Task</span><span class="o">&lt;</span><span class="n">HttpResponseMessage</span><span class="o">&gt;</span><span class="w"> </span><span class="n">GetAsync</span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="n">url</span><span class="p">)</span>
+<span class="w">        </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="n">url</span><span class="p">);</span>
+<span class="p">}</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">ConsoleOutput</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IOutput</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">WriteLine</span><span class="p">(</span><span class="kt">bool</span><span class="w"> </span><span class="k">value</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="k">value</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConsoleOutput</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IOutput</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">WriteLine</span><span class="p">(</span><span class="kt">bool</span><span class="w"> </span><span class="k">value</span><span class="p">)</span>
+<span class="w">        </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="k">value</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>With these adapters, in our production code we can put together an
 instance of <code>Example</code> that works just like the original, but which is
 componentized enough that we can actually test it:</p>
-<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">example</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Example</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="k">new</span><span class="w"> </span><span class="nf">HttpClientWrapper</span><span class="p">(),</span><span class="w"></span>
-<span class="w">    </span><span class="k">new</span><span class="w"> </span><span class="nf">ConsoleOutput</span><span class="p">());</span><span class="w"></span>
-<span class="n">example</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">example</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Example</span><span class="p">(</span>
+<span class="w">    </span><span class="k">new</span><span class="w"> </span><span class="nf">HttpClientWrapper</span><span class="p">(),</span>
+<span class="w">    </span><span class="k">new</span><span class="w"> </span><span class="nf">ConsoleOutput</span><span class="p">());</span>
+<span class="n">example</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span>
 </pre></div>
 
 <p>In our test code, we can use a framework like Moq<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup> to set up mocks
 and verify that the expected calls happen:</p>
-<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">mockClient</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IHttpClient</span><span class="p">&gt;();</span><span class="w"></span>
-<span class="n">mockClient</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">client</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">))</span><span class="w"></span>
-<span class="w">    </span><span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">Task</span><span class="p">.</span><span class="n">FromResult</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">HttpResponseMessage</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="n">StatusCode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">OK</span><span class="w"></span>
-<span class="w">        </span><span class="p">}));</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">mockClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Mock</span><span class="o">&lt;</span><span class="n">IHttpClient</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">mockClient</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span>
+<span class="w">    </span><span class="n">client</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">Task</span><span class="p">.</span><span class="n">FromResult</span><span class="p">(</span>
+<span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">HttpResponseMessage</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">StatusCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">OK</span>
+<span class="w">        </span><span class="p">}));</span>
 
-<span class="kt">var</span><span class="w"> </span><span class="n">mockOutput</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IOutput</span><span class="p">&gt;();</span><span class="w"></span>
-<span class="n">mockOutput</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">output</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="n">It</span><span class="p">.</span><span class="n">Is</span><span class="p">&lt;</span><span class="kt">bool</span><span class="p">&gt;(</span><span class="k">value</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="k">true</span><span class="p">)));</span><span class="w"></span>
+<span class="kt">var</span><span class="w"> </span><span class="n">mockOutput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Mock</span><span class="o">&lt;</span><span class="n">IOutput</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">mockOutput</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span>
+<span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">output</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span>
+<span class="w">        </span><span class="n">It</span><span class="p">.</span><span class="n">Is</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span><span class="p">(</span><span class="k">value</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="k">true</span><span class="p">)));</span>
 
-<span class="kt">var</span><span class="w"> </span><span class="n">example</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Example</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">mockClient</span><span class="p">.</span><span class="n">Object</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">mockOutput</span><span class="p">.</span><span class="n">Object</span><span class="p">);</span><span class="w"></span>
-<span class="n">example</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span><span class="w"></span>
+<span class="kt">var</span><span class="w"> </span><span class="n">example</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Example</span><span class="p">(</span>
+<span class="w">    </span><span class="n">mockClient</span><span class="p">.</span><span class="n">Object</span><span class="p">,</span>
+<span class="w">    </span><span class="n">mockOutput</span><span class="p">.</span><span class="n">Object</span><span class="p">);</span>
+<span class="n">example</span><span class="p">.</span><span class="n">Get</span><span class="p">();</span>
 
-<span class="n">mockOutput</span><span class="p">.</span><span class="n">VerifyAll</span><span class="p">();</span><span class="w"></span>
+<span class="n">mockOutput</span><span class="p">.</span><span class="n">VerifyAll</span><span class="p">();</span>
 </pre></div>
 
 <p>The above code sets up an <code>IHttpClient</code> mock implementation which so
@@ -204,69 +204,69 @@ or at run-time.</p>
 <p>At compile-time, we can use a template parameter as the <q>interface</q>,
 have the production version of the code instantiate it with one concrete
 implementation and have the tests instantiate it with a mock:</p>
-<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TImpl</span><span class="o">&gt;</span><span class="w"></span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Example</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">TImpl</span><span class="w"> </span><span class="n">impl</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TImpl</span><span class="o">&gt;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Example</span>
+<span class="p">{</span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">TImpl</span><span class="w"> </span><span class="n">impl</span><span class="p">;</span>
 
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">impl</span><span class="p">.</span><span class="n">Do</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">impl</span><span class="p">.</span><span class="n">Do</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">ConcreteImpl</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConcreteImpl</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="c1">// Concrete implementation</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">MockImpl</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MockImpl</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="c1">// Mock implementation</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
 <span class="c1">// ...</span>
 
-<span class="n">Example</span><span class="o">&lt;</span><span class="n">ConcreteImpl</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ex</span><span class="p">;</span><span class="w"></span>
+<span class="n">Example</span><span class="o">&lt;</span><span class="n">ConcreteImpl</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ex</span><span class="p">;</span>
 </pre></div>
 
 <p>At link-time, we can link against the concrete implementations in
 production and against mock implementations in tests:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Example</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="n">Impl</span><span class="w"> </span><span class="n">impl</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Example</span>
+<span class="p">{</span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="n">Impl</span><span class="w"> </span><span class="n">impl</span><span class="p">;</span>
 
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">impl</span><span class="p">.</span><span class="n">Do</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">impl</span><span class="p">.</span><span class="n">Do</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
 <span class="c1">// In concrete implementation file:</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Impl</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Impl</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="c1">// Concrete implementation</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 
 <span class="c1">// In mock implementation file:</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Impl</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="k">public</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Impl</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">Do</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="c1">// Mock implementation</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>At run-time, we can do something similar to our C# example above. There

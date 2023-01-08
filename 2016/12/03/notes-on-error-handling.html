@@ -35,44 +35,44 @@ manifests itself deep in the stack when it could&#39;ve been caught
 earlier. A simple example would be move directions for a game - let&#39;s
 say the player can move <code>Up</code>, <code>Down</code>, <code>Left</code>, or <code>Right</code>. This can be
 encoded as:</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">UP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">LEFT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
-<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">DOWN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
-<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">RIGHT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">UP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">LEFT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">DOWN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">RIGHT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
 
-<span class="p">...</span><span class="w"></span>
+<span class="p">...</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="n">move</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">player</span><span class="w"> </span><span class="n">player</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">direction</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">UP</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_up</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">LEFT</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_left</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">DOWN</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_down</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">RIGHT</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_right</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="k">default</span><span class="o">:</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="n">move</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">player</span><span class="w"> </span><span class="n">player</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">UP</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_up</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">LEFT</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_left</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">DOWN</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_down</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">RIGHT</span><span class="p">:</span><span class="w"> </span><span class="n">player</span><span class="p">.</span><span class="n">move_right</span><span class="p">();</span><span class="w"> </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">default</span><span class="o">:</span>
 <span class="w">            </span><span class="c1">// direction should only be 0, 1, 2, 3</span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>but ultimately a caller can still pass any int value to this function
 which would end up in the default branch as a direction the code
 doesn&#39;t know how to handle. The alternative is, of course:</p>
-<div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">direction</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">up</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">left</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">down</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">right</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">direction</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">up</span><span class="p">,</span>
+<span class="w">    </span><span class="n">left</span><span class="p">,</span>
+<span class="w">    </span><span class="n">down</span><span class="p">,</span>
+<span class="w">    </span><span class="n">right</span>
+<span class="p">};</span>
 
-<span class="p">...</span><span class="w"></span>
+<span class="p">...</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="n">move</span><span class="p">(</span><span class="n">direction</span><span class="w"> </span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">player</span><span class="w"> </span><span class="n">player</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="n">move</span><span class="p">(</span><span class="n">direction</span><span class="w"> </span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">player</span><span class="w"> </span><span class="n">player</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>In this case, the type system ensures direction can only possibly hold
@@ -80,47 +80,47 @@ one of the allowed values. This is a trivial example but there are many
 more interesting ones. Take for example some connection which, if
 opened, can receive data and close and, if not opened, can be opened.
 This can be modelled like this:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">connection</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">open</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection already opened */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">        </span><span class="p">...</span><span class="w"></span>
-<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">connection</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">open</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection already opened */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">    </span><span class="p">};</span>
 
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">close</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection not opened */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">        </span><span class="p">...</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">close</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection not opened */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">receive</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection not opened */</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">        </span><span class="p">...</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">receive</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">is_opened</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* error, connection not opened */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">    </span><span class="p">}</span>
 
-<span class="k">private</span><span class="o">:</span><span class="w"></span>
-<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_opened</span><span class="p">;</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_opened</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 
 <p>Here we have to handle various cases where we try to perform an
 open-connection operation on a connection that hasn&#39;t been opened yet,
 and vice-versa. Another way to model this (as of C++17) is using a
 variant and separate types for open and closed connections:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">opened_connection</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">close</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">receive</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">opened_connection</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">close</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">receive</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">closed_connection</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">open</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">};</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">closed_connection</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">open</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
 
-<span class="k">using</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">closed_connection</span><span class="p">,</span><span class="w"> </span><span class="n">opened_connection</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+<span class="k">using</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="n">closed_connection</span><span class="p">,</span><span class="w"> </span><span class="n">opened_connection</span><span class="o">&gt;</span><span class="p">;</span>
 </pre></div>
 
 <p>Here, as long as we have a <code>closed_connection</code> instance, we can only
@@ -136,48 +136,48 @@ alternative to using return codes. For example, assume we have a
 function which parses a phone number provided by the user into some
 <code>phone_number_t</code> used internally. There are a few ways to implement
 this:</p>
-<div class="highlight"><pre><span></span><span class="n">phone_number_t</span><span class="w"> </span><span class="nf">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">phone_number_t</span><span class="w"> </span><span class="nf">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">from_string</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"> </span><span class="c1">// assume we can construct a phone_number_t from a valid string</span>
-<span class="w">    </span><span class="k">else</span><span class="w"></span>
-<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="n">invalid_phone_number</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="n">invalid_phone_number</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">};</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This is not ideal though, since exception should really be exceptional
 (more on this below), and user providing invalid input should be a
 completely valid scenario. The alternative would be to use a return
 code:</p>
-<div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">&amp;</span><span class="w"> </span><span class="n">output</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">&amp;</span><span class="w"> </span><span class="n">output</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">from_string</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">from_string</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This works, but calling code is uglier:</p>
-<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">phone_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">phone_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
 </pre></div>
 
 <p>now becomes:</p>
-<div class="highlight"><pre><span></span><span class="n">phone_number_t</span><span class="w"> </span><span class="n">phone_number</span><span class="p">;</span><span class="w"></span>
-<span class="kt">bool</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">phone_number</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">phone_number_t</span><span class="w"> </span><span class="n">phone_number</span><span class="p">;</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">phone_number</span><span class="p">);</span>
 </pre></div>
 
 <p>We can also end up in a bad state if we forget to check the return
 value. The alternative is to encode the information that we either have
 a <code>phone_number_t</code> or an invalid number in a type. In C++ we have (as of
 C++17) <code>optional&lt;T&gt;</code> for this:</p>
-<div class="highlight"><pre><span></span><span class="n">optional</span><span class="o">&lt;</span><span class="n">phone_number_t</span><span class="o">&gt;</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span><span class="w"></span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">nullopt</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">from_string</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">optional</span><span class="o">&lt;</span><span class="n">phone_number_t</span><span class="o">&gt;</span><span class="w"> </span><span class="n">parse_phone_number</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">is_valid</span><span class="p">(</span><span class="n">input</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">nullopt</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">phone_number_t</span><span class="o">::</span><span class="n">from_string</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>This is not quite a return error code and cannot really be ignored -
@@ -250,27 +250,27 @@ for example, a generic algorithm that takes some throwing function.
 Since we supply the predicate, we know what exception it can throw and
 we can catch it in the code that invokes the generic algorithm, keeping
 this invisible to the algorithm:</p>
-<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">InputIt</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">UnaryFunction</span><span class="o">&gt;</span><span class="w"></span>
-<span class="kt">void</span><span class="w"> </span><span class="n">for_each</span><span class="p">(</span><span class="n">InputIt</span><span class="w"> </span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">InputIt</span><span class="w"> </span><span class="n">last</span><span class="p">,</span><span class="w"> </span><span class="n">UnaryFunction</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">(</span><span class="k">noexcept</span><span class="p">(</span><span class="n">UnaryFunction</span><span class="p">))</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">last</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">first</span><span class="p">)</span><span class="w"></span>
-<span class="w">        </span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">first</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">InputIt</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">UnaryFunction</span><span class="o">&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">for_each</span><span class="p">(</span><span class="n">InputIt</span><span class="w"> </span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">InputIt</span><span class="w"> </span><span class="n">last</span><span class="p">,</span><span class="w"> </span><span class="n">UnaryFunction</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">(</span><span class="k">noexcept</span><span class="p">(</span><span class="n">UnaryFunction</span><span class="p">))</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">last</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">first</span><span class="p">)</span>
+<span class="w">        </span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">first</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>If our predicate returns an error code instead, the generic algorithm
 must be aware of this:</p>
-<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">InputIt</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">UnaryFunction</span><span class="o">&gt;</span><span class="w"></span>
-<span class="k">auto</span><span class="w"> </span><span class="n">for_each</span><span class="p">(</span><span class="n">InputIt</span><span class="w"> </span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">InputIt</span><span class="w"> </span><span class="n">last</span><span class="p">,</span><span class="w"> </span><span class="n">UnaryFunction</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">last</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">first</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">first</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
-<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">InputIt</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">UnaryFunction</span><span class="o">&gt;</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">for_each</span><span class="p">(</span><span class="n">InputIt</span><span class="w"> </span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">InputIt</span><span class="w"> </span><span class="n">last</span><span class="p">,</span><span class="w"> </span><span class="n">UnaryFunction</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">last</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">first</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">first</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 
 <p>Note that here we are also making an assumption that 0 means success,
