@@ -8,6 +8,167 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html</link>
+      <guid>https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html</guid>
+      <title><![CDATA[Mental Poker Part 0: An Overview]]></title>
+      <description><![CDATA[<h1>Mental Poker Part 0: An Overview</h1>
+
+<p>I wrote previously about <a href="https://vladris.com/blog/2021/12/11/mental-poker.html">Mental Poker</a>,
+how one can set up a game in a zero trust environment, and how this could be
+implemented using <a href="https://fluidframework.com/">Fluid Framework</a>.</p>
+
+<p>Since the previous post, I spent some more time prototyping an implementation
+with a colleague and did a <a href="https://www.youtube.com/watch?v=F1gPTXAllxY">tech talk</a>
+about it.</p>
+
+<p>If you haven't read the previous post and are not familiar with Mental Poker,
+the following won't make much sense. Please start there or by watching the
+tech talk video.</p>
+
+<p>The implementation consists of a few components:</p>
+
+<ul>
+<li>A Fluid Framework append-only list distributed data structure - Used for
+tracking turns in a game.</li>
+<li>Cryptography - An implementation of SRA (commutative encryption algorithm
+required by Mental Poker) and digital signing (required for authenticating
+messages from players).</li>
+<li>Game client - A layer that abstracts communication between clients, with
+an implementation on Fluid Framework.</li>
+<li>A state machine - Used to model games (<strong>If I make this move I expect the
+other player to make that move</strong>).</li>
+<li>Recipes built on top of the state machine, like shuffling a deck of cards
+using the steps described in my <a href="https://vladris.com/blog/2021/12/11/mental-poker.html">previous blog post</a>.</li>
+</ul>
+
+<p>At the time of writing, the append-only list distributed data structure is
+ready, available on my GitHub as <a href="https://github.com/vladris/fluid-ledger">fluid-ledge</a>
+and published on <a href="https://www.npmjs.com/package/fluid-ledger-dds">npm</a>.</p>
+
+<p>The other components will all eventually end up in the
+<a href="https://github.com/vladris/mental-poker-toolkit">mental-poker-toolkit</a> repo.</p>
+
+<p>Some parts, like cryptography and the game client, I cleaned up and moved from
+a private hackathon repo. Other parts, like the state machine, require major
+rework, which I haven't gotten around to yet.</p>
+
+<p>The plan is to provide a quality implementation with good documentation and
+samples. A major difference between the hackathon proof of concept and this is
+that the proof of concept implements a simple discard game while I'm hoping the
+toolkit can support games with more than two players.</p>
+
+<h2>Discard game</h2>
+
+<p>Modeling a game like Poker is non-trivial. That said, a big part of the
+complexity comes from the rules of the game itself. For a proof of concept of
+Mental Poker, we didn't want to get in the weeds of Poker rules, rather
+showcase the key ideas of how two players can shuffle a deck of cards, agree
+on what order the cards end up in, while at the same time each being able
+to maintain some private state (cards in hand). All of this done over a public
+channel (Fluid Framework).</p>
+
+<p>The game we modeled was simple: players draw a hand of cards, then take turns
+discarding by number or suit. If a player can't discard (no matching number or
+suit), they draw cards until they can discard. The player who discards their
+whole hand first wins.</p>
+
+<p>This prototype informed the components we had to build.</p>
+
+<h2>A new distributed data structure</h2>
+
+<p>Framework does not offer <q>out of the box</q> a data structure like the one needed
+to model a sequence of moves. We ended up using <code>SharedObjectSequence</code>, a data
+structure that was marked as deprecated and since removed from Fluid. In
+general, the Fluid data structures that support lists are overkill for Mental
+Poker as they support insertion and deletion of sequences of items at arbitrary
+positions. For modeling a game, we just need an append only list - players take
+turns and each <em>move</em> means appending something to the end of the list.</p>
+
+<p>In fact, having an append-only list ensures that we don't run into issues like
+a client unexpectedly inserting something in the middle of the list, which
+doesn't make sense if we're modeling a sequence of moves in a game.</p>
+
+<h2>Cryptography</h2>
+
+<p>I was also not able to find a package providing commutative encryption. This is
+a key requirement for the Mental Poker protocol but industry standard
+cryptography algorithms do not have this property. I ended up implementing the
+SRA algorithm from scratch, including a bunch of BigInt math. I still strongly
+believe in the <em>don't roll your own crypto</em> rule, so please do not use my
+implementation to play Poker for real money.</p>
+
+<p>Besides encryption, we also need digital signatures. When a player joins a
+game, they generate a public/private key pair and their first action is to post
+their public key. All subsequent moves from that player are signed with the
+private key, so other players can ensure the action is taken by the player
+claiming to take that action, eliminating spoofing. Fortunately we were able to
+use <code>Crypto.subtle</code> for this (see <a href="https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle">Crypto Web API</a>).</p>
+
+<h2>State machine</h2>
+
+<p>Another interesting discovery was the state machine. A high-level game move,
+like <em>I'm drawing a card from the top of the pile</em> translates into a message
+exchange between the players:</p>
+
+<ul>
+<li><code>Alice</code>: I'm drawing a card from the top of the pile.</li>
+<li><code>Bob</code>: Here is my key for that card.</li>
+</ul>
+
+<p>Shuffling cards, as described in the previous blog post, includes a longer
+sequence of steps. We needed a way to express <q>I do <em>this</em>, then I expect the
+other player to reply with <em>that</em></q>. We can use such a state machine to express
+sequences of multiple moves to implement things like card shuffling.</p>
+
+<p>The proof of concept state machine uses a queue of expected moves from the
+other player to implement the game mechanics and Mental Poker protocol. For
+example, for the Discard game, if it is the other player's turn, we expect
+two things can happen: they either discard a card or draw a card.</p>
+
+<p>If they discard a card, then they publish their encryption key for the card
+which we can use to <em>see</em> the card (again, please refer to the previous
+<a href="https://vladris.com/blog/2021/12/11/mental-poker.html">Mental Poker post</a> for
+details on the protocol). Alternately, if they can't discard a card, they
+need to draw a card, in which case we have to hand over our encryption key
+for the card on top of the deck.</p>
+
+<h2>Recipes</h2>
+
+<p>Some of the rules captured in this state machine are specific to each game
+implemented. Others though are simply steps in the Mental Poker protocol:
+things like shuffling, drawing cards etc. are all modeled as <em>actions I take
+and actions I expect the other player to follow up with</em>. I envision
+expressing such known sequences as <q>recipes</q>, building blocks for games.</p>
+
+<p>As I mentioned before, the proof of concept state machine implementation
+requires some major rework. It needs to scale from two players to an arbitrary
+number of players, and needs to support recipes, which it currently doesn't.
+At the time of writing, this is one of the biggest chunks of pending work, and
+considering this is a hobby project I work on when time permits, I currently
+don't have a good sense of when I'll finish this. That said, a bunch of pieces
+are already in decent shape and public, so I plan to write about them while
+I continue working on finishing the toolkit.</p>
+
+<h2>Mental Poker series</h2>
+
+<p>In upcoming blog posts, I plan to cover the various pieces discussed above. The
+components address different problems, and I find all of them quite interesting.
+The problem space includes understanding how Fluid Framework distributed data
+structures work internally, how to generate large prime numbers, and how to
+model expected sequences of moves in a game among other things.</p>
+
+<p>This post outlines the high level framing of the project. Following posts will
+dive deep into specific aspects.</p>
+
+<p>In terms of applications, as I mention in the tech talk, the term <em>games</em> is
+pretty broad - we're not talking only about card games, but things like
+auctions, lotteries, blind voting etc. All of these can be implemented using
+Mental Poker as decentralized, zero-trust games.</p>
+]]></description>
+      <pubDate>Sat, 18 Feb 2023 00:00:00 -0800</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2023/01/07/notes-on-advent-of-code-2022.html</link>
       <guid>https://vladris.com/blog/2023/01/07/notes-on-advent-of-code-2022.html</guid>
       <title><![CDATA[Notes on Advent of Code 2022]]></title>
