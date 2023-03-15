@@ -8,6 +8,497 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html</link>
+      <guid>https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html</guid>
+      <title><![CDATA[Mental Poker Part 1: Cryptography]]></title>
+      <description><![CDATA[<h1>Mental Poker Part 1: Cryptography</h1>
+
+<p>In the <a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">previous post</a>
+I outlined some of the interesting bits of putting together a <a href="https://en.wikipedia.org/wiki/Mental_poker">Mental Poker</a>
+toolkit. In this post I will talk about cryptography.</p>
+
+<p>The golden rule when it comes to cryptography code is to not roll your own,
+rather use something that's been battle-tested. That said, I could not find
+what I needed so had to implement some stuff. I urge you not to rely on my
+implementation for high-stakes poker, as it is likely buggy.</p>
+
+<p>With the disclaimer out of the way, let's look at what we need to support
+Mental Poker.</p>
+
+<h2>Card shuffling</h2>
+
+<p>Recap from <a href="https://vladris.com/blog/2021/12/11/mental-poker.html">this old post</a>
+when I first got interested in the subject:</p>
+
+<blockquote>
+<p>Mental poker requires a commutative encryption function. If we encrypt
+  \(A\) using \(Key_1\) then encrypting the result using \(Key_2\), we should be
+  able to decrypt the result back to \(A\) regardless of the order of
+  decryption (first with \(Key_1\) and then with \(Key_2\), or vice-versa).</p>
+
+<p>Here is how Alice and Bob play a game of mental poker:</p>
+
+<ul>
+<li>Alice takes a deck of cards (an array), shuffles the deck, generates
+a secret key \(K_A\), and encrypts each card with \(K_A\).</li>
+<li>Alice hands the shuffled and encrypted deck to Bob. At this point,
+Bob doesn't know what order the cards are in (since Alice encrypted
+the cards in the shuffled deck).</li>
+<li>Bob takes the deck, shuffles it, generates a secret key \(K_B\), and
+encrypts each card with \(K_B\).</li>
+<li>Bob hands the deck to Alice. At this point, neither Alice nor Bob
+know what order the cards are in. Alice got the deck back reshuffled
+and re-encrypted by Bob, so she no longer knows where each card
+ended up. Bob reshuffled an encrypted deck, so he also doesn't know
+where each card is.</li>
+</ul>
+
+<p>At this point the cards are shuffled. In order to play, Alice and Bob
+  also need the capability to look at individual cards. In order to enable
+  this, the following steps must happen:</p>
+
+<ul>
+<li>Alice decrypts the shuffled deck with her secret key \(K_A\). At this
+point she still doesn't know where each card is, as cards are still
+encrypted with \(K_B\).</li>
+<li>Alice generates a new set of secret keys, one for each card in the
+deck. Assuming a 52-card deck, she generates
+\(K_{A_1} ... K_{A_{52}}\) and encrypts each card in the deck with one
+of the keys.</li>
+<li>Alice hands the deck of cards to Bob. At this point, each card is
+encrypted by Bob's key, \(B_K\), and one of Alice's keys, \(K_{A_i}\).</li>
+<li>Bob decrypts the cards using his key \(K_B\). He still doesn't know
+where each card is, as now the cards are encrypted with Alice's
+keys.</li>
+<li>Bob generates another set of secret keys, \(K_{B_1} ... K_{B_{52}}\),
+and encrypts each card in the deck.</li>
+<li>Now each card in the deck is encrypted with a unique key that only
+Alice knows and a unique key only Bob knows.</li>
+</ul>
+
+<p>If Alice wants to look at a card, she asks Bob for his key for that
+  card. For example, if Alice draws the first card, encrypted with
+  \(K_{A_1}\) and \(K_{B_1}\), she asks Bob for \(K_{B_1}\). If Bob sends her
+  \(K_{B_1}\), she now has both keys to decrypt the card and <q>look</q> at it.
+  Bob still can't decrypt it because he doesn't have \(K_{A_1}\).</p>
+
+<p>This way, as long as both Alice and Bob agree that one of them is
+  supposed to <q>see</q> a card, they exchange keys as needed to enable this.</p>
+</blockquote>
+
+<p>The reason I ended up hand-rolling some cryptography is that off-the-shelf
+encryption algorithms are non-commutative. With a non-commutative algorithm,
+the above steps don't work: Alice cannot decrypt the deck with her secret
+key \(K_A\) after Bob shuffled it and encrypted it with \(K_B\).</p>
+
+<p>The analogy I used in <a href="https://www.youtube.com/watch?v=F1gPTXAllxY">this tech talk</a>
+is boxes and locks: if we have commutative encryption, we put the secret
+information in a box and both Alice (using \(K_A\)) and Bob (using \(K_B\)) put
+a lock on that box. It doesn't really matter in which order we unlock the two
+locks - as long as both are unlocked, we can get to the content. On the other
+hand, if we have non-commutative encryption, this is equivalent of Alice
+putting the secret in a box locked with \(K_A\), and Bob putting the whole locked
+box in another box locked with \(K_B\). Now Alice's key is useless while the
+outerbox only has the \(K_B\) lock on it.</p>
+
+<p>There aren't as many applications for commutative encryption, so the popular
+libraries out there provide only non-commutative encryption algorithms. The
+commutative encryption algorithm we will look at is SRA.</p>
+
+<h2>SRA</h2>
+
+<p>The SRA encryption algorithm was designed by Shamir, Rivest, and Adleman of
+RSA fame. Both algorithms use their initials, but the industry-standard RSA is
+non-commutative. SRA, on the other hand, is.</p>
+
+<p>SRA works like this: we need a large prime number \(P\). This seed prime is
+shared by all players. To generate encryption keys from it, let \(\phi = P - 1\).
+Each player needs to find another prime \(E\), such that \(\phi\) and \(E\) are
+coprime. \(E\) is that player's encryption key. The decryption key is derived
+from \(\phi\) and \(E\) as the modulo-inverse \(D\) such that
+\(E * D \equiv 1 \pmod{\phi}\).</p>
+
+<p>To encrypt a number \(N\), we raise it to \(E\) modulo \(P\). To decrypt an encrypted
+number \(N'\), we raise it to \(D\) modulo \(P\).</p>
+
+<p>Then if player 1 encrypts a payload with \(E_1\) and player 2 encrypts again
+using \(E_2\), the message can be decrypted by applying \(D_1\) and \(D_2\) in any
+order. Remember, this is key to the card shuffling algorithm.</p>
+
+<p>For a simple implementation, we can use arbitrarily large integers (<a href="https://developer.mozilla.org/en-US/docs/web/javascript/reference/global_objects/bigint">BigInt</a>).
+Unfortunately, the built-in JavaScript math libraries only work with <code>number</code>
+values, so we need to implement a bit of math.</p>
+
+<h2>BigInt math</h2>
+
+<p>First, we need to find the greatest common divisor of two numbers:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">gcd</span><span class="p">(</span><span class="nx">a</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">bigint</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nx">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">[</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="nx">b</span><span class="p">,</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">b</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">a</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We use this to check if two numbers are coprime (their GCD is 1).</p>
+
+<p>Next, we need modulo inverse (find <code>x</code> such that <code>(a * x) % m == 1</code>). One way
+of doing this is using Euclidean Division. We use the same algorithm we used
+for GCD, but we keep track of the values we find at each step. Finally, if <code>a</code>
+is <code>1</code>, it means there is no modulo inverse. Otherwise we find the modulo
+inverse by starting with a pair of numbers <code>x = 1, y = 0</code> and iterating over
+the values we found at the previous step, updating <code>x</code> to be <code>y</code> and <code>y</code> to be
+<code>x - y * (a / b)</code> where <code>a</code> and <code>b</code> are values we saved from the previous step:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">modInverse</span><span class="p">(</span><span class="nx">a</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">m</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">((</span><span class="nx">a</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">m</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">m</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">m</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">a</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">m</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid input"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Find GCD (and remember numbers at each step)</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">m</span><span class="p">;</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nx">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">[</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="nx">b</span><span class="p">,</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">b</span><span class="p">];</span>
+<span class="w">        </span><span class="nx">s</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span><span class="w"> </span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">a</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"No inverse"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Find the inverse</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">s</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">2</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="o">--</span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">[</span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="nx">y</span><span class="p">,</span><span class="w"> </span><span class="nx">x</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nx">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="nx">s</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">a</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nx">s</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">b</span><span class="p">)];</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">((</span><span class="nx">y</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">m</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">m</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">m</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This gives us the modulo inverse. To recap, we use this once we have a large
+prime \(P\) with \(\phi = P - 1\) and a large prime \(E\) such that
+\(gcd(E, \phi) = 1\) to find our decryption key \(D\).</p>
+
+<p>We also need modulo exponentiation for encryption/decryption. Since we are
+dealing with large numbers, we will implement exponentiation using the <a href="https://en.wikipedia.org/wiki/Ancient_Egyptian_multiplication">ancient
+Egyptian multiplication algorithm</a>.
+To raise <code>b</code> to <code>e</code> modulo <code>m</code>, if <code>e</code> is <code>1</code>, we return <code>b</code>. Otherwise we
+recursively raise <code>(b * b) % m</code> to <code>e / 2</code> modulo <code>m</code>. Whenever <code>e</code> is odd,
+we multiply the recursion result by an additional <code>b</code>:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">exp</span><span class="p">(</span><span class="nx">b</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">m</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">bigint</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">b</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">exp</span><span class="p">((</span><span class="nx">b</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nx">b</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">m</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">2</span><span class="p">),</span><span class="w"> </span><span class="nx">m</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">2</span><span class="p">)</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">result</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="nx">b</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">m</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This algorithm runs in log <code>e</code> time and keeps the large numbers to a manageable
+size since we apply modulo <code>m</code> at each step. We have most of the math pieces in
+place. The only thing missing is a way to generate large primes.</p>
+
+<h2>Generating large primes</h2>
+
+<p>One way of generating large primes is through trial and error: we generate a
+large number, check if it is prime, and repeat if it isn't. We can generate a
+large number by filling a byte array with random values, then converting it
+into a <code>BigInt</code>:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">randBigInt</span><span class="p">(</span><span class="nx">sizeInBytes</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">128</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">bigint</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">buffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Uint8Array</span><span class="p">(</span><span class="nx">sizeInBytes</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">crypto</span><span class="p">.</span><span class="nx">getRandomValues</span><span class="p">(</span><span class="nx">buffer</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Build a bigint out of the buffer</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">buffer</span><span class="p">.</span><span class="nx">forEach</span><span class="p">((</span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">256</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="nx">n</span><span class="p">);</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This gives us a random number of as many bytes as we want (default being 128
+bytes, i.e. 1024 bits). Since we are dealing with very large numbers, we can't
+naively test for primality of \(N\) by trying divisions up to \(\sqrt{N}\), this is
+too expensive. We instead use the probabilistic <a href="https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test">Miller-Rabin test</a>.</p>
+
+<p>In short, Miller-Rabin works like this: we can write an integer \(N\) (our prime
+candidate) as \(N = 2^S * D + 1\) where \(S\) and \(D\) are positive integers.</p>
+
+<p>Let's take another integer \(A\) coprime with \(N\). \(N\) is likely to be prime if
+\(A^D \equiv 1 \pmod{N}\) or \(A^{2^{R}*D} \equiv -1 \pmod{N}\) for some
+\(0 &lt;= R &lt;= S\). If this is not the case, then \(N\) is not a prime and \(A\) is
+called a <em>witness</em> of the compositeness of \(N\).</p>
+
+<p>This is a probabilistic test, so we can tell whether \(N\) is for sure non-prime
+or likely to be prime. Unfortunately, we can't tell for sure that \(N\) is prime.
+We need to run multiple iterations of this picking different \(A\) values until
+we are satisfied that \(N\) is <em>likely enough</em> to be prime.</p>
+
+<p>First, we need a helper function that checks \(A\) is not a <em>witness</em> of \(N\),
+given \(A\), \(N\), and \(S\) and \(D\) such that \(N = S^2 * D + 1\).</p>
+
+<p>We compute \(U\) as \(A^D \pmod{N}\). If \(U - 1 = 0\) or \(U + 1 = N\), then \(A\) is
+not a witness of \(N\). Otherwise, we repeat \(S - 1\) times: \(U = U^2 \pmod{N}\)
+and \(A\) is not a witness if \(U + 1 = N\). At this point, if we haven't confirmed
+that \(A\) is not a witness, we consider \(A\) a witness of \(N\) thus \(N\) is not
+prime. These are simply the checks described above (\(A^D \equiv 1 \pmod{N}\)
+and \(A^{2^{R}*D} \equiv -1 \pmod{N}\)) in implementation form.</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">isNotWitness</span><span class="p">(</span><span class="nx">a</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">d</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">s</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">a</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// u is a ^ d % n</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">u</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">exp</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">d</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// a is not a witness if u - 1 = 0 or u + 1 = n</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">u</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">)</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">u</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">)</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Repeat s - 1 times</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">s</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// u = u ^ 2 % n</span>
+<span class="w">        </span><span class="nx">u</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">exp</span><span class="p">(</span><span class="nx">u</span><span class="p">,</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">2</span><span class="p">),</span><span class="w"> </span><span class="nx">n</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// a is not a witness if u = n - 1</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">u</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">)</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// a is a witness of n</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>With this, we can finally implement Miller-Rabin. We first check a few trivial
+cases (<code>2</code> and <code>3</code> are prime, even numbers are non-prime). We then find \(S\) and
+\(D\) such that our number \(N = 2^S * D + 1\) (we do this by factoring out powers
+of 2 from \(N - 1\)).</p>
+
+<p>We then repeat the test: get a random number \(A &lt; N\). If \(A\) is a witness of
+\(N\), then \(N\) is not prime. If we run this test enough times, we can safely
+assume the number is prime. According to <a href="https://stackoverflow.com/questions/6325576/how-many-iterations-of-rabin-miller-should-i-use-for-cryptographic-safe-primes">this</a>,
+40 rounds should be good enough for a 1024 bit prime.</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">millerRabinTest</span><span class="p">(</span><span class="nx">candidate</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Handle some obvious cases</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">candidate</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">2</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">candidate</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">3</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">candidate</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">2</span><span class="p">)</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">candidate</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">2</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// Find s and d</span>
+<span class="w">  </span><span class="kd">let</span><span class="w"> </span><span class="nx">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">candidate</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">let</span><span class="w"> </span><span class="nx">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">while</span><span class="w"> </span><span class="p">((</span><span class="nx">d</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">))</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">d</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">s</span><span class="o">++</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// Test 40 rounds.</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">40</span><span class="p">;</span><span class="w"> </span><span class="nx">k</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">let</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">randBigInt</span><span class="p">()</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">candidate</span><span class="p">;</span>
+
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">isNotWitness</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">d</span><span class="p">,</span><span class="w"> </span><span class="nx">s</span><span class="p">,</span><span class="w"> </span><span class="nx">candidate</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Note <code>d</code> and <code>s</code> above are technically only needed in <code>isNotWitness()</code>, but
+since they are based on our prime candidate, we compute them once and pass them
+as arguments to <code>isNotWitness()</code> rather than having to recompute them on each
+call of the function.</p>
+
+<p>We can finally implement our prime generator. We simply generate large numbers
+and repeat until Miller-Rabin confirms we got a prime number:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">randPrime</span><span class="p">(</span><span class="nx">sizeInBytes</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">128</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">bigint</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">candidate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">do</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">candidate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">randBigInt</span><span class="p">(</span><span class="nx">sizeInBytes</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">millerRabinTest</span><span class="p">(</span><span class="nx">candidate</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">candidate</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<h2>Cryptography</h2>
+
+<p>With the low-level math out of the way, we can implement the cryptography API.
+First, we will define an <code>SRAKeyPair</code> as consisting of the initial large prime
+\(P\) and the derived \(E\) and \(D\) used for encryption/decryption:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">SRAKeyPair</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">prime</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">enc</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">dec</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>We can generate a large prime using <code>randPrime()</code>. From such a prime, we can
+generate an <code>SRAKeyPair</code>:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">generateKeyPair</span><span class="p">(</span><span class="nx">largePrime</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">size</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">128</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">SRAKeyPair</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">largePrime</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">enc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Trial and error</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Generate a large prime</span>
+<span class="w">        </span><span class="nx">enc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">randPrime</span><span class="p">(</span><span class="nx">size</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Stop when generated prime and passed in prime - 1 are coprime</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">gcd</span><span class="p">(</span><span class="nx">enc</span><span class="p">,</span><span class="w"> </span><span class="nx">phi</span><span class="p">)</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// enc is our encryption key, now let's find dec as the mod inverse of enc</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">dec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">modInverse</span><span class="p">(</span><span class="nx">enc</span><span class="p">,</span><span class="w"> </span><span class="nx">phi</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">prime</span><span class="o">:</span><span class="w"> </span><span class="kt">largePrime</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">enc</span><span class="o">:</span><span class="w"> </span><span class="kt">enc</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">dec</span><span class="o">:</span><span class="w"> </span><span class="kt">dec</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>If we have an <code>SRAKeyPair</code>, we can encrypt/decrypt numbers using the modulo
+exponentiation function we defined above (<code>exp()</code>):</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">encryptInt</span><span class="p">(</span><span class="nx">n</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">exp</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="p">.</span><span class="nx">enc</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="p">.</span><span class="nx">prime</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">decryptInt</span><span class="p">(</span><span class="nx">n</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">exp</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="p">.</span><span class="nx">dec</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="p">.</span><span class="nx">prime</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We can also convert a string into a BigInt and vice-versa. Assuming we only
+have character codes below 256 (so ASCII), we can simply encode the string
+as a 256-base number where each digit is a character:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">stringToBigInt</span><span class="p">(</span><span class="nx">str</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">bigint</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">str</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">c</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">255</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="sb">`Unexpected char code </span><span class="si">${</span><span class="nx">c</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="mf">0</span><span class="p">)</span><span class="si">}</span><span class="sb"> for </span><span class="si">${</span><span class="nx">c</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">256</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="nx">c</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="mf">0</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The ASCII assumption is reasonable, since we use this at a protocol level, not
+as part of the user experience. We can decode such a number back into a string
+using division and modulo:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">bigIntToString</span><span class="p">(</span><span class="nx">n</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nx">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">[</span><span class="nx">n</span><span class="p">,</span><span class="w"> </span><span class="nx">m</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="nx">n</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">256</span><span class="p">),</span><span class="w"> </span><span class="nx">n</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">256</span><span class="p">)];</span>
+<span class="w">        </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="nb">Number</span><span class="p">(</span><span class="nx">m</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Now that we have these conversions, we can can implement string
+encryption/decryption on top of our <code>encryptInt()</code> and <code>decryptInt()</code>
+functions:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">encryptString</span><span class="p">(</span><span class="nx">clearText</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">bigIntToString</span><span class="p">(</span><span class="nx">encryptInt</span><span class="p">(</span><span class="nx">stringToBigInt</span><span class="p">(</span><span class="nx">clearText</span><span class="p">),</span><span class="w"> </span><span class="nx">kp</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">decryptString</span><span class="p">(</span><span class="nx">cypherText</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">bigIntToString</span><span class="p">(</span><span class="nx">decryptInt</span><span class="p">(</span><span class="nx">stringToBigInt</span><span class="p">(</span><span class="nx">cypherText</span><span class="p">),</span><span class="w"> </span><span class="nx">kp</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We can encode any object as a string (and decode back strings to objects):</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">encrypt</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">obj</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">encryptString</span><span class="p">(</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">obj</span><span class="p">),</span><span class="w"> </span><span class="nx">kp</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">decrypt</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">cypherText</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">decryptString</span><span class="p">(</span><span class="nx">cypherText</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>And that's it! We start with <code>randPrime()</code> to generate a large prime, then
+use <code>generateKeyPair()</code> to derive \(E\) and \(D\) from it. We can then use this
+<code>SRAKeyPair</code> with <code>encrypt()</code> and <code>decrypt()</code> to encrypt/decrypt objects using
+the commutative SRA algorithm.</p>
+
+<p>Here is a small example pulling everything together:</p>
+<div class="highlight"><pre><span/><span class="c1">// Seed prime used by both players to generate keys</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">sharedPrime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">randPrime</span><span class="p">();</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">aliceKP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">generateKeyPair</span><span class="p">(</span><span class="nx">sharedPrime</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">bobKP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">generateKeyPair</span><span class="p">(</span><span class="nx">sharedPrime</span><span class="p">);</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">card</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Ace of spades"</span><span class="p">;</span>
+
+<span class="c1">// Encrypt with Alice's key first, then Bob's</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">aliceEncrypted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">encryptString</span><span class="p">(</span><span class="nx">card</span><span class="p">,</span><span class="w"> </span><span class="nx">aliceKP</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">aliceAndBobEncrypted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">encryptString</span><span class="p">(</span><span class="nx">aliceEncrypted</span><span class="p">,</span><span class="w"> </span><span class="nx">bobKP</span><span class="p">);</span>
+
+<span class="c1">// Decrypt with Alice's key first, then Bob's</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">bobEncrypted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">decryptString</span><span class="p">(</span><span class="nx">aliceAndBobEncrypted</span><span class="p">,</span><span class="w"> </span><span class="nx">aliceKP</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">decrypted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">decryptString</span><span class="p">(</span><span class="nx">bobEncrypted</span><span class="p">,</span><span class="w"> </span><span class="nx">bobKP</span><span class="p">);</span>
+
+<span class="c1">// Prints "Ace of spades"</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">decrypted</span><span class="p">);</span>
+</pre></div>
+
+<h2>Summary</h2>
+
+<ul>
+<li>We went over a short overview of the SRA algorithm.</li>
+<li>We looked at <code>BigInt</code> implementations for GCD, modulo inverse, and modulo
+exponentiation.</li>
+<li>Then we generated random large numbers by filling a buffer, and testing for
+primality using the Miller-Rabin test.</li>
+<li>With the math in place, we implemented a key generator for SRA (takin a
+prime and deriving \(E\) and \(D\)).</li>
+<li>We can encrypt/decrypt numbers by simply applying modulo exponentiation.</li>
+<li>We can encrypt/decrypt any string by converting it to a <code>BigInt</code>, and more
+generally any object by stringifying it.</li>
+</ul>
+
+<p>My work-in-progress Mental Poker Toolkit is <a href="https://github.com/vladris/mental-poker-toolkit">here</a>.
+This post covered the <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/cryptography">cryptography package</a>.</p>
+]]></description>
+      <pubDate>Tue, 14 Mar 2023 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html</link>
       <guid>https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html</guid>
       <title><![CDATA[Mental Poker Part 0: An Overview]]></title>
