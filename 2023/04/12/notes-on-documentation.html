@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Notes on Documentation &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/light.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>April 12, 2023</span></header>
+<article>
+<h1>Notes on Documentation</h1>
+
+<p>I spent a bunch of time lately revamping some documentation and this got me
+thinking. In terms of tooling, even state-of-the-art documentation pipelines
+are missing some key features. This is also an area where we can directly apply
+LLMs. In this post, I&#39;ll jot down some thoughts of how things could look like
+in a more perfect world. Of course, here I&#39;m referring to documentation
+associated with software projects.</p>
+
+<h2>Build from source</h2>
+
+<p>This first one isn&#39;t unheard of: documentation should be captured in source
+control and generated from there as a static website. There are two major types
+of documentation: API reference and <em>articles</em> that aren&#39;t tied to a specific
+API.</p>
+
+<p>API reference should be extracted from code comments. Different languages have
+different levels of <q>official</q> support for this. C# has out-of-the-box XML
+documentation (<code>///</code>), JavaScript has the non-standard but popular <a href="https://jsdoc.app/">JsDoc</a>
+etc.</p>
+
+<p>Articles on the other hand should be written as stand-alone Markdown files.</p>
+
+<p>A good documentation pipeline should support both. We&#39;re using <a href="https://dotnet.github.io/docfx/">DocFX</a>
+to that effect, though TypeScript is not supported out-of-the-box and requires
+some additional packages to set up.</p>
+
+<h2>CI validation</h2>
+
+<p>Commenting APIs should be enforced via linter. We have tools like <a href="https://github.com/StyleCop/StyleCop">StyleCop</a>
+for C# and a <a href="https://www.npmjs.com/package/eslint-plugin-jsdoc">JsDoc plugin for eslint</a>
+for JavaScript. At the very least, all of the public API surface should be
+documented. If you introduce a new public API without corresponding
+documentation, this should cause a build break.</p>
+
+<p>For technical documentation, many times articles also contain code samples.
+These run the risk of getting out of sync with the actual code as the code
+churns. In an ideal world, we should be able to associate a code snippet from
+an article with a test that runs with the CI pipeline. Documentation might
+skip scaffolding for clarity, so it&#39;s likely harder to simply attempt running
+the exact code snippet. But we should have a way to pull the snipped into a
+test that provides that scaffolding.</p>
+
+<p>Alternately, enforce that running all snippets in an article in order works -
+treat articles more like Jupyter notebooks, where the runtime maintains some
+context, so if, for example, I import something in the first code snippet, the
+import is available to subsequent code snippets.</p>
+
+<p>The key thing is to have some way to validate at build time that all code
+examples actually work and not allow breaking changes, even if the only thing
+that breaks is documentation.</p>
+
+<h2>Ownership</h2>
+
+<p>From my personal experience, documentation is usually treated as an
+afterthought. From time to time there is a big push to update things, but it&#39;s
+rare that everyone is constantly working towards improving docs.</p>
+
+<p>Unless documentation reaches a critical mass of contributors to ensure
+everything is kept in order, it&#39;s best to have clear ownership of each article.
+Git history is not always the best for finding owners - sometimes the last
+author is no longer with the team or with the company, or maybe last commits
+just moved the file around or fixed typos.</p>
+
+<p>This concern goes beyond documentation, in general I&#39;d love to see an ownership
+tracking system that can associate assets with people and is also org-chart
+aware - so if an owner changes teams, this gets flagged and a new owner must be
+provided.</p>
+
+<h2>Inline fragments</h2>
+
+<p>While working on documentation, I noticed that for a large enough project, some
+information tends to repeat across multiple articles. Maybe as part of a summary
+on the front page, then again in an article covering some of the details, and
+once more incidentally in a related article.</p>
+
+<p>The problem is that if something changes and I only update one of the articles
+(maybe I&#39;m not aware of all the places this shows up), documentation can start
+contradicting itself. This is something that is not part of the common Markdown
+syntax but I&#39;d love to have a way to inline a paragraph across multiple
+documents to avoid this.</p>
+
+<h2>Style guides</h2>
+
+<p>All documentation should include a style guide. Some guidelines encourage
+writing for easier reading, so apply in most cases. For example:</p>
+
+<ul>
+<li>Avoid passive voice.</li>
+<li>Encourage diagrams and pictures vs. very long descriptions.</li>
+</ul>
+
+<p>Some guidelines depend on the type of article. If you&#39;re documenting a design
+decision, explain the reasoning and list other options considered and why these
+weren&#39;t adopted. On the other hand, if you are writing a troubleshooting guide,
+no need to explain the <em>why</em>, just what steps the reader needs to take.</p>
+
+<p>Unfortunately I haven&#39;t seen a lot of such guides accompany projects. I wish
+we had a set of industry standard ones to simply plug in, like we do with open
+source licenses.</p>
+
+<h2>Information architecture</h2>
+
+<p>In many cases, there is little effort put into structuring the documentation.
+We start with <code>/docs</code> then as articles pile up, we create new subfolders
+organically.</p>
+
+<p>Much like we want some high-level design of a system, we should also require
+a high-level design of the documentation. What are the key topics and
+sub-sections? This doesn&#39;t even need to be reinvented for each new project,
+I expect there&#39;s a handful of structures which can support most projects,
+so much like style guides, it would be great to have these available
+of-the-shelf.</p>
+
+<h3>An alternative to hierarchy</h3>
+
+<p>I started this post talking about building documentation from source, which
+naturally maps to articles being files organized in folders (categories). This
+type of organization - categories and subcategories - works well up to a
+certain volume of information.</p>
+
+<p>At some point, it gets hard to figure out which subcategory something fits in:
+it might fit just as well in multiple places. Here the folder categorization
+breaks down: there is no clear hierarchy of nested folders in which to fit
+everything.</p>
+
+<p>At alternative to hierarchies are tags. Maintain a curated set of tags, then
+tag each article with one or more tags. You can then browse by tag, but have
+articles show up under multiple tags. This tends to work better with larger
+volumes of information, but it&#39;s harder to map to a file and folder structure.</p>
+
+<h2>AI</h2>
+
+<p>With the popularity of large language models, I see many applications
+throughout the lifecycle:</p>
+
+<h3>Authoring</h3>
+
+<p>Generative AI can help coauthor documentation. GitHub Copilot <a href="https://learn.microsoft.com/en-us/shows/introduction-to-github-copilot/how-to-write-documentation-with-copilot-suggestions-5-of-6">already does
+this</a>.
+As models get better and cheaper to run, I expect they will be more and more
+involved in writing documentation.</p>
+
+<h3>Reviewing and editing</h3>
+
+<p>Given a style guide, a model can review how closely a document adheres to it
+and suggest changes to match the guide.</p>
+
+<p>With a knowledge of the whole documentation, a model could also spot
+contradictions (the problem I mentioned in the <strong>Inline fragments</strong> section).
+This could be a step in the CI pipeline to ensure consistency.</p>
+
+<p>A model could potentially also act as a reader and provide feedback on how
+clear the documentation is.</p>
+
+<h3>Retrieval</h3>
+
+<p>Most tools generating documentation from source provide very rudimentary search
+capabilities. OpenAI offers text and code <a href="https://openai.com/blog/introducing-text-and-code-embeddings">embedding APIs</a>
+which enable semantic search and natural language querying. Using something
+like this on documentation should make finding things much easier.</p>
+
+<h3>Q&amp;A</h3>
+
+<p>Models can also be used to answer questions, so instead of readers having to
+search the docs for what they need, they can simply ask questions. A model
+can provide answers based on the documentation (and the codebase). This takes
+retrieval a step further: users can simply get their questions answered by a
+model. In some cases articles might not even be needed, as the model can
+explain in real time how the code is supposed to be used.</p>
+
+<h2>Summary</h2>
+
+<p>I believe as of today, even the best tools available for documentation leave
+room for improvement and large language models have the potential to radically
+change the game.</p>
+
+<p>In this post we looked at:</p>
+
+<ul>
+<li>The two main types of documentation: API reference and articles, which should
+both live in source control.</li>
+<li>API reference should be extracted from code comments.</li>
+<li>Articles should be written as Markdown.</li>
+<li>CI validation for documentation: enforce API documentation and ensure code
+samples still work.</li>
+<li>Ownership tracking: ensuring someone feels responsible for every piece of
+documentation.</li>
+<li>Inline fragments as a proposed solution to keep information in sync across
+multiple documents.</li>
+<li>Style guides for documentation to ensure consistent &amp; readable articles.</li>
+<li>Information architecture to improve overall structure and navigation.</li>
+<li>Potential AI applications throughout the lifecycle:
+
+<ul>
+<li>Coauthoring documentation with generative AI.</li>
+<li>Reviewing documentation and providing suggestions (for style, consistency,
+readability).</li>
+<li>Finding the right documentation using embeddings.</li>
+<li>Answering natural language questions.</li>
+</ul></li>
+</ul>
+
+<p>Some of these features exist and some of these practices are adopted in some
+projects, but most are not widely implemented. I&#39;m curious to see how the
+landscape will look like in a few years and how AIs will change the way we
+learn and get our questions answered.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2023/03/14/mental-poker-part-1-cryptography.html">Mental Poker Part 1: Cryptography</a></span></div>
+
+
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>
