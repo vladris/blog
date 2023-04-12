@@ -21,7 +21,7 @@ etc.
 
 Articles on the other hand should be written as stand-alone Markdown files.
 
-A good documentation pipeline should support both. We're using [DocFX](https://dotnet.github.io/docfx/)
+A good documentation pipeline should support both. My team is using [DocFX](https://dotnet.github.io/docfx/)
 to that effect, though TypeScript is not supported out-of-the-box and requires
 some additional packages to set up.
 
