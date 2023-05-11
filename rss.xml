@@ -748,7 +748,7 @@ using the steps described in my <a href="https://vladris.com/blog/2021/12/11/men
 </ul>
 
 <p>At the time of writing, the append-only list distributed data structure is
-ready, available on my GitHub as <a href="https://github.com/vladris/fluid-ledger">fluid-ledge</a>
+ready, available on my GitHub as <a href="https://github.com/vladris/fluid-ledger">fluid-ledger</a>
 and published on <a href="https://www.npmjs.com/package/fluid-ledger-dds">npm</a>.</p>
 
 <p>The other components will all eventually end up in the
