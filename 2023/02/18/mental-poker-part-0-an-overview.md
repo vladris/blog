@@ -27,7 +27,7 @@ The implementation consists of a few components:
   using the steps described in my [previous blog post](https://vladris.com/blog/2021/12/11/mental-poker.html).
 
 At the time of writing, the append-only list distributed data structure is
-ready, available on my GitHub as [fluid-ledge](https://github.com/vladris/fluid-ledger)
+ready, available on my GitHub as [fluid-ledger](https://github.com/vladris/fluid-ledger)
 and published on [npm](https://www.npmjs.com/package/fluid-ledger-dds).
 
 The other components will all eventually end up in the
