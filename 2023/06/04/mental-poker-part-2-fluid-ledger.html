@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Mental Poker Part 2: Fluid Ledger &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/light.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>June 04, 2023</span></header>
+<article>
+<h1>Mental Poker Part 2: Fluid Ledger</h1>
+
+<p>In the <a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">previous post</a>
+I covered the cryptography part of implementing Mental Poker. In this post,
+I&#39;ll cover the append-only list data structure used to model games.</p>
+
+<p>As I mentioned before, we rely on <a href="https://fluidframework.com/">Fluid Framework</a>.
+The code is available in my GitHub <a href="https://github.com/vladris/fluid-ledger">fluid-ledger repo</a>.</p>
+
+<h2>Fluid Framework</h2>
+
+<p>I touched on Fluid Framework before so I won&#39;t describe in detail what the
+library is about. Relevant to this blog post, we have a set of <em>distributed
+data structures</em> that multiple clients can update concurrently. All clients
+in a session connect to a service (like the <a href="https://learn.microsoft.com/en-us/azure/azure-fluid-relay/">Azure Fluid Relay</a>
+service). Each update a client makes to a distributed data structure gets
+sent to the service as an operation. The service stamps a sequence number
+on the operation and broadcasts it to all clients. That means that
+eventually, all clients end up with the same list of operations in the same
+sequence, so they can merge changes client-side while ensuring all clients
+end up with the same view of the world.</p>
+
+<p>The neat thing about Fluid Framework is the fact that merges happen on the
+clients as described above rather than server-side. The service doesn&#39;t need
+to understand the semantics of each data structure. It only needs to sequence
+operations. Different data structures implement their own merge logic. The
+framework provides some powerful out-of-the-box data structures like a sparse
+matrix or a tree. But we don&#39;t need such powerful data structures to model
+games: a list is enough.</p>
+
+<h2>Append-only list</h2>
+
+<p>Most turn-based games can be modeled as a list of moves. This includes games
+like chess, but also card games. The whole Mental Poker shuffling protocol we
+discussed, where one player encrypts and shuffles the deck, then hands it over
+to the other player to do the same etc. is also, in fact, a sequence of moves.</p>
+
+<p>The semantics of a particular game are implemented at a higher level. The types
+of games we are looking at though can be modeled as a list of moves, where
+players take turns. Each move is an item in the list. In this blog post we&#39;re
+looking at the generic list data structure, without worrying too much about
+how a move looks like.</p>
+
+<p>A list is a very simple data structure, but let&#39;s see how this looks like in
+the context of Fluid Framework. Here, we have a distributed data structure
+multiple clients can concurrently update.</p>
+
+<h2>Fluid ledger</h2>
+
+<p>I named the data structure <em>ledger</em>, as it should act very much as a ledger
+from the crypto/blockchain world - an immutable record of what happened. In
+our case, this contains a list of game moves.</p>
+
+<p>The Fluid Framework implementation is fairly straight-forward: when a client
+wants to append an item to the list, it sends the new item to the Fluid Relay
+service. The service sequences the append, meaning it adds the sequence number
+and broadcasts it to all clients, including the sender. The local data
+structure only gets appended once received from the service. That guarantees
+all clients end up with the same list, even if they concurrently attempt to
+append items to it.</p>
+
+<p><img src="ledger.png" alt="Fluid ledger diagram"></p>
+
+<p>The diagram shows how this works when <code>Client A</code> wants to append <code>4</code> to the
+ledger:</p>
+
+<ol>
+<li>The new item <code>4</code> is sent to the Relay Service.</li>
+<li>The relay service broadcasts it to all clients.</li>
+<li>Clients receive the new item and append it to the list.</li>
+</ol>
+
+<h3>Interfaces</h3>
+
+<p>Our API consists of two interfaces, <code>ILedgerEvents</code>, representing the events
+that our data structure can fire, and <code>ILedger</code>, the API of our data structure.</p>
+
+<p>We derive these from <code>ISharedObjectEvents</code> and <code>ISharedObject</code>, which are
+available in Fluid Framework. We also need the <code>Serializable</code> type, which
+represents data that can be serialized in the Fluid Framework data store:</p>
+<div class="highlight"><pre><span></span><span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">ISharedObject</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">ISharedObjectEvents</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/shared-object-base&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Serializable</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/datastore-definitions&quot;</span><span class="p">;</span>
+</pre></div>
+
+<p>With these imports, we can define our <code>ILedgerEvents</code> as:</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">ILedgerEvents</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">ISharedObjectEvents</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">values</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">[])</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><code>T</code> is the generic type of the list items. The <code>append</code> event is fired after
+we get an item from the Fluid Relay service and the item is appended to the
+ledger. The <code>clear</code> event is fired when we get a <em>clear</em> operation from the
+Fluid Relay service and the ledger is cleared. The event will return the full
+list of items that have been removed as <code>values</code>.</p>
+
+<p>We can also defined <code>ILedger</code> as:</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">ILedger</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">any</span><span class="o">&gt;</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">ISharedObject</span><span class="o">&lt;</span><span class="nx">ILedgerEvents</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">get</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">append</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">clear</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>get()</code> function returns an iterator over the ledger. <code>append()</code> appends
+a value and <code>clear()</code> clears the ledger.</p>
+
+<p>The full implementation can be found in <a href="https://github.com/vladris/fluid-ledger/blob/main/packages/dds/src/interfaces.ts">interfaces.ts</a>.</p>
+
+<h3>Factory</h3>
+
+<p>We also need to provide a <code>LedgerFactory</code> the framework can use to create or
+load our data structure.</p>
+
+<p>We need to import a handful of types from the framework, our <code>ILedger</code>
+interface, and our yet-to-be-implemented <code>Ledger</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">IChannelAttributes</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">IFluidDataStoreRuntime</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">IChannelServices</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">IChannelFactory</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/datastore-definitions&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Ledger</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./ledger&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ILedger</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./interfaces&quot;</span><span class="p">;</span>
+</pre></div>
+
+<p>We can now define the factory as implementing the <code>IChannelFactory</code> interface:</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="w"> </span><span class="k">implements</span><span class="w"> </span><span class="nx">IChannelFactory</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We&#39;ll cover the implementation step-by-step. First, we need a couple of static
+properties defining the type of the data structure and properties of the
+<em>channel</em>:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">Type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;fluid-ledger-dds&quot;</span><span class="p">;</span>
+
+<span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">Attributes</span><span class="o">:</span><span class="w"> </span><span class="kt">IChannelAttributes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">snapshotFormatVersion</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0.1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">packageVersion</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0.0.1&quot;</span>
+
+<span class="k">public</span><span class="w"> </span><span class="nx">get</span><span class="w"> </span><span class="kr">type</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="p">.</span><span class="nx">Type</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">public</span><span class="w"> </span><span class="nx">get</span><span class="w"> </span><span class="nx">attributes</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="p">.</span><span class="nx">Attributes</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+
+<p><code>Type</code> just needs to be a unique value for our distributed data structure.
+We&#39;ll define it as <code>fluid-ledger-dds</code>. The channel <code>Attributes</code> are used by
+the runtime for versioning purposes.</p>
+
+<p>You can think of the way Fluid Framework stores data as similar to git. In git
+we have snapshots and commits. Fluid Framework uses a similar mechanism, where
+the service records all operations sent to it (this is the equivalent of a
+commit) and periodically takes a snapshot of the <q>current</q> state of the world.</p>
+
+<p>When a client connects and wants to get up to date, it tells the service what
+is the last state it saw and the service sends back what happened since. This
+could include the latest snapshot (if the client doesn&#39;t have it) and a bunch
+of operations that have been sent by clients after the latest snapshot.</p>
+
+<p>In case we iterate on our data structure, we need to tell the runtime which
+snapshot format and which ops our client understands.</p>
+
+<p>The interface we are implementing (<code>IChannelFactory</code>) includes a <code>load()</code>
+and a <code>create()</code> function.</p>
+
+<p>Here is how we load a ledger:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="nx">load</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">runtime</span><span class="o">:</span><span class="w"> </span><span class="kt">IFluidDataStoreRuntime</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">services</span><span class="o">:</span><span class="w"> </span><span class="kt">IChannelServices</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">attributes</span><span class="o">:</span><span class="w"> </span><span class="kt">IChannelAttributes</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">ILedger</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">ledger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Ledger</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">runtime</span><span class="p">,</span><span class="w"> </span><span class="nx">attributes</span><span class="p">);</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">ledger</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="nx">services</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">ledger</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This is pretty straightforward: we construct a new instance of <code>Ledger</code> (we&#39;ll
+look at the <code>Ledger</code> implementation in a bit), call <code>load()</code>, and return the
+object. This is an async function. No need to worry about the arguments as the
+framework will handle these - we just plumb them through.</p>
+
+<p><code>create()</code> is similar, except this is synchronous:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="nx">create</span><span class="p">(</span><span class="nx">document</span><span class="o">:</span><span class="w"> </span><span class="kt">IFluidDataStoreRuntime</span><span class="p">,</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">ILedger</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">ledger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Ledger</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nb">document</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">attributes</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">ledger</span><span class="p">.</span><span class="nx">initializeLocal</span><span class="p">();</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">ledger</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Instead of calling the async <code>ledger.load()</code>, we call <code>initializeLocal()</code>. We
+again don&#39;t have to cover the arguments, but let&#39;s talk about the difference
+between creating and loading.</p>
+
+<p>In order to understand these, we need to introduce a new concept: the Fluid
+container.</p>
+
+<p>The container is a collection of distributed data structures defined by a
+schema. This describes the data model of an application. In our case, to model
+a game, we only need a ledger. For more complex applications, we might need
+to use multiple distributed data structures. Fluid Framework uses containers
+as the <q>unit</q> of data - we will never instantiate or use a distributed data
+structure <em>standalone</em>. Even if we only need one, as in our case, we still need
+to define a container.</p>
+
+<p><img src="container.png" alt="Container diagram"></p>
+
+<p>The lifecycle shown in the diagram is:</p>
+
+<ol>
+<li>A client creates a container locally (this is where <code>create()</code> comes into
+play). Based on the provided schema, the runtime will call <code>create()</code> for
+all described data structures. At this point, we haven&#39;t yet connected to
+the Fluid Relay. We are in what is called <em>detached</em> mode. Here we have the
+opportunity to update our data structures before we connect and have other
+clients see them.</li>
+<li>We <em>attach</em> the container, meaning we connect to the Relay Service and start
+a multi-user session. We can now expect changes to come in from other
+clients.</li>
+<li>Another client can now connect to the session. On this second client, since
+the container was already created, the runtime will rely on the <code>load()</code>
+functions to hydrate it.</li>
+</ol>
+
+<p>As a side note, the Fluid Relay can also store documents to persistent storage
+so once the coauthoring session is over and all clients disconnect, the
+document is persistent for future sessions.</p>
+
+<p>For our Mental Poker application, we don&#39;t need to worry too much about
+containers and schemas, we only need a minimal implementation consisting of a
+container with a single distributed data structure: our <code>Ledger</code>. But it is
+worth understanding how the runtime works.</p>
+
+<p>We went over the full implementation of the <code>LedgerFactory</code>. You can also find
+it in <a href="https://github.com/vladris/fluid-ledger/blob/main/packages/dds/src/ledgerFactory.ts">ledgerFactory.ts</a>.</p>
+
+<h3>Implementation</h3>
+
+<p>Let&#39;s now look at the actual implementation and learn about the anatomy of a
+Fluid distributed data structure.</p>
+
+<p>We need to import several types from the framework, which we&#39;ll cover as we
+encounter them in the code below, or won&#39;t discuss if they are boilerplate.</p>
+<div class="highlight"><pre><span></span><span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">ISequencedDocumentMessage</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">MessageType</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/protocol-definitions&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">IChannelAttributes</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">IFluidDataStoreRuntime</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">IChannelStorageService</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">IChannelFactory</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">Serializable</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/datastore-definitions&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ISummaryTreeWithStats</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/runtime-definitions&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">readAndParse</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/driver-utils&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">createSingleBlobSummary</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">IFluidSerializer</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">SharedObject</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/shared-object-base&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ILedger</span><span class="p">,</span><span class="w"> </span><span class="nx">ILedgerEvents</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./interfaces&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./ledgerFactory&quot;</span><span class="p">;</span>
+</pre></div>
+
+<p>Note the last two imports: we import our interfaces and our <code>LedgerFactory</code>.</p>
+
+<p>We&#39;ll define a couple of <em>delta operations</em>. That&#39;s the Fluid Framework name
+for an operation (op) we send to the (or get back from) Fluid Relay service.</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">ILedgerOperation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">IAppendOperation</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">IClearOperation</span><span class="p">;</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">IAppendOperation</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">IClearOperation</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>In our case, we can have either an <code>IAppendOperation</code> or an <code>IClearOperation</code>.
+The two together define the <code>ILedgerOperation</code> type.</p>
+
+<p>The <code>IAppendOperation</code> includes a <code>value</code> property which can be anything. Both
+<code>IAppendOperation</code> and <code>IClearOperation</code> have a <code>type</code> property, so we can see
+at runtime which type we are dealing with.</p>
+
+<p>We talked about how Fluid Framework is similar to git in the way it stores
+documents as snapshots and ops. A lot of this is handled internally by the
+framework, but our data structure needs to tell the service how we want to name
+the snapshots, so we&#39;ll define a constant for this:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">snapshotFileName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;header&quot;</span><span class="p">;</span>
+</pre></div>
+
+<p>With this, we can start the implementation of <code>Ledger</code>.</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nx">Ledger</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">any</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="k">extends</span><span class="w"> </span><span class="nx">SharedObject</span><span class="o">&lt;</span><span class="nx">ILedgerEvents</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span>
+<span class="w">    </span><span class="k">implements</span><span class="w"> </span><span class="nx">ILedger</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We derive from <code>SharedObject</code>, the base distributed data structure type. We
+specify that this <code>SharedObject</code> will be firing <code>ILedgerEvents</code> and that it
+implements the <code>ILedger</code> interface.</p>
+
+<p>The framework expects a few functions used to construct objects. Our
+constructor looks like this:</p>
+<div class="highlight"><pre><span></span><span class="kr">constructor</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">runtime</span><span class="o">:</span><span class="w"> </span><span class="kt">IFluidDataStoreRuntime</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">attributes</span><span class="o">:</span><span class="w"> </span><span class="kt">IChannelAttributes</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">super</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">runtime</span><span class="p">,</span><span class="w"> </span><span class="nx">attributes</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;fluid_ledger_&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The constructor takes an <code>id</code>, a <code>runtime</code>, and channel <code>attributes</code>. We don&#39;t
+need to deeply understand these, as they are handled and passed in by the
+framework. The last argument of the base class constructor is a telemetry
+string prefix. We just need to provide a string unique to our data structure,
+so we use <code>fluid_ledger_</code> in our case.</p>
+
+<p>We also need a couple of static functions: <code>create()</code> and <code>getFactory()</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="nx">create</span><span class="p">(</span><span class="nx">runtime</span><span class="o">:</span><span class="w"> </span><span class="kt">IFluidDataStoreRuntime</span><span class="p">,</span><span class="w"> </span><span class="nx">id?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">runtime</span><span class="p">.</span><span class="nx">createChannel</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="p">.</span><span class="nx">Type</span><span class="p">)</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Ledger</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="nx">getFactory</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">IChannelFactory</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>For <code>create()</code>, again we don&#39;t need to worry about <code>runtime</code> and <code>id</code>, as we
+won&#39;t have to pass these in ourselves. We just need this function to forward
+them to <code>runtime.createChannel()</code>. <code>createChannel()</code> also requires the unique
+type, which we&#39;ll get from our <code>LedgerFactory</code>.</p>
+
+<p>The <code>getFactory()</code> function simply creates a new instance of <code>LedgerFactory</code>.</p>
+
+<p>We covered the constructor and factory functions. Next, let&#39;s look at the
+internal data and the required <code>initializeLocalCore()</code> functions:</p>
+<div class="highlight"><pre><span></span><span class="k">private</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+
+<span class="k">public</span><span class="w"> </span><span class="nx">get</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="p">[</span><span class="nb">Symbol</span><span class="p">.</span><span class="nx">iterator</span><span class="p">]();</span>
+<span class="p">}</span>
+
+<span class="k">protected</span><span class="w"> </span><span class="nx">initializeLocalCore</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This is very simple - we represent our ledger as an array of <code>Serializable&lt;T&gt;</code>.</p>
+
+<p>The <code>get()</code> function, which we defined on our <code>IFluidLedger</code> interface, returns
+the array&#39;s iterator.</p>
+
+<p><code>initializeLocalCore()</code>, called internally by the runtime, simply sets <code>data</code>
+to be an empty array.</p>
+
+<p>We also need to implement saving and loading of the data structure. <q>Save</q> in
+Fluid Framework world is called <em>summarize</em>: this is what the framework uses to
+create snapshots.</p>
+<div class="highlight"><pre><span></span><span class="k">protected</span><span class="w"> </span><span class="nx">summarizeCore</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">serializer</span><span class="o">:</span><span class="w"> </span><span class="kt">IFluidSerializer</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">ISummaryTreeWithStats</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">createSingleBlobSummary</span><span class="p">(</span>
+<span class="w">        </span><span class="nx">snapshotFileName</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">serializer</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">handle</span><span class="p">)</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We can use a framework-provided <code>createSingleBlobSummary</code>. In our case, we save
+the whole <code>data</code> array and the <code>handle</code> (<code>handle</code> is an inherited attribute
+representing a handle to the data structure, which the Framework uses for
+nested data structure scenarios).</p>
+
+<p>Here is how we load the data structure:</p>
+<div class="highlight"><pre><span></span><span class="k">protected</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="nx">loadCore</span><span class="p">(</span><span class="nx">storage</span><span class="o">:</span><span class="w"> </span><span class="kt">IChannelStorageService</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">content</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">readAndParse</span><span class="o">&lt;</span><span class="nx">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">[]</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">        </span><span class="nx">storage</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">snapshotFileName</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">serializer</span><span class="p">.</span><span class="nx">decode</span><span class="p">(</span><span class="nx">content</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>For both summarize and load, we rely on Framework-provided utilities.</p>
+
+<p>We can now focus on the non-boilerplate bits: implementing our <code>append()</code>
+and <code>clear()</code>. Let&#39;s start with <code>append()</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">private</span><span class="w"> </span><span class="nx">applyInnerOp</span><span class="p">(</span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="kt">ILedgerOperation</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">content</span><span class="p">.</span><span class="kr">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="o">:</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span><span class="o">:</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">submitLocalMessage</span><span class="p">(</span><span class="nx">content</span><span class="p">);</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="nx">default</span><span class="o">:</span>
+<span class="w">            </span><span class="kt">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Unknown operation&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">private</span><span class="w"> </span><span class="nx">appendCore</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s2">&quot;append&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">public</span><span class="w"> </span><span class="nx">append</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">opValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">serializer</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">handle</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isAttached</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">op</span><span class="o">:</span><span class="w"> </span><span class="kt">IAppendOperation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">opValue</span>
+<span class="w">        </span><span class="p">};</span>
+
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">applyInnerOp</span><span class="p">(</span><span class="nx">op</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">appendCore</span><span class="p">(</span><span class="nx">opValue</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><code>applyInnerOp()</code> is common to both <code>append()</code> and <code>clear()</code>. This is the
+function that takes an <code>ILedgerOperation</code> and sends it to the Fluid Relay
+service. <code>submitLocalMessage()</code> is inherited from the base <code>SharedObject</code>.</p>
+
+<p><code>appendCore()</code> effectively updates <code>data</code> and fires the <code>append</code> event.</p>
+
+<p><code>append()</code> first serializes the provided value using the inherited
+Framework-provided <code>serializer</code>. We assign this to <code>opValue</code>. We then need
+to cover both the attached and detached scenarios. If attached, it means
+we are connected to a Fluid Relay and we are in the middle of a coauthoring
+session. In this case, we create an <code>IAppendOperation</code> object and call
+<code>applyInnerOp()</code>. If we are detached, it means we created our data structure
+(and its container) on this client, but we are not connected to a service
+yet. In this case we call <code>appendCore()</code> to immediately append the value
+since there is no service to send the op to and get it back sequenced.</p>
+
+<p><code>clear()</code> is very similar:</p>
+
+<pre><code>private clearCore() {
+    const data = this.data.slice();
+
+    this.data = [];
+
+    this.emit(&quot;clear&quot;, data);
+}
+
+public clear() {
+    if (this.isAttached()) {
+        const op: IClearOperation = {
+            type: &quot;clear&quot;
+        };
+
+        this.applyInnerOp(op);
+    }
+    else {
+        this.clearCore();
+    }
+}</code></pre>
+
+<p><code>clearCore()</code> effectively clears <code>data</code> and emits the <code>clear</code> event.</p>
+
+<p><code>clear()</code> handles both the attached and detached scenarios.</p>
+
+<p>So far we update our data immediately when detached, and when attached we
+send the op to the Relay Service. The missing piece is handling ops as
+they come back from the Relay Service. We do this in <code>processCore()</code>,
+another function the runtime expects us to provide:</p>
+<div class="highlight"><pre><span></span><span class="k">protected</span><span class="w"> </span><span class="nx">processCore</span><span class="p">(</span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">ISequencedDocumentMessage</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">message</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">MessageType</span><span class="p">.</span><span class="nx">Operation</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">op</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">message</span><span class="p">.</span><span class="nx">contents</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">ILedgerOperation</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">op</span><span class="p">.</span><span class="kr">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="o">:</span>
+<span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">appendCore</span><span class="p">(</span><span class="nx">op</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span>
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span><span class="o">:</span>
+<span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">clearCore</span><span class="p">();</span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span>
+<span class="w">            </span><span class="nx">default</span><span class="o">:</span>
+<span class="w">                </span><span class="kt">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Unknown operation&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This function is called by the runtime when the Fluid Relay sends the client
+a message. In our case, we only care about messages that are operations. We
+only support <code>append</code> and <code>clear</code> operations. We handle these by calling the
+<code>appendCore()</code> and <code>clearCore()</code> we just saw - since these ops are coming
+from the service, we can safely append them to our <code>data</code> (we have the
+guarantee that all clients will get these in the same order).</p>
+
+<p>And we&#39;re almost done. We need to implement <code>onDisconnect()</code>, which is called
+when we disconnect from the Fluid Relay. This gives the distributed data
+structure a chance to run some code but in our case we don&#39;t need to do
+anything.</p>
+<div class="highlight"><pre><span></span><span class="k">protected</span><span class="w"> </span><span class="nx">onDisconnect</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
+</pre></div>
+
+<p>Finally, we also need <code>applyStashedOp()</code>. This is used in offline mode. For
+some applications, we might want to provide some functionality when offline -
+a client can keep making updates, which get <em>stashed</em>. We won&#39;t dig into this
+since for Mental Poker we can&#39;t have a single client play offline - we simply
+throw an exception if this function ever gets called:</p>
+<div class="highlight"><pre><span></span><span class="k">protected</span><span class="w"> </span><span class="nx">applyStashedOp</span><span class="p">(</span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="kt">unknown</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Not supported&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The full implementation is in <a href="https://github.com/vladris/fluid-ledger/blob/main/packages/dds/src/ledger.ts">ledger.ts</a>.</p>
+
+<p>And that&#39;s it! We have a fully functioning distributed data structure we can
+use to model games.</p>
+
+<h2>Demo</h2>
+
+<p>The GitHub repo also includes a <a href="https://github.com/vladris/fluid-ledger/tree/main/packages/demo-app">demo app</a>:
+a collaborative coloring application where multiple clients can simultaneously
+color a drawing.</p>
+
+<p>In this case, we model coloring operations as <code>x</code> and <code>y</code> coordinates, and a
+<code>color</code>. As users click on the drawing, we append these operations to the
+ledger and play them back to color the drawing using flood fill.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2023/04/12/notes-on-documentation.html">Notes on Documentation</a></span></div>
+
+
+</nav>
+<footer><span>By Vlad Rișcuția | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>
