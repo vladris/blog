@@ -490,7 +490,7 @@ since there is no service to send the op to and get it back sequenced.
 
 `clear()` is very similar:
 
-```typerscript
+```typescript
 private clearCore() {
     const data = this.data.slice();
 
