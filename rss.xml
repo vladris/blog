@@ -469,27 +469,27 @@ yet. In this case we call <code>appendCore()</code> to immediately append the va
 since there is no service to send the op to and get it back sequenced.</p>
 
 <p><code>clear()</code> is very similar:</p>
+<div class="highlight"><pre><span/><span class="k">private</span><span class="w"> </span><span class="nx">clearCore</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">slice</span><span class="p">();</span>
 
-<pre><code>private clearCore() {
-    const data = this.data.slice();
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
 
-    this.data = [];
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s2">"clear"</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">);</span>
+<span class="p">}</span>
 
-    this.emit("clear", data);
-}
+<span class="k">public</span><span class="w"> </span><span class="nx">clear</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isAttached</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">op</span><span class="o">:</span><span class="w"> </span><span class="kt">IClearOperation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"clear"</span>
+<span class="w">        </span><span class="p">};</span>
 
-public clear() {
-    if (this.isAttached()) {
-        const op: IClearOperation = {
-            type: "clear"
-        };
-
-        this.applyInnerOp(op);
-    }
-    else {
-        this.clearCore();
-    }
-}</code></pre>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">applyInnerOp</span><span class="p">(</span><span class="nx">op</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">clearCore</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 
 <p><code>clearCore()</code> effectively clears <code>data</code> and emits the <code>clear</code> event.</p>
 
