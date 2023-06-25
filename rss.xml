@@ -175,9 +175,10 @@ given prompt.</em></p>
 
 <p>5.4. <strong>Other approaches</strong></p>
 
-<p><em>I really liked the idea in this paper, where memory is a tree of
-summarizations provided by the LLM itself. Cover this and show the problem
-space is still ripe for innovation.</em></p></li>
+<p><em>I really liked the idea in <a href="https://arxiv.org/abs/2304.03442">this paper</a>,
+where memory importance is determined by the LLM itself, and retrieval is a
+combination of recency, importance, and embedding distance. Cover this and
+show the problem space is still ripe for innovation.</em></p></li>
 <li><p><strong>Interacting with External Systems</strong></p>
 
 <p><em>How we can make external tools available to LLMs.</em></p>
