@@ -165,9 +165,10 @@ the OpenAI API.*
 
    5.4. **Other approaches**
 
-   *I really liked the idea in this paper, where memory is a tree of
-   summarizations provided by the LLM itself. Cover this and show the problem
-   space is still ripe for innovation.*
+   *I really liked the idea in [this paper](https://arxiv.org/abs/2304.03442),
+   where memory importance is determined by the LLM itself, and retrieval is a
+   combination of recency, importance, and embedding distance. Cover this and
+   show the problem space is still ripe for innovation.*
 
 6. **Interacting with External Systems**
 
