@@ -92,5 +92,6 @@ all of these on Medium:
 * [Embeddings and Vector Databases](https://medium.com/@vladris/embeddings-and-vector-databases-732f9927b377)
 * [Interacting with External Systems](https://medium.com/@vladris/interacting-with-external-systems-1951e820b2e7)
 * [Planning](https://medium.com/@vladris/planning-d00cc124868f)
+* [Adversarial LLM Attacks](https://medium.com/@vladris/adversarial-llm-attacks-17ba03621e61)
 
 I hope you enjoy the book! Check it out here: [Large Language Models at Work](https://www.amazon.com/dp/B0CLSSM8RL).
