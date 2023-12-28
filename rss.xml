@@ -8,6 +8,213 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2023/12/28/notes-on-platform-development.html</link>
+      <guid>https://vladris.com/blog/2023/12/28/notes-on-platform-development.html</guid>
+      <title><![CDATA[Notes on Platform Development]]></title>
+      <description><![CDATA[<h1>Notes on Platform Development</h1>
+
+<p>I spent the past few years building a platform for Loop components within the
+Microsoft 365 ecosystem. While some of the learnings might only apply to our
+particular scenario, I think some observations apply broadly.</p>
+
+<p>Weâve been using 1P/2P/3P to mean our team (1P), other teams within Microsoft
+(2P), and external developers (3P). Loop started with a set of 1P components and
+we set out to extract a developer platform out of these that can be leveraged by
+other teams. We currently have a set of 2P components built on our platform, and
+a 3P developer story centered around <a href="https://learn.microsoft.com/en-us/microsoftteams/platform/m365-apps/cards-loop-component">Adaptive Cards</a>.</p>
+
+<p>In this blog post Iâll cover some of my learnings with regard to platform
+development.</p>
+
+<h2>1P != 3P</h2>
+
+<p>Aspirationally, we set out with the stated goal of <em>1P equals 3P</em>, meaning 3rd
+party developers should be building on the same platform as 1st party
+developers. Looking at it another way, if the platform is good enough for 1st
+party, it should be just as good for 3rd party - this is a statement of platform
+capabilities and maturity and a lofty goal.</p>
+
+<p>That said, I donât think this is realistic, especially within a product like
+Office, where user experience is paramount. That is because we have two
+audiences to consider: we have the developer audience - users building on our
+platform, and we have Office users, people who get to use the end product.
+Mediating between the two is quite a challenge.</p>
+
+<p>A simple example is the classic performance/security tradeoff. Especially as
+Loop components are embedded in other applications, what level of isolation do
+we provide? Loop components are built with web technology. An iframe provides
+great isolation (best security) but iframes add performance overhead (worse
+perf). If we host a Loop component without an iframe, we get better performance,
+but we open up the whole DOM to the component. If we threat model this, we
+immediately see that we donât necessarily need isolation for Loop components
+developed within Microsoft (we donât expect our partner teams to write malicious
+code) but we absolutely need to isolate code written by 3rd party developers. Of
+course, we could say âjust isolate everythingâ, which might even have other
+advantages, but do we want to take the perf hit? Our <em>other</em> audience, people
+who use our product, would be negatively impacted by an overhead we can
+technically avoid.</p>
+
+<p>Another example in the same vein: overall user experience. The more we make Loop
+components feel like part of the hosting app, the smoother the end user
+experience is. On the other hand, we canât realistically test every single Loop
+component built by any 3rd party developer. The way Office services and products
+are deployed and administered, tenant admins can configure which 3rd party
+extensions are enabled within the tenant. The Microsoft tenant we use internally
+has set some set of extensions available, but not all. That means there are
+always 3rd party extensions we never even see. Now if one of these extensions
+doesnât work properly (errors out, looks out of place, is slow etc.), end users
+might end up dissatisfied with the overall experience of using Office products.
+For internally developed components, we get to dogfood and keep a high bar, but
+this doesnât scale to a wide developer audience. Our current approach is to
+offer 3rd party development via Adaptive Cards. This way, we donât run 3rd party
+code on clients and we have a set of consistent UI controls. Ideally, weâd like
+to enable custom code but this at the time of writing weâre still thinking
+through the best approach considering all of the challenges listed above.</p>
+
+<p>Finally, I think another key difference is the product goals. The platform
+audience are the developers, but the product audience are the users. Thereâs
+usually a tension between these. For example, an internal team builds a Loop
+component. They come up with a requirement that is a âmustâ to deliver their
+scenario. For example, we had a component developed by a partner team that asked
+us to check the tenantâs Cloud Policy service to see whether the component
+should be <em>on</em> or <em>off</em>. This makes perfect sense in this case, since the
+backing service might not be running in the tenant. We offer tenant admins a
+different way to control 3rd party extensions, so this platform capability would
+not make sense for a 3rd party. In general, a lot of our internal platform
+capability requests come from the desire to provide the best possible end user
+experience. If our only customer were the developers using the platform, we
+would probably say ânoâ to some of these - not general enough, doesnât benefit
+3rd party etc. But, of course, Office has way more users than developers.</p>
+
+<p>I think the 1P/3P challenge is common to most platforms built from within
+product teams (or supporting product teams within the same company). With Loop,
+this is compounded by the fact we are deeply integrated within other
+applications. I can think of some notable examples when the strong push for a
+â1P equals 3Pâ platform ended up disastrously - Windows Longhorn was supposed to
+be built on a version of .NET that was just not good enough for core OS pieces.
+I can also think of many platforms that provide sufficient capabilities for 3rd
+party developers but 1st/2nd party developers donât use. And I think this is
+OK - building a platform for 3P lets you focus on the developer community needs.
+Supporting 1P/2P might be best served by focusing on the product goals and
+unique scenario needs rather than trying to generalize to a public platform.</p>
+
+<h2>Life stages</h2>
+
+<p>A platform goes through several life stages, each with its own characteristics
+and challenges. Looking back at how our platform evolved (and how I foresee the
+future), a successful platform goes through 4 life stages: <em>incubation</em>, <em>0 to
+1</em>, <em>stabilization</em>, and <em>commoditization</em>.</p>
+
+<h3>Incubation</h3>
+
+<p>At this stage, itâs all one team building both the what-will-become-a-platform
+and the product supported by this platform. During the incubation stage, the
+platform doesnât really have any  users (meaning developers leveraging the
+platform). We are free to toy with ideas. If we want to make a breaking change
+to an API, we can easily do it and fix the handful of internal calls. At this
+point, everything is in flux - the canvas is blank and we have plenty of room to
+innovate.</p>
+
+<p>On the other hand, we donât really have a clear idea of what developers would
+need out of the platform - we know what the main scenario we are supporting
+needs, but we donât have a feedback loop yet. At this stage, we need to rely on
+experience and intuition to set some initial direction.</p>
+
+<h3>0 to 1</h3>
+
+<p>This is the biggest growth stage. â0 to 1â is a nod to Peter Thielâs <a href="https://www.goodreads.com/book/show/18050143-zero-to-one">Zero to One</a> book. The
+platform goes from no users to a few users - and by âusersâ here I mean
+developers. Taking the platform from 0 (or incubation) to 1, means supporting a
+handful of âseriousâ production scenarios.</p>
+
+<p>We now have a feedback loop and developers able to give us requirements - we can
+now understand their needs rather than have to divine them ourselves. As a side
+note, this is the approach we took with Loop, where we worked closely with a set
+of 2P partners to light up scenarios and grow the platform to support these.</p>
+
+<p>At this stage, itâs already difficult to make breaking changes. Since there are
+already a set of dependencies on the platform, a breaking change requires a lot
+of coordination. Or some form of backwards compatibility. Or legacy support.
+There are different ways to go about this (maybe in another blog post), but the
+key point is we can no longer churn as fast as we could during the incubation
+stage. And added costs at the 0 to 1 stage are painful.</p>
+
+<p>Another challenge is generalization. We have a handful of partners with a
+handful of requests for the platform. And weâre in the growth stage, so we most
+likely need to move fast. Thereâs a big tension between how fast we can light up
+new platform capabilities and how much time we spend thinking through design
+patterns and future-proofing. If we just say âyesâ to every ask, we can move
+fast but risk ending up with a very gnarly platform that has many one-off pieces
+and a very inconsistent developer story. On the other hand, we can spend a lot
+of time iterating on design and predicting how an incoming requirement would
+scale when the platform is large, all the way until our partners give up on us
+or funding runs out. There is no silver bullet for this - you always end up
+somewhere in the middle, with parts of the platform that you wished were done
+differently, but hopefully still alive and kicking in the next stage.</p>
+
+<h3>Stabilization</h3>
+
+<p>At this point, enough developers depend on the platform that ad-hoc breaking
+changes are no longer possible. By âstabilizationâ I donât mean the platform
+stops growing - in fact, this is the stage where we get most feedback and
+requests. But while the platform continues to grow incrementally, changes become
+even more difficult as they can break the whole ecosystem.</p>
+
+<p>There are now enough user that early design decision that proved wrong become
+obvious, but itâs too late to change them. This is a natural âif I knew then
+what I know nowâ point for any platform that canât really be avoided.</p>
+
+<p>This is the point where most platform start producing new major version numbers
+that aim to address large swats of issues and add new bundles of functionality.
+But while during the incubation stage, a change could land in a few days, and in
+the 0 to 1 stage maybe weeks or at most months, breaking changes at this stage
+take years to land - many developers means not all of them are ready right-away
+to update their code to the newest patterns. The platform needs some form of
+long-term support for older versions and deprecation/removal becomes a long
+journey.</p>
+
+<p>On the other hand, the core of the platform is stable by now and battle-tested.
+The final step is the platform becoming a commodity.</p>
+
+<h3>Commoditization</h3>
+
+<p>At this stage, the platform is mature and robust. A large developer community
+depends on it and the platform is mostly feature complete. Some new requirements
+might pop up from time to time, but not very often.</p>
+
+<p>At this stage developers rely on existing behaviors and change is next to
+impossible. Thatâs because a lot of the developer solutions are also âdoneâ by
+now and people moved on. Nobody wants to go back and update things to support
+API changes. The platform is a useful commodity.</p>
+
+<p>This is also the stage where active development slows down and fewer engineers
+are required to keep things going. We havenât reached this stage with Loop, we
+are still growing the platform and moving fast. But any successfully platform
+should reach this stage - a low-churn state where its capabilities (and gotchas)
+are well understood and reliable.</p>
+
+<p>Each of the stages require a different approach to evolving the platform. The
+speed with which we add capabilities, churn, how updates are rolled out, how we
+design new features - all happen in different ways and at a different pace
+depending on where the platform is and its number of users.</p>
+
+<h2>Summary</h2>
+
+<p>In this post I covered two main aspects of platform development: the tension
+between supporting 3rd party developers and ensuring end users have the best
+possible experience; and the different stages of a platform. As usage increases,
+changes become more difficult and early decisions solidify, for better or worse.</p>
+
+<p>If I look at other platforms, I can easily see how they went through the same
+growing pains and challenges.</p>
+
+<p>Iâll probably have more to write on the topic of platform development, since
+this has been my main job for a while now.</p>
+]]></description>
+      <pubDate>Thu, 28 Dec 2023 00:00:00 -0800</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2023/11/28/mental-poker-part-3-transport.html</link>
       <guid>https://vladris.com/blog/2023/11/28/mental-poker-part-3-transport.html</guid>
       <title><![CDATA[Mental Poker Part 3: Transport]]></title>
