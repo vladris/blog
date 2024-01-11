@@ -8,6 +8,980 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2024/01/10/notes-on-advent-of-code-2023.html</link>
+      <guid>https://vladris.com/blog/2024/01/10/notes-on-advent-of-code-2023.html</guid>
+      <title><![CDATA[Notes on Advent of Code 2023]]></title>
+      <description><![CDATA[<h1>Notes on Advent of Code 2023</h1>
+
+<p>I always have fun with <a href="https://adventofcode.com">Advent of Code</a> every
+December, and last year I did write <a href="https://vladris.com/blog/2023/01/07/notes-on-advent-of-code-2022.html">a blog post</a>
+covering some of the more interesting problems I worked through. I'll continue
+the tradition this year.</p>
+
+<p>I'll repeat my disclaimer from last time:</p>
+
+<blockquote>
+<p><strong>Disclaimer on my solutions</strong></p>
+
+<p>I use Python because I find it easiest for this type of coding. I treat
+solving these as a write-only exercise. I do it for the problem-solving bit,
+so I don't comment the code &amp; once I find the solution I consider it <q>done</q> -
+I don't revisit and try to optimize even though sometimes I strongly feel
+like there is a better solution. I don't even share code between part 1 and
+part 2 - once part 1 is solved, I copy/paste the solution and change it to
+solve part 2, so each can be run independently. I also rarely use libraries,
+and when I do it's some standard ones like <code>re</code>, <code>itertools</code>, or <code>math</code>. The
+code has no comments and is littered with magic numbers and strange variable
+names. This is not how I usually code, rather my decadent holiday indulgence.
+I wasn't thinking I will end up writing a blog post discussing my solutions so
+I would like to apologize for the code being hard to read.</p>
+</blockquote>
+
+<p>All my solutions are on my GitHubÂ <strong><a href="https://github.com/vladris/aoc">here</a></strong>.</p>
+
+<p>This time around, I did use GitHub Copilot, with mixed results. In general, it
+mostly helped with tedious work, like implementing the same thing to work in
+different directions - there are problems that require we do something while
+heading north, then same thing while heading east etc. I did also observe it
+produce buggy code that I had to manually edit.</p>
+
+<p>I'll skip over the first few days as they tend to be very easy.</p>
+
+<h2>Day 9</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/9">here</a>.</p>
+
+<p>This is an easy problem, I just want to call out a shortcut: for part 2, to
+exact same algorithm as in part 1 works if you first reverse the input. This was
+a neat discovery that saved me a bunch of work.</p>
+
+<h2>Day 10</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/10">here</a>.</p>
+
+<p>Part 1 was again very straightforward. I found part 2 a bit more interesting,
+especially the fact that we can determine whether a tile is <q>inside</q> or
+<q>outside</q> our loop by only looking at a single row (or column). We always start
+<q>outside</q>, then scan each tile. If we hit a <code>|</code>, then we toggle from <q>outside</q>
+to <q>inside</q> and vice-versa. If we hit an <code>L</code> or a <code>F</code>, we continue while we're
+on a <code>-</code> (these are all parts of our loop), and we stop on the <code>7</code> or <code>J</code>. If we
+started on <code>L</code> and ended on <code>J</code> or started on <code>F</code> and eded on <code>7</code> - meaning the
+pipe bends and turns back the way we came, we don't change our state. On the
+other hand, if the pipe goes <q>down</q> from <code>L</code> to <code>7</code> or <q>up</q> from <code>F</code> to <code>J</code>,
+then we toggle <q>outside</q>/<q>inside</q>. For each non-pipe tile, if we're <q>inside</q>, we
+count it. Maybe this is obvious but it took me a bit to figure it out.</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">scan_line</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
+    <span class="n">total</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">inside</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">inside</span><span class="p">:</span>
+                <span class="n">total</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="n">ln</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'|'</span><span class="p">:</span>
+                <span class="n">inside</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">inside</span>
+                <span class="k">continue</span>
+            
+            <span class="c1"># grid[ln][i] in 'LF'</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="n">ln</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">while</span> <span class="n">grid</span><span class="p">[</span><span class="n">ln</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'-'</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="s1">'L'</span> <span class="ow">and</span> <span class="n">grid</span><span class="p">[</span><span class="n">ln</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'7'</span> <span class="ow">or</span> \
+               <span class="n">start</span> <span class="o">==</span> <span class="s1">'F'</span> <span class="ow">and</span> <span class="n">grid</span><span class="p">[</span><span class="n">ln</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'J'</span><span class="p">:</span>
+               <span class="n">inside</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">inside</span>
+    <span class="k">return</span> <span class="n">total</span>
+</pre></div>
+
+<p>In the code above, <code>visited</code> tracks pipe segments (as opposed to tiles that are
+not part of the pipe).</p>
+
+<h2>Day 11</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/11">here</a>.</p>
+
+<p>Day 11 was easy, so not much to discuss. Use Manhattan distance for part 1 and
+in part 2, just add <code>999999</code> for every row or column crossed that doesn't
+contain any galaxies.</p>
+
+<h2>Day 12</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/12">here</a>.</p>
+
+<p>Part 1 was very easy.</p>
+
+<p>Part 2 was a bit harder because just trying out every combination takes forever
+to run. I initially tried to do something more clever around deciding when to
+turn a <code>?</code> into <code>#</code> or <code>.</code> depending on what's around it, where we are in the
+sequence, etc. But ultimately it turns out just adding memoization made the
+combinatorial approach run very fast.</p>
+
+<h2>Day 13</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/13">here</a>.</p>
+
+<p>This was a very easy one, so I won't cover it.</p>
+
+<h2>Day 14</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/14">here</a>.</p>
+
+<p>This was easy but part 2 was tedious, having to implement <code>tilt</code> functions for
+various directions. This is where Copilot saved me a bunch of typing.</p>
+
+<p>Once we have the <code>tilt</code> functions, we can implement a <code>cycle</code> function that
+tilts things north, then west, then south, then east. Finally, we need a bit of
+math to figure out the final position: we save the state of the grid after each
+cycle and as soon as we find a configuration we encountered before, it means we
+found our cycle. Based on this, we know how many steps we have before the cycle,
+what the length of the cycle is, so we can compute the state after 1000000000
+cycles:</p>
+<div class="highlight"><pre><span/><span class="n">pos</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">while</span> <span class="p">(</span><span class="n">state</span> <span class="o">:=</span> <span class="n">cycle</span><span class="p">())</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+    <span class="n">pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+<span class="n">lead</span><span class="p">,</span> <span class="n">loop</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">state</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">-</span> <span class="n">pos</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1000000000</span> <span class="o">-</span> <span class="n">lead</span><span class="p">)</span> <span class="o">%</span> <span class="n">loop</span>
+</pre></div>
+
+<p>With this, we need to count the load of the north support beams for the grid we
+have at <code>pos[lead + d - 1]</code>.</p>
+
+<h2>Day 15</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/15">here</a>.</p>
+
+<p>Another very easy one that I won't cover.</p>
+
+<h2>Day 16</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/16">here</a>.</p>
+
+<p>This one was also easy and tedious, as we have to handle the different types of
+reflections. Another one where Copilot saved me a lot of typing.</p>
+
+<h2>Day 17</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/17">here</a>.</p>
+
+<h3>Part 1</h3>
+
+<p>This was a fairly straightforward depth-first search, where we keep a cache of
+how much heat loss we have up to a certain point. The one interesting
+complication is that we can only move forward 3 times. In the original
+implementation, I keyed the cache on grid coordinates + direction we're going
+in + how many steps we already took in that direction. This worked in
+reasonable time.</p>
+
+<h3>Part 2</h3>
+
+<p>In part 2, we now have to move at least 4 steps in one direction and at
+most 10. The cache I used in part 1 doesn't work that well anymore. On the
+other hand, I realized that rather than keeping track of direction and how
+many steps we took in that direction so far, I can model this differently: we
+are moving either horizontally or vertically. If we're at some point and moving
+horizontally, we can expand our search to all destination points (from 4 to 10
+away horizontally or vertically) and flip the direction. For example, if we
+just moved horizontally to the right, we won't move further to the right as we
+already covered all those cases, and we won't move back left as the crucible
+can't turn 180 degrees. That means the only possible directions we can take are
+up or down in this case, meaning since we just moved horizontally, we now have
+to move vertically.</p>
+
+<p>This makes our cache much smaller: our key is the coordinates of the cell and
+the direction we were moving in. This also makes the depth-first search
+complete very fast.</p>
+<div class="highlight"><pre><span/><span class="n">best</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="p">{},</span> <span class="mi">1000000</span>
+
+<span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">end</span>
+
+    <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;=</span> <span class="n">end</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">:</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="ow">in</span> <span class="n">best</span> <span class="ow">and</span> <span class="n">best</span><span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">)]</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">best</span><span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">)]</span> <span class="o">=</span> <span class="n">p</span>
+    
+    <span class="k">if</span> <span class="n">d</span> <span class="o">!=</span> <span class="s1">'H'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">]):</span>
+            <span class="n">pxr</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">3</span><span class="p">][</span><span class="n">y</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">+</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">):</span>
+                    <span class="n">pxr</span> <span class="o">+=</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">i</span><span class="p">][</span><span class="n">y</span><span class="p">]</span>
+                    <span class="n">search</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s1">'H'</span><span class="p">,</span> <span class="n">pxr</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pxl</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="mi">2</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="mi">3</span><span class="p">][</span><span class="n">y</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">-</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">pxl</span> <span class="o">+=</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="n">i</span><span class="p">][</span><span class="n">y</span><span class="p">]</span>
+                    <span class="n">search</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s1">'H'</span><span class="p">,</span> <span class="n">pxl</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">d</span> <span class="o">!=</span> <span class="s1">'V'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">pyd</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">y</span> <span class="o">+</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="n">pyd</span> <span class="o">+=</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span>
+                    <span class="n">search</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="s1">'V'</span><span class="p">,</span> <span class="n">pyd</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">&gt;-</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pyu</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">-</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">-</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">y</span> <span class="o">-</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">pyu</span> <span class="o">+=</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span>
+                    <span class="n">search</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="s1">'V'</span><span class="p">,</span> <span class="n">pyu</span><span class="p">)</span>
+</pre></div>
+
+<p>I realized this approach actually applies well to part 1 too, and retrofitted it
+there. The only difference is instead of expanding to the cells +4 to +10 in a
+direction, we expand to the cells +1 to +3.</p>
+
+<h2>Day 18</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/18">here</a>.</p>
+
+<h3>Part 1</h3>
+
+<p>The first part is easy - we plot the input on a grid, then flood fill to find
+the area.</p>
+
+<p>In the below code, <code>dig</code> is the input, processed as a tuple of direction and
+number of steps:</p>
+<div class="highlight"><pre><span/><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grid</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">{(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)}</span>
+<span class="k">for</span> <span class="n">dig</span> <span class="ow">in</span> <span class="n">digs</span><span class="p">:</span>
+    <span class="k">match</span> <span class="n">dig</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">case</span> <span class="s1">'U'</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">y</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">case</span> <span class="s1">'R'</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">case</span> <span class="s1">'D'</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">case</span> <span class="s1">'L'</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">x</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">]),</span> <span class="nb">min</span><span class="p">([</span><span class="n">y</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">])</span>
+<span class="k">while</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">:</span>
+    <span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="n">queue</span> <span class="o">=</span> <span class="p">[(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">:</span>
+        <span class="k">continue</span>
+
+    <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+    <span class="n">queue</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+</pre></div>
+
+<h3>Part 2</h3>
+
+<p>Part 2 is trickier, as the number are way larger and the same flood fill
+algorithm won't work. My approach was to divide the area into rectangles: as we
+process all movements, we end up with a set of <code>(x, y)</code> tuples of points where
+our line changes direction. If we sort all the <code>x</code> coordinates and all <code>y</code>
+coordinates independently, we end up with a grid where we can treat each pair of
+subsequent <code>x</code>s and <code>y</code>s as describing a rectangle on our grid.</p>
+<div class="highlight"><pre><span/><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">points</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+<span class="k">for</span> <span class="n">dig</span> <span class="ow">in</span> <span class="n">digs</span><span class="p">:</span>
+    <span class="k">match</span> <span class="n">dig</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="n">x</span> <span class="o">+=</span> <span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">case</span> <span class="mi">1</span><span class="p">:</span> <span class="n">y</span> <span class="o">+=</span> <span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">case</span> <span class="mi">2</span><span class="p">:</span> <span class="n">x</span> <span class="o">-=</span> <span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">case</span> <span class="mi">3</span><span class="p">:</span> <span class="n">y</span> <span class="o">-=</span> <span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+
+<span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">points</span><span class="p">}),</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">y</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">points</span><span class="p">})</span>
+</pre></div>
+
+<p>Where <code>digs</code> above represents the input, processed as before into direction and
+number of steps tuples.</p>
+
+<p>Now <code>points</code> contains all the connected points we get following the directions,
+which means a pair of subsequent points describes a line. Once we have this, we
+can start a flood fill in one of the rectangles and proceed as follows: if there
+is a north boundary, meaning we have a line between our top left and top right
+coordinates, then we don't recurse north; otherwise we go to the rectangle north
+of our current rectangle and repeat the algorithm there. Same for east, south,
+west.</p>
+
+<p>Since we have to consider each point in the terrain in our area calculation, we
+need to be careful how we measure the boundaries of each rectangle so we don't
+double-count or omit points. To ensure this, my approach was that for each
+rectangle we count, we count an extra line north (if there is no boundary) and
+an extra line east (if there is no boundary). If there's neither a north nor an
+east boundary, then we add 1 for the north-east corner. This should ensure we
+don't double-count, as each rectangle only considers its north and east
+boundaries, and we don't miss anything, as any rectangle without a boundary will
+count the additional points. What remains is the perimeter of our surface, which
+we add it at the end. The explanations might sound convoluted, but the code is
+very easy to understand:</p>
+<div class="highlight"><pre><span/><span class="n">queue</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">visited</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">set</span><span class="p">()</span>
+<span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">e</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xs</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="n">x</span><span class="p">])</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ys</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">y</span><span class="p">])</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xs</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">x</span><span class="p">])</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ys</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="n">y</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+        <span class="k">continue</span>
+    <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+
+    <span class="n">total</span> <span class="o">+=</span> <span class="p">(</span><span class="n">e</span> <span class="o">-</span> <span class="n">w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">s</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">found_n</span><span class="p">,</span> <span class="n">found_s</span><span class="p">,</span> <span class="n">found_e</span><span class="p">,</span> <span class="n">found_w</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+        <span class="k">if</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">n</span> <span class="ow">and</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">found_n</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span> <span class="ow">and</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">found_s</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">e</span> <span class="ow">and</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">found_e</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">w</span> <span class="ow">and</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">found_w</span> <span class="o">=</span> <span class="kc">True</span>
+                
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found_n</span><span class="p">:</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">e</span> <span class="o">-</span> <span class="n">w</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found_s</span><span class="p">:</span>
+        <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found_e</span><span class="p">:</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">n</span> <span class="o">-</span> <span class="n">s</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">e</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found_w</span><span class="p">:</span>
+        <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found_n</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">found_e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="n">total</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">dig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">dig</span> <span class="ow">in</span> <span class="n">digs</span><span class="p">])</span>
+</pre></div>
+
+<h2>Day 19</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/19">here</a>.</p>
+
+<h3>Part 1</h3>
+
+<p>For the first part, we can process rule by rule.</p>
+
+<h3>Part 2</h3>
+
+<p>For the second part, start with bounds: <code>(1, 4000)</code> for all of <code>xmas</code>. Then at
+each decision point, recurse updating bounds. Whenever we hit an <code>A</code>, add the
+bounds to the list of accepted bounds.</p>
+
+<p>Bounds are guaranteed to never overlap, by definition.</p>
+<div class="highlight"><pre><span/><span class="n">accepts</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">def</span> <span class="nf">execute_workflow</span><span class="p">(</span><span class="n">workflow_key</span><span class="p">,</span> <span class="n">bounds</span><span class="p">):</span>
+    <span class="n">workflow</span> <span class="o">=</span> <span class="n">workflows</span><span class="p">[</span><span class="n">workflow_key</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">workflow</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rule</span> <span class="o">==</span> <span class="s1">'A'</span><span class="p">:</span>
+            <span class="n">accepts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bounds</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">rule</span> <span class="o">==</span> <span class="s1">'R'</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">workflows</span><span class="p">:</span>
+            <span class="n">execute_workflow</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="n">bounds</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">check</span><span class="p">,</span> <span class="n">next_workflow</span> <span class="o">=</span> <span class="n">rule</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">':'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">'&lt;'</span> <span class="ow">in</span> <span class="n">check</span><span class="p">:</span>
+            <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">check</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'&lt;'</span><span class="p">)</span>
+            <span class="n">nb</span> <span class="o">=</span> <span class="n">bounds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">nb</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nb</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">bounds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">bounds</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="s1">'&gt;'</span> <span class="ow">in</span> <span class="n">check</span><span class="p">:</span>
+            <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">check</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'&gt;'</span><span class="p">)</span>
+            <span class="n">nb</span> <span class="o">=</span> <span class="n">bounds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">nb</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nb</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">bounds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">bounds</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+
+        <span class="n">execute_workflow</span><span class="p">(</span><span class="n">next_workflow</span><span class="p">,</span> <span class="n">nb</span><span class="p">)</span>
+
+<span class="n">execute_workflow</span><span class="p">(</span><span class="s1">'in'</span><span class="p">,</span> <span class="p">{</span><span class="s1">'x'</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4000</span><span class="p">),</span> <span class="s1">'m'</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4000</span><span class="p">),</span> <span class="s1">'a'</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4000</span><span class="p">),</span> <span class="s1">'s'</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4000</span><span class="p">)})</span>
+</pre></div>
+
+<p>This gives us all accepted ranges for each of <code>x</code>, <code>m</code>, <code>a</code>, and <code>s</code>.</p>
+
+<h2>Day 20</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/20">here</a>.</p>
+
+<h3>Part 1</h3>
+
+<p>For the first part, we can model the various module types as classes with a
+common interface and different implementations. Since one of the requirements is
+to process pulses in the order they are sent, we will use a queue rather than
+have objects call each other based on connections. So rather than module <code>A</code>
+directly calling connected module <code>B</code> when it receives a signal (which would
+cause out-of-order processing), model <code>A</code> will just queue a signal for module
+<code>B</code>, which will be processed once the signals queued before this one are already
+processed.</p>
+
+<p>I won't share the code here as it is straightforward. You can find it on my
+GitHub.</p>
+
+<h3>Part 2</h3>
+
+<p>This one was one of the most interesting problems this year. Simply simulating
+button presses wouldn't work. I ended up dumping the diagram as a dependency
+graph and it looks like the only module that signals <code>rx</code> is a conjunction
+module with multiple inputs.</p>
+
+<p>Conjunction modules emit a low pulse when they remember high pulses being sent
+by all their connected inputs. In this case, we can simulate button presses and
+keep track when each input to this conjunction module emits a high pulse. Then
+we compute the least common multiple of these to determine when the <code>rx</code> module
+will get a low signal.</p>
+
+<p>My full solution is
+<a href="https://github.com/vladris/aoc/blob/master/2023/20/02.py">here</a>, though I'm
+still pretty sure it is topology-dependent. Meaning we might have a different
+set up where the inputs to this conjunction model are not fully independent,
+which might make LCM not return the correct answer.</p>
+
+<h2>Day 21</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/21">here</a>.</p>
+
+<h3>Part 1</h3>
+
+<p>Part 1 is trivial, we can easily simulate 64 steps and count reachable spots.</p>
+
+<h3>Part 2</h3>
+
+<p>The second part is much more tricky - this is actually the problem I spent the
+most time on. Since the garden is infinite, and we are looking for a very high
+number of steps, we can't use the same approach as in part 1 to simply simulate
+moves.</p>
+
+<p>Let's now call a <q>tile</q> a repetition of the garden on our infinite grid. Say we
+start with the garden at <code>(0, 0)</code>. Then as we expand beyond its bounds, we reach
+tiles <code>(-1, 0)</code>, <code>(1, 0)</code>, <code>(0, -1)</code>, <code>(0, 1)</code>, which are repetitions of our
+initial garden.</p>
+
+<p>The two observations that helped here were:</p>
+
+<ol>
+<li>Once we reach all possible spots in a garden, following steps just cycle
+between the same two sets of reachable spots. Meaning once we spend enough
+time in a garden, we know how many steps are reachable in that particular
+garden by just looking at the modulo of total number of steps.</li>
+<li>As the number of steps increases over the infinitely repeating garden, there
+is a pattern to how the covered area grows. This is a diamond shape where the
+center is always fully covered garden tiles (see the first observation above)
+and the surrounding tiles are at various stages of being visited.</li>
+</ol>
+
+<p>In fact, after we grow beyond the first 4 surrounding tiles, it seems like the
+garden grows with a periodicity of the size of the garden. Meaning every
+<code>len(grid)</code> steps, we reach new tiles. There are a few cases to consider -
+north, east, south, west, diagonals.</p>
+
+<p>My approach was to do a probe - simulate the first few steps and record the
+results.</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">probe</span><span class="p">():</span>
+    <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">tiles</span><span class="p">,</span> <span class="n">progress</span> <span class="o">=</span> <span class="p">{(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)},</span> <span class="p">{(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+    
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">41</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">new_tiles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">grid</span><span class="p">[(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)][</span><span class="n">y</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">!=</span> <span class="s1">'#'</span><span class="p">:</span>
+                <span class="n">new_tiles</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">grid</span><span class="p">[(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)][</span><span class="n">y</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">!=</span> <span class="s1">'#'</span><span class="p">:</span>
+                <span class="n">new_tiles</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)][(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">!=</span> <span class="s1">'#'</span><span class="p">:</span>
+                <span class="n">new_tiles</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)][(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">!=</span> <span class="s1">'#'</span><span class="p">:</span>
+                <span class="n">new_tiles</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">tiles</span> <span class="o">=</span> <span class="n">new_tiles</span>
+
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
+            <span class="n">sq_x</span><span class="p">,</span> <span class="n">sq_y</span> <span class="o">=</span> <span class="n">x</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">),</span> <span class="n">y</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">sq_x</span><span class="p">,</span> <span class="n">sq_y</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">progress</span><span class="p">:</span>
+                <span class="n">progress</span><span class="p">[(</span><span class="n">sq_x</span><span class="p">,</span> <span class="n">sq_y</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">progress</span><span class="p">[(</span><span class="n">sq_x</span><span class="p">,</span> <span class="n">sq_y</span><span class="p">)]:</span>
+                <span class="n">progress</span><span class="p">[(</span><span class="n">sq_x</span><span class="p">,</span> <span class="n">sq_y</span><span class="p">)][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">progress</span><span class="p">[(</span><span class="n">sq_x</span><span class="p">,</span> <span class="n">sq_y</span><span class="p">)][</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">progress</span>
+</pre></div>
+
+<p>Here <code>progress</code> keeps track, for each tile (keyed as set of <code>(x, y)</code> coordinates
+offset from <code>(0, 0)</code>), of how many spots are reachable at a given time. I run
+this until <code>progress</code> grows enough for the repeating pattern to show - because
+we start from the center of a garden but in all other tiles we enter from a
+side, it takes a couple of iterations for the pattern to stabilize. My guess is
+this probe could be smaller with some better math, but that's what I have.</p>
+
+<p>With this, given a number of steps, we can reduce it using <code>steps % len(grid)</code>
+to a smaller value we can loop in our <code>progress</code> record. The reasoning being, if
+the pattern repeats, it doesn't really matter whether we are 3 steps into tile
+<code>(-1000, 0)</code> or 3 steps into tile <code>(-3, 0)</code>.</p>
+
+<p>The tedious part was determining the right offsets and special cases when
+computing the total number of squares. For example, even for the tiles that are
+fully covered, we'll have a subset where tiles are on the <q>odd</q> state of squares
+and a subset where tiles are on the âeven" state.</p>
+
+<p>I ended up with the following formula (which might still be buggy, but seemed to
+have worked for my input):</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">at</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">progress</span><span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)][</span><span class="n">step</span><span class="p">]</span> <span class="k">if</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">progress</span><span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)]</span> <span class="k">else</span> <span class="mi">0</span>
+
+
+<span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+    <span class="n">even</span><span class="p">,</span> <span class="n">odd</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">steps</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">steps</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">steps</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">even</span> <span class="o">+=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">i</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">odd</span> <span class="o">+=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">i</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">odd</span> <span class="o">+=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">i</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">even</span> <span class="o">+=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">i</span>
+
+    <span class="n">total</span> <span class="o">=</span> <span class="n">even</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">odd</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">at</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">at</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">at</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">at</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="n">steps</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    
+    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">at</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">steps</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">total</span>
+</pre></div>
+
+<p>I'm covering all inner <q>even</q> and âodd" tiles, then the directly north, east,
+south, and west tiles, then two layers of diagonals. Again, I have a feeling
+this could be simpler, but I didn't bother to optimize it further.</p>
+
+<h2>Day 22</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/22">here</a>.</p>
+
+<h3>Part 1</h3>
+
+<p>For part one, we sort bricks by <code>z</code> coordinate (ascending), then we make each
+brick <q>fall</q>. We do this by decrementing their <code>z</code> coordinate and checking
+whether they intersect with any other brick.</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">intersect</span><span class="p">(</span><span class="n">brick1</span><span class="p">,</span> <span class="n">brick2</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">brick1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">brick2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="ow">or</span> <span class="n">brick1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">brick2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">if</span> <span class="n">brick1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">brick2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="ow">or</span> <span class="n">brick1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">brick2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">if</span> <span class="n">brick1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="n">brick2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="ow">or</span> <span class="n">brick1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">&lt;</span> <span class="n">brick2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="k">def</span> <span class="nf">slide_down</span><span class="p">(</span><span class="n">brick</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">delta</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">delta</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">fall</span><span class="p">(</span><span class="n">brick</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="n">result</span><span class="p">,</span> <span class="n">orig</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">brick</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">brick</span> <span class="o">=</span> <span class="n">slide_down</span><span class="p">(</span><span class="n">brick</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bricks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">orig</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">intersect</span><span class="p">(</span><span class="n">brick</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">result</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="n">bricks</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">bricks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">brick</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">bricks</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">delta</span> <span class="o">:=</span> <span class="n">fall</span><span class="p">(</span><span class="n">brick</span><span class="p">):</span>
+        <span class="n">bricks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">slide_down</span><span class="p">(</span><span class="n">brick</span><span class="p">,</span> <span class="n">delta</span><span class="p">)</span>
+</pre></div>
+
+<p>Once every brick that could fall has fallen to its final position, we need to
+find the <q>critical</q> bricks - the bricks that are the only support for some other
+bricks. We do this by shifting down each brick again 1 <code>z</code> and determining how
+many bricks it intersects with. If a shifted brick only intersects with one
+other brick, that is a âcritical<q>brick, so we add it to our set of âcritical</q>
+support bricks. All other bricks can be safely removed.</p>
+<div class="highlight"><pre><span/><span class="n">critical</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">brick</span> <span class="ow">in</span> <span class="n">bricks</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">continue</span>
+
+    <span class="n">supported_by</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="n">slide_down</span><span class="p">(</span><span class="n">brick</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">bricks</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">brick</span> <span class="o">==</span> <span class="n">b</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">intersect</span><span class="p">(</span><span class="n">nb</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="n">supported_by</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">supported_by</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">critical</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">supported_by</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bricks</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">critical</span><span class="p">))</span>
+</pre></div>
+
+<h3>Part 2</h3>
+
+<p>In part 2, we need to figure out which bricks is each brick supported by. We can
+use a similar algorithm to part 1, where we shift <code>z</code> by 1 and check which
+bricks we intersect. Then we can build a dependency graph of which bricks is
+supported by which other bricks.</p>
+<div class="highlight"><pre><span/><span class="n">supported_by</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">brick</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">bricks</span><span class="p">):</span>
+    <span class="n">supported_by</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">continue</span>
+
+    <span class="n">nb</span> <span class="o">=</span> <span class="n">slide_down</span><span class="p">(</span><span class="n">brick</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">bricks</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">intersect</span><span class="p">(</span><span class="n">nb</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="n">supported_by</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+</pre></div>
+
+<p>Then for each brick we remove, we can walk the <q>supported by</q> dependencies to
+determine which bricks would fall and would, in turn, cause other bricks to
+fall, without having to actually simulate falling.</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">count_falling</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">sup</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">supported_by</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">supported_by</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+    <span class="n">queue</span><span class="p">,</span> <span class="n">removed</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">removed</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">removed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">sup</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sup</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+                <span class="n">sup</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sup</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">removed</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">count_falling</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">supported_by</span><span class="p">))))</span>
+</pre></div>
+
+<h2>Day 23</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/23">here</a>.</p>
+
+<p>The main insight here for both part 1 and part 2 is that we can model the paths
+as a graph where each intersection (decision point) is a vertex and the paths
+between intersections are edges. With this representation, we simply need to
+find the longest path between our starting point and our end point.</p>
+
+<p>In part 1, we have a directed graph, as right before hitting each intersection,
+we have a <code>&gt;&lt;^v</code> constraint, making the path one-way. In part 2, we have an
+undirected graph.</p>
+
+<p>Note that the longest path problem in a graph is harder than the shortest path
+problem. That said, we are dealing with extremely small graphs.</p>
+
+<h2>Day 24</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/24">here</a>.</p>
+
+<h3>Part 1</h3>
+
+<p>Part 1 was fairly straightforward: for each pair of lines, solve the equation to
+find where they meet and check if within bounds (when lines are not parallel).</p>
+
+<p>Since each line is described by a point \((x_{origin}, y_{origin})\) and a vector \((dx, dy)\), we
+can represent them as</p>
+
+<p>\[\begin{cases}
+x = x_{origin} + dx * t \\
+y = y_{origin} + dy * t
+\end{cases}\]</p>
+
+<p>Then the lines intersect when</p>
+
+<p>\[\begin{cases}
+x_1 + dx_1 * t_1 = x_2 + dx_2 * t_2 \\
+y_1 + dy_1 * t_1 = y_2 + dy_2 * t_2
+\end{cases}\]</p>
+
+<p>We know all of \((x_1, y_1), (dx_1, dy_1), (x_2, y_2), (dx_2, dy_2)\) so we solve
+for \(t_1\) and \(t_2\).</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">intersect</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">v2</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">v1</span><span class="o">.</span><span class="n">dx</span> <span class="o">/</span> <span class="n">v1</span><span class="o">.</span><span class="n">dy</span> <span class="o">==</span> <span class="n">v2</span><span class="o">.</span><span class="n">dx</span> <span class="o">/</span> <span class="n">v2</span><span class="o">.</span><span class="n">dy</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">t2</span> <span class="o">=</span> <span class="p">(</span><span class="n">v1</span><span class="o">.</span><span class="n">dx</span> <span class="o">*</span> <span class="p">(</span><span class="n">p2</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">p1</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="n">v1</span><span class="o">.</span><span class="n">dy</span> <span class="o">*</span> <span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">p2</span><span class="o">.</span><span class="n">x</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">dx</span> <span class="o">*</span> <span class="n">v1</span><span class="o">.</span><span class="n">dy</span> <span class="o">-</span> <span class="n">v2</span><span class="o">.</span><span class="n">dy</span> <span class="o">*</span> <span class="n">v1</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="p">(</span><span class="n">p2</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">v2</span><span class="o">.</span><span class="n">dy</span> <span class="o">*</span> <span class="n">t2</span> <span class="o">-</span> <span class="n">p1</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">/</span> <span class="n">v1</span><span class="o">.</span><span class="n">dy</span>
+
+    <span class="k">return</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span>
+</pre></div>
+
+<p>Once we have <code>t1</code> and <code>t2</code>, we need to check both are positive (so intersection didn't happen in the past), and make sure the intersection point, which is either <code>x1 + dx1 * t1</code>, <code>y1 + dx1 * t1</code> or <code>x2 + dx2 * t2</code>, <code>y2 + dx2 * t2</code>, is within our bounds (at leastÂ 200000000000000Â and at mostÂ 400000000000000).</p>
+
+<p>If that's the case, then we found an intersection and we can add it to the total.</p>
+
+<h3>Part 2</h3>
+
+<p>Part 2 was really fun. We now have 3 dimensions, so a line is represented as</p>
+
+<p>\[\begin{cases}
+x = x_{origin} + dx * t \\
+y = y_{origin} + dy * t \\
+z = z_{origin} + dz * t
+\end{cases}\]</p>
+
+<p>We need to find a line (the trajectory of our rock) that intersects each line in
+our input at a different time, such that for some \(t\) and line \(l\), we have</p>
+
+<p>\[\begin{cases}
+x_{origin_{l}} + dx_l * t = x_{origin_{rock}} + dx_{rock} * t \\
+y_{origin_{l}} + dy_l * t = y_{origin_{rock}} + dy_{rock} * t \\
+z_{origin_{l}} + dz_l * t = z_{origin_{rock}} + dz_{rock} * t
+\end{cases}\]</p>
+
+<p>One way to solve this is using linear algebra. If we take 3 different hailstorms
+and our rock, we end up with the following set of equations:</p>
+
+<p>\[\begin{cases}
+x_{origin_{1}} + dx_1 * t_1 = x_{origin_{rock}} + dx_{rock} * t_1 \\
+y_{origin_{1}} + dy_1 * t_1 = y_{origin_{rock}} + dy_{rock} * t_1 \\
+z_{origin_{1}} + dz_1 * t_1 = z_{origin_{rock}} + dz_{rock} * t_1 \\
+x_{origin_{2}} + dx_2 * t_2 = x_{origin_{rock}} + dx_{rock} * t_2 \\
+y_{origin_{2}} + dy_2 * t_2 = y_{origin_{rock}} + dy_{rock} * t_2 \\
+z_{origin_{2}} + dz_2 * t_2 = z_{origin_{rock}} + dz_{rock} * t_2 \\
+x_{origin_{3}} + dx_3 * t_3 = x_{origin_{rock}} + dx_{rock} * t_3 \\
+y_{origin_{3}} + dy_3 * t_3 = y_{origin_{rock}} + dy_{rock} * t_3 \\
+z_{origin_{3}} + dz_3 * t_3 = z_{origin_{rock}} + dz_{rock} * t_3
+\end{cases}\]</p>
+
+<p>In the above system, we know all of the starting points and vectors of the
+hailstorms. Our unknowns are \(t_1, t_2, t_3, x_{origin_{rock}},
+y_{origin_{rock}}, z_{origin_{rock}}, dx_{rock}, dy_{rock}, dz_{rock}\). That's
+9 unknowns to 9 equations, so it should be solvable.</p>
+
+<p>While this approach works, I didn't want to use a numerical library to solve
+this (I'm trying to keep dependencies at a minimum), and implementing the math
+from scratch was a bit too much for me. I thought of a different approach: as
+long as we can find a rock trajectory that intersects the first couple of
+hailstorms at the right times, we most likely found our solution.</p>
+
+<p>\[\begin{cases}
+x_{origin_{rock}} + dx_{rock} * t_1 = x_1 + dx_1 * t_1 \\
+y_{origin_{rock}} + dy_{rock} * t_1 = y_1 + dy_1 * t_1 \\
+x_{origin_{rock}} + dx_{rock} * t_2 = x_2 + dx_2 * t_2 \\
+y_{origin_{rock}} + dy_{rock} * t_2 = y_2 + dy_2 * t_2
+\end{cases}\]</p>
+
+<p>If we solve this for \(t_1\) and \(t_2\), we can then easily determine
+\(z_{origin_{rock}}\) and \(dz_{rock}\).</p>
+
+<p>In the above set of equations, we have too many unknowns: \(x_{origin_{rock}},
+dx_{rock}, y_{origin_{rock}}, dy_{rock}, t_1, t_2\). We can reduce this number
+by trying out different values for a couple of these unknowns. While the ranges
+of possible values for \(x_{origin_{rock}}, y_{origin_{rock}}, t_1, t_2\) are
+very large, so unfeasible to cover, \(dx_{origin}\) and \(dy_{origin}\) ranges
+should be small - if these values are large, our rock will quickly shoot past
+all the other hailstorms.</p>
+
+<p>My approach was to try all possible values between -1000 and 1000 for both of
+these, then see if we can find \(x_{origin_{rock}}, y_{origin_{rock}}, t_1,
+t_2\) such that these intersect the first two hailstorms. If we do, we then
+find \(z_{origin_{rock}}, dz_{rock}\) (easy to find since now we know \(t_1, t_2\)).
+We have an additional helpful constraint: the origin coordinates of the rock
+need to be integers.</p>
+
+<p>Then we just need to check that indeed for the given \((x_{origin_{rock}},
+y_{origin_{rock}}, z_{origin_{rock}})\) and \((dx_{rock}, dy_{rock}, dz_{rock})\),
+for each hailstorm, there is a time \(t_i\) when they intersect.</p>
+
+<p>Here is the code:</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">rng</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">dx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">rng</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">rng</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span> <span class="o">=</span> <span class="n">hails</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">dx1</span><span class="p">,</span> <span class="n">dy1</span><span class="p">,</span> <span class="n">dz1</span> <span class="o">=</span> <span class="n">hails</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">z2</span> <span class="o">=</span> <span class="n">hails</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">dx2</span><span class="p">,</span> <span class="n">dy2</span><span class="p">,</span> <span class="n">dz2</span> <span class="o">=</span> <span class="n">hails</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># x + dx * t1 = x1 + dx1 * t1</span>
+            <span class="c1"># y + dy * t1 = y1 + dy1 * t1</span>
+            <span class="c1"># x + dx * t2 = x2 + dx2 * t2</span>
+            <span class="c1"># y + dy * t2 = y2 + dy2 * t2</span>
+
+            <span class="c1"># x = x1 + t1 * (dx1 - dx)        </span>
+            <span class="c1"># t1 = (x2 - x1 + t2 * (dx2 - dx)) / (dx1 - dx)</span>
+            <span class="c1"># y = y1 + (x2 - x1 + t2 * (dx2 - dx)) * (dy1 - dy) / (dx1 - dx)</span>
+            <span class="c1"># t2 = ((y2 - y1) * (dx1 - dx) - (dy1 - dy) * (x2 - x1)) / ((dy1 - dy) * (dx2 - dx) + (dy - dy2) * (dx1 - dx))</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">dy1</span> <span class="o">-</span> <span class="n">dy</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dx2</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">dy</span> <span class="o">-</span> <span class="n">dy2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dx1</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">t2</span> <span class="o">=</span> <span class="p">((</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dx1</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">dy1</span> <span class="o">-</span> <span class="n">dy</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">))</span> <span class="o">/</span> <span class="p">((</span><span class="n">dy1</span> <span class="o">-</span> <span class="n">dy</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dx2</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">dy</span> <span class="o">-</span> <span class="n">dy2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dx1</span> <span class="o">-</span> <span class="n">dx</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">t2</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="ow">or</span> <span class="n">t2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">dx1</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">+</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">t2</span> <span class="o">*</span> <span class="p">(</span><span class="n">dx2</span> <span class="o">-</span> <span class="n">dx</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">dy1</span> <span class="o">-</span> <span class="n">dy</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx1</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">y</span><span class="o">.</span><span class="n">is_integer</span><span class="p">():</span>
+                <span class="k">continue</span>
+
+            <span class="n">t1</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">t2</span> <span class="o">*</span> <span class="p">(</span><span class="n">dx2</span> <span class="o">-</span> <span class="n">dx</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx1</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">t1</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="ow">or</span> <span class="n">t1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">t1</span> <span class="o">*</span> <span class="p">(</span><span class="n">dx1</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span>        
+
+            <span class="c1"># z + dz * t1 = z1 + dz1 * t1</span>
+            <span class="c1"># z + dz * t2 = z2 + dz2 * t2        </span>
+
+            <span class="c1"># dz = (z1 + dz1 * t1 - z2 - dz2 * t2) / (t1 - t2)</span>
+            <span class="c1"># z = z1 + dz1 * t1 - dz * t1</span>
+
+            <span class="k">if</span> <span class="n">t1</span> <span class="o">==</span> <span class="n">t2</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">dz</span> <span class="o">=</span> <span class="p">(</span><span class="n">z1</span> <span class="o">+</span> <span class="n">dz1</span> <span class="o">*</span> <span class="n">t1</span> <span class="o">-</span> <span class="n">z2</span> <span class="o">-</span> <span class="n">dz2</span> <span class="o">*</span> <span class="n">t2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t2</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dz</span><span class="o">.</span><span class="n">is_integer</span><span class="p">():</span>
+                <span class="k">continue</span>
+
+            <span class="n">z</span> <span class="o">=</span> <span class="n">z1</span> <span class="o">+</span> <span class="n">dz1</span> <span class="o">*</span> <span class="n">t1</span> <span class="o">-</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">t1</span>
+</pre></div>
+
+<p>In the above <code>x</code>, <code>y</code>, <code>z</code>, <code>dx</code>, <code>dy</code>, <code>dz</code> are the rock's origin and vector.</p>
+
+<p>The final step (omitted from the code sample for brevity), is to confirm that
+for the given origin and vector, we end up eventually intersecting all other
+hailstorms.</p>
+
+<p>I really enjoyed this problem as it made me work through the math.</p>
+
+<h2>Day 25</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2023/day/25">here</a>.</p>
+
+<p>I liked this problem. It turned out to be a variation of the <a href="https://en.wikipedia.org/wiki/Minimum_cut">minimum cut
+problem</a>. Trying out all possible
+permutations of nodes would take way too much time. The algorithm I used keeps
+track of a set of <em>visited</em> nodes - one of the two components. Then at each
+step, we add a new node to this set by selecting the most connected node to this
+component (meaning the node that has most edges incoming from visited nodes).</p>
+
+<p><code>most_connected()</code> determines which node we want to pick next:</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">most_connected</span><span class="p">(</span><span class="n">visited</span><span class="p">):</span>
+    <span class="n">best_n</span><span class="p">,</span> <span class="n">best_d</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">neighbors</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">neighbors</span> <span class="o">&gt;</span> <span class="n">best_d</span><span class="p">:</span>
+            <span class="n">best_n</span><span class="p">,</span> <span class="n">best_d</span> <span class="o">=</span> <span class="n">n</span><span class="p">,</span> <span class="n">neighbors</span>
+
+    <span class="k">return</span> <span class="n">best_n</span>
+</pre></div>
+
+<p>Then we keep going until our component has exactly 3 outgoing edges to nodes
+that haven't ben visited yet:</p>
+<div class="highlight"><pre><span/><span class="k">def</span> <span class="nf">find_components</span><span class="p">():</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">visited</span> <span class="o">=</span> <span class="p">{</span><span class="n">start</span><span class="p">}</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">visited</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="p">):</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">visited</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="n">most_connected</span><span class="p">(</span><span class="n">visited</span><span class="p">)</span>
+        <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+</pre></div>
+
+<p>That's where we need to make the cut. We just need to multiply <code>len(visited)</code>
+with <code>len(graph) - len(visited)</code> to find our answer.</p>
+
+<p>I personally found the most difficult problems to be part 2 of day 20, 21, 24
+and the one and only part of day 25. All of these took me a bit to figure out.
+That said, Advent of Code is always a nice holiday past-time and I can't wait
+for the 2024 iteration.</p>
+]]></description>
+      <pubDate>Wed, 10 Jan 2024 00:00:00 -0800</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2023/12/28/notes-on-platform-development.html</link>
       <guid>https://vladris.com/blog/2023/12/28/notes-on-platform-development.html</guid>
       <title><![CDATA[Notes on Platform Development]]></title>
