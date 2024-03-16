@@ -8,6 +8,240 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2024/03/16/mental-poker-part-4-actions-and-async-queue.html</link>
+      <guid>https://vladris.com/blog/2024/03/16/mental-poker-part-4-actions-and-async-queue.html</guid>
+      <title><![CDATA[Mental Poker Part 4: Actions and Async Queue]]></title>
+      <description><![CDATA[<h1>Mental Poker Part 4: Actions and Async Queue</h1>
+
+<p>As I was building up the library and looking at state machines that would run
+turns in a game, I realized an async queue would come in handy. The challenge
+with the raw <code>ITransport</code> interface built on top of the Fluid ledger is that if
+you are not the first client to join a session, you end up with a set of ops
+that already exist on the ledger. You need a way to consume both the ops that
+were already sequenced and new incoming ops. An async interface is also easier
+to consume than callbacks.</p>
+
+<p>Before diving into that though, letâs talk about actions.</p>
+
+<h2>Actions</h2>
+
+<p>As a reminder, <em>op</em> is the Fluid Framework term for data being sent/received. In
+Mental Poker we use <em>actions</em>. All actions should be subtypes of <code>BaseAction</code>:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">ClientId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">BaseAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">unknown</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>Every action should have a <code>clientId</code> showing which client it came from, and a
+<code>type</code>.</p>
+
+<p>For example, hereâs how we would model a game of Rock/Paper/Scissors:</p>
+
+<ul>
+<li>Both players pick <em>rock</em> or <em>paper</em> or <em>scissors</em>, encrypt their selection,
+and post it on the ledger.</li>
+<li>Next, both players post their encryption key, so the other player can decrypt
+and see the selection.</li>
+</ul>
+
+<p>We model the game in these two steps so regardless of which player moves first,
+the player choices are revealed after they have been put on the ledger. If a
+player would simply post their unencrypted selection, the other player might
+cheat by looking at it before posting their own.</p>
+
+<p>I will cover the Rock/Paper/Scissors implementation in detail in a future post,
+for now, letâs just go over the actions:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">PlayAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"PlayAction"</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">encryptedSelection</span><span class="o">:</span><span class="w"> </span><span class="kt">EncryptedSelection</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">RevealAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"RevealAction"</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedSRAKeyPair</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">Action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">PlayAction</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">RevealAction</span><span class="p">;</span>
+</pre></div>
+
+<p>The two actions described above are modeled as <code>PlayAction</code> and <code>RevealAction</code>.
+Both of these have a <code>clientId</code> and <code>type</code>, thus are subtypes of <code>BaseAction</code>.
+Finally, the <code>Action</code> type represents all possible actions in the game.</p>
+
+<p>This becomes relevant as we move higher in the stack of the Mental Poker
+library. Once we start encoding some of the game semantics, we require generic
+types to extend <code>BaseAction</code>. This is what happens with the async queue.</p>
+
+<h2>Async queue</h2>
+
+<p>As I mentioned at the beginning of the article, queues aim to provide a nicer
+API over the transport. The interface is very simple:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nx">dequeue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>For any type <code>T</code> extending <code>BaseAction</code>, we can <code>enqueue()</code>  a value and we can
+<code>dequeue()</code> a value. Both of the operations are asynchronous.</p>
+
+<p>Iâll show the full implementation then go over the details:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nx">ActionQueue</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="w"> </span><span class="k">implements</span><span class="w"> </span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span>
+<span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">transport</span><span class="o">:</span><span class="w"> </span><span class="kt">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">preseed</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">transport</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">"actionPosted"</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">        </span><span class="p">});</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">preseed</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">transport</span><span class="p">.</span><span class="nx">getActions</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">postAction</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">dequeue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">shift</span><span class="p">();</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">result</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nb">Promise</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">((</span><span class="nx">resolve</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="s2">"actionPosted"</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">resolve</span><span class="p">(</span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">dequeue</span><span class="p">());</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The implementation maintains an array of <code>T</code>s (actions). The constructor takes a
+<code>transport</code> argument of type <code>ITransport</code> and <code>preseed</code> flag:</p>
+<div class="highlight"><pre><span/><span class="kr">constructor</span><span class="p">(</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">transport</span><span class="o">:</span><span class="w"> </span><span class="kt">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">preseed</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">transport</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">"actionPosted"</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">preseed</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">transport</span><span class="p">.</span><span class="nx">getActions</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* ... */</span>
+</pre></div>
+
+<p>The queue starts listening to the <code>actionPosted</code> event and whenever we have an
+incoming value, we push it to the internal queue. If <code>preseed</code> is <code>true</code>, we
+also push all actions already posted to the queue.</p>
+
+<p>The reason we make this optional is that we might end up using multiple queues
+in a game implementation but we only want to consume the actions posted on the
+ledger before we joined the session once. After we are âup to speedâ, new
+incoming actions fire events which we can consume in realtime. So we would
+usually create our first queue with <code>preseed</code> set to <code>true</code> and subsequent
+queues with <code>preseed</code> set to <code>false</code>.</p>
+
+<p>Enqueuing a value is trivial - we leverage the transportâs <code>postAction</code> API:</p>
+<div class="highlight"><pre><span/><span class="cm">/* ... */</span>
+
+<span class="k">async</span><span class="w"> </span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">postAction</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* ... */</span>
+</pre></div>
+
+<p>Dequeuing is a bit more interesting:</p>
+<div class="highlight"><pre><span/><span class="cm">/* ... */</span>
+
+<span class="k">async</span><span class="w"> </span><span class="nx">dequeue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">shift</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">result</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">Promise</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">((</span><span class="nx">resolve</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="s2">"actionPosted"</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">resolve</span><span class="p">(</span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">dequeue</span><span class="p">());</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="p">}</span>
+
+<span class="cm">/* ... */</span>
+</pre></div>
+
+<p>First, we call <code>shift()</code> on the queue. This either returns a value or
+<code>undefined</code> if the queue is empty.</p>
+
+<p>If we do get a value, we return a resolved promise right away.</p>
+
+<p>If we donât have a value, we add a one-time listener to the <code>actionPosted</code>
+event. When a new action is posted, the underlying transport will fire the
+event. Since event listeners are called in the order they subscribed, we are
+guaranteed the listener we added in the constructor fires first, and adds the
+value to <code>queue</code>. We resolve the promise by recursively calling <code>dequeue()</code> and
+awaiting the response.</p>
+
+<p>The reason we do this is we might have multiple callers to <code>dequeue()</code> holding
+on to promises. In this case, we donât want to resolve all of them with the
+incoming value, rather just the first one. The first recursive call to
+<code>dequeue()</code> should grab the value from the internal <code>queue</code> and return it right
+away, while other recursive callers would end up awaiting again until a new
+value comes in. There's probably a more efficient non-recursive implementation
+but for our specific use-case (games), we don't expect many cases where we have
+multiple dequeus pending.</p>
+
+<h2>Using the queue</h2>
+
+<p>There are two main reasons for using this queue rather than relying directly on
+the underlying transport.</p>
+
+<p>First, the underlying transport can have a set of actions (messages) that
+already arrived on the client (which we would retrieve with the <code>getActions()</code>
+method), and some which arrive in real time (which would fire events). The
+queue gives us a unified way to consume both, by calling <code>await dequeue()</code>.</p>
+
+<p>Besides a unified interface, we expect multiple spots in the code to wait for
+an incoming action. This depends on the game implementation, but usually at
+different game states we expect different messages to come in. This is harder
+to achieve waiting for event callbacks and much easier to do via the same
+<code>await dequeue()</code> call.</p>
+
+<h2>Summary</h2>
+
+<p>In this post we looked at <em>actions</em>, the key building blocks of Mental Poker
+games, and an async queue which provides a clean abstraction over the underlying
+transport.</p>
+
+<p>The code covered in this post is available on GitHub in
+theÂ <strong><a href="https://github.com/vladris/mental-poker-toolkit/">mental-poker-toolkitÂ repo</a></strong>.
+<code>BaseAction</code> and the <code>ITransport</code> and <code>IQueue</code> interfaces are part of the core
+types package <strong><a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/types">packages/types</a></strong>.
+<code>ActionQueue</code>Â is implemented underÂ <strong><a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/action-queue">packages/action-queue</a></strong>.</p>
+]]></description>
+      <pubDate>Sat, 16 Mar 2024 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2024/01/10/notes-on-advent-of-code-2023.html</link>
       <guid>https://vladris.com/blog/2024/01/10/notes-on-advent-of-code-2023.html</guid>
       <title><![CDATA[Notes on Advent of Code 2023]]></title>
@@ -1194,23 +1428,49 @@ this has been my main job for a while now.</p>
       <title><![CDATA[Mental Poker Part 3: Transport]]></title>
       <description><![CDATA[<h1>Mental Poker Part 3: Transport</h1>
 
-<p>Now that my <a href="https://vladris.com/blog/2023/11/03/large-language-models-at-work-rtm.html">LLM book is done</a>, I can get back to the Mental Poker series. A high-level overview can be found <a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">here</a>. In the previous posts we covered <a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">cryptography</a> and <a href="https://vladris.com/blog/2023/06/04/mental-poker-part-2-fluid-ledger.html">a Fluid append-only list data structure</a>. Weâll be using the append-only list (we called this <code>fluid-ledger</code>) to model games.</p>
+<p>Now that my <a href="https://vladris.com/blog/2023/11/03/large-language-models-at-work-rtm.html">LLM book is done</a>,
+I can get back to the Mental Poker series. A high-level overview can be found
+<a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">here</a>.
+In the previous posts we covered
+<a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">cryptography</a>
+and <a href="https://vladris.com/blog/2023/06/04/mental-poker-part-2-fluid-ledger.html">a Fluid append-only list data
+structure</a>.
+Weâll be using the append-only list (we called this <code>fluid-ledger</code>) to model
+games.</p>
 
-<p>An append-only list should be all that is needed to model turn-based games: each <em>turn</em> is an element added to the list. In this post, weâll stitch things together and look at the transport layer for our games.</p>
+<p>An append-only list should be all that is needed to model turn-based games: each
+<em>turn</em> is an element added to the list. In this post, weâll stitch things
+together and look at the transport layer for our games.</p>
 
 <h2>Transport</h2>
 
 <p>Our basic transport interface is very simple:</p>
 <div class="highlight"><pre><span/><span class="kr">declare</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">getActions</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">;</span>
+
 <span class="w">    </span><span class="nx">postAction</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
 
+<span class="w">    </span><span class="nx">once</span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">"actionPosted"</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="k">this</span><span class="p">;</span>
 <span class="w">    </span><span class="nx">on</span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">"actionPosted"</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="k">this</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">off</span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">"actionPosted"</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="k">this</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 
-<p>For some type <code>T</code>, we have a <code>postAction()</code>  which takes a value of type <code>T</code> and an <code>actionPosted</code> event which fires whenever any of the clients posts an action (this relies on the Fluid data synchronization).</p>
+<p>For some type <code>T</code>, we have:</p>
 
-<p>The basic implementation of this on top of the <code>fluid-ledger</code> distributed data structure looks like this:</p>
+<ul>
+<li>A <code>getActions()</code>, which returns an iterator over all values (of type <code>T</code>)
+posted so far.</li>
+<li>A <code>postAction()</code>, which takes a value of type <code>T</code> and an <code>actionPosted</code> event
+which fires whenever any of the clients posts an action (this relies on the
+Fluid data synchronization).</li>
+<li>And the standard <code>EventEmitter</code> methods.</li>
+</ul>
+
+<p>We'll cover why we call these values <em>actions</em> in a future post.</p>
+
+<p>The basic implementation of this on top of the <code>fluid-ledger</code> distributed data
+structure looks like this:</p>
 <div class="highlight"><pre><span/><span class="kd">class</span><span class="w"> </span><span class="nx">FluidTransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">EventEmitter</span><span class="w"> </span><span class="k">implements</span><span class="w"> </span><span class="nx">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kr">constructor</span><span class="p">(</span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">ledger</span><span class="o">:</span><span class="w"> </span><span class="kt">ILedger</span><span class="o">&lt;</span><span class="kt">string</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">super</span><span class="p">();</span>
@@ -1219,29 +1479,70 @@ this has been my main job for a while now.</p>
 <span class="w">        </span><span class="p">});</span>
 <span class="w">    </span><span class="p">}</span>
 
+<span class="w">    </span><span class="o">*</span><span class="nx">getActions</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">ledger</span><span class="p">.</span><span class="nx">get</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">yield</span><span class="w"> </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">T</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
 <span class="w">    </span><span class="nx">postAction</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">Promise</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ledger</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">value</span><span class="p">)));</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
-<p>The only mildly interesting thing to note here is our <code>postAction()</code> implementation uses <code>JSON.stringify()</code> to convert the given value from <code>T</code> to a <code>string</code> and, on the flip side, our <code>actionPosted</code> event parses the given string back into a value of type <code>T</code>. The constructor takes an <code>ILedger&lt;string&gt;</code> (this is the interface we looked at in <a href="https://vladris.com/blog/2023/06/04/mental-poker-part-2-fluid-ledger.html">the previous post</a>).</p>
+<p>The constructor takes an <code>ILedger&lt;string&gt;</code> (this is the interface we looked at
+in <a href="https://vladris.com/blog/2023/06/04/mental-poker-part-2-fluid-ledger.html">the previous post</a>).</p>
 
-<p>With this in place, we abstracted away the Fluid-based transport details. We will separately set up a Fluid container and establish connection to other clients (in a future post), then take the <code>ILedger</code> instance, pass it to <code>FluidTransport</code>, and we are good to go. </p>
+<p>It hooks up an event listener to the ledger's <code>append</code> event to in turn trigger
+an <code>actionPosted</code> event. We also convert the incoming value from <code>string</code> to <code>T</code>
+using <code>JSON.parse()</code>.</p>
 
-<p>We can model games on top of just these two primitives: <code>postAction()</code> and <code>actionPosted</code>. Whenever we take a turn, we call <code>postAction()</code>. Whenever any player takes a turn, the <code>actionPosted</code> event is fired.</p>
+<p>Similarly, <code>getActions()</code> is a simple wrapper over the underlying ledger, doing
+the same conversion to <code>T</code>.</p>
 
-<p>Since weâre designing Mental Poker, which takes place in a zero-trust environment, letâs make sure our transport is secure.</p>
+<p>Finally, the <code>postAction()</code> does the reverse - it converts from <code>T</code> to a string
+and appends the value to the ledger.</p>
+
+<p>With this in place, we abstracted away the Fluid-based transport details. We
+will separately set up a Fluid container and establish connection to other
+clients (in a future post), then take the <code>ILedger</code> instance, pass it to
+<code>FluidTransport</code>, and we are good to go.</p>
+
+<p>We can model games on top of just these two primitives: <code>postAction()</code> and
+<code>actionPosted</code>. Whenever we take a turn, we call <code>postAction()</code>. Whenever any
+player takes a turn, the <code>actionPosted</code> event is fired.</p>
+
+<p>Since weâre designing Mental Poker, which takes place in a zero-trust
+environment, letâs make sure our transport is secure.</p>
 
 <h2>Signature verification</h2>
 
-<p>Signature verification allows us to ensure that in a multiplayer game, players canât spoof each other, meaning Alice canât pretend she is Bob and post an action on Bobâs behalf for other clients to misinterpret.</p>
+<p>Signature verification allows us to ensure that in a multiplayer game, players
+canât spoof each other, meaning Alice canât pretend she is Bob and post an
+action on Bobâs behalf for other clients to misinterpret.</p>
 
-<p>Note in a 2-player game this is not strictly needed if we trust the channel: we know that if a payload was not sent by us, it was sent by the other player. But in games with more players, we need to protect against spoofing. Signatures are also useful in case we donât trust the channel - maybe itâs supposed to be a 2-player game but a third client gets access to the channel and starts sending messages.</p>
+<p>Note in a 2-player game this is not strictly needed if we trust the channel: we
+know that if a payload was not sent by us, it was sent by the other player. But
+in games with more players, we need to protect against spoofing. Signatures are
+also useful in case we donât trust the channel - maybe itâs supposed to be a
+2-player game but a third client gets access to the channel and starts sending
+messages.</p>
 
-<p>We will implement this using public key cryptography. The way this works is each player generates (locally) a public/private key pair. They broadcast the public key to all other players. Then they can sign any message they send with their private key and other players can validate the signature using the public key. Nobody else can sign on their behalf, since the private key is kept private.</p>
+<p>We will implement this using public key cryptography. The way this works is each
+player generates (locally) a public/private key pair. They broadcast the public
+key to all other players. Then they can sign any message they send with their
+private key and other players can validate the signature using the public key.
+Nobody else can sign on their behalf, since the private key is kept private.</p>
 
-<p>I wonât go into deeper detail here, since this is very standard public key cryptography. In fact, I didnât even cover this in the blog post covering <a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">cryptography</a> for Mental Poker for this reason. There, I focused on the commutative SRA encryption algorithm. Unlike SRA, which we had to implement by hand, signature verification is part of the standard <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API">Web Crypto API</a>. Letâs implement signature verification on top of this.</p>
+<p>I wonât go into deeper detail here, since this is very standard public key
+cryptography. In fact, I didnât even cover this in the blog post covering
+<a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">cryptography</a>
+for Mental Poker for this reason. There, I focused on the commutative SRA
+encryption algorithm. Unlike SRA, which we had to implement by hand, signature
+verification is part of the standard <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API">Web Crypto
+API</a>. Letâs
+implement signature verification on top of this.</p>
 
 <p>First, we need to model a public/private key pair:</p>
 <div class="highlight"><pre><span/><span class="c1">// Keys are represented as strings</span>
@@ -1254,7 +1555,9 @@ this has been my main job for a while now.</p>
 <span class="p">};</span>
 </pre></div>
 
-<p>A key is a string. We model the key pair as <code>PublicPrivateKeyPair</code>, a type containing two keys. Hereâs how we generate the key pair using the Web Crypto API:</p>
+<p>A key is a string. We model the key pair as <code>PublicPrivateKeyPair</code>, a type
+containing two keys. Hereâs how we generate the key pair using the Web Crypto
+API:</p>
 <div class="highlight"><pre><span/><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">encode</span><span class="p">,</span><span class="w"> </span><span class="nx">decode</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"base64-arraybuffer"</span><span class="p">;</span>
 
 <span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">generatePublicPrivateKeyPair</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">PublicPrivateKeyPair</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
@@ -1279,9 +1582,12 @@ this has been my main job for a while now.</p>
 <span class="p">}</span>
 </pre></div>
 
-<p>We use <code>subtle</code> to generate our key pair and return both public and private keys as base64-encoded strings.</p>
+<p>We use <code>subtle</code> to generate our key pair and return both public and private keys
+as base64-encoded strings.</p>
 
-<p>We can similarly rely on <code>subtle</code> for signing. The following function takes a string payload and signs it with the given private key. The response is the base64-encoded signature.</p>
+<p>We can similarly rely on <code>subtle</code> for signing. The following function takes a
+string payload and signs it with the given private key. The response is the
+base64-encoded signature.</p>
 <div class="highlight"><pre><span/><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">sign</span><span class="p">(</span>
 <span class="w">    </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">privateKey</span><span class="o">:</span><span class="w"> </span><span class="kt">Key</span>
@@ -1306,7 +1612,9 @@ this has been my main job for a while now.</p>
 <span class="p">}</span>
 </pre></div>
 
-<p>First, we import the given <code>privateKey</code>, then we call <code>subtle.sign()</code> to sign the base64-decoded <code>payload</code>. We re-encode the signature to base64 and return it as a string.</p>
+<p>First, we import the given <code>privateKey</code>, then we call <code>subtle.sign()</code> to sign
+the base64-decoded <code>payload</code>. We re-encode the signature to base64 and return it
+as a string.</p>
 
 <p>Finally, this is how we verify signatures:</p>
 <div class="highlight"><pre><span/><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">verifySignature</span><span class="p">(</span>
@@ -1333,9 +1641,14 @@ this has been my main job for a while now.</p>
 <span class="p">}</span>
 </pre></div>
 
-<p>Here, we import the given <code>publicKey</code>, then we use <code>subtle.verify()</code>. For signature verification, we pass in a <code>signature</code> and the <code>payload</code> that was signed (decoded from base64). This API returns <code>true</code> if the signature matches, meaning it was indeed signed with the private key corresponding to the public key we provided.</p>
+<p>Here, we import the given <code>publicKey</code>, then we use <code>subtle.verify()</code>. For
+signature verification, we pass in a <code>signature</code> and the <code>payload</code> that was
+signed (decoded from base64). This API returns <code>true</code> if the signature matches,
+meaning it was indeed signed with the private key corresponding to the public
+key we provided.</p>
 
-<p>Again, I wonât go deep into the <code>subtle</code> APIs as they are standard and very well documented. The main takeaway is now we have 3 APIs:</p>
+<p>Again, I wonât go deep into the <code>subtle</code> APIs as they are standard and very well
+documented. The main takeaway is now we have 3 APIs:</p>
 
 <ul>
 <li><code>generatePublicPrivateKeyPair()</code> to generate key pairs.</li>
@@ -1343,13 +1656,15 @@ this has been my main job for a while now.</p>
 <li><code>verify()</code> to validate the signature.</li>
 </ul>
 
-<p>Weâll put these in the <code>Signing</code> namespace. </p>
+<p>Weâll put these in the <code>Signing</code> namespace.</p>
 
 <p>Now letâs layer this cryptography over our <code>FluidTransport</code>.</p>
 
 <h2>Signed transport</h2>
 
-<p>Now that we have our Fluid-based implementation of the <code>ITransport</code> interface and signature verification functions, weâll provide another implementation of this interface that handles signature verification.</p>
+<p>Now that we have our Fluid-based implementation of the <code>ITransport</code> interface
+and signature verification functions, weâll provide another implementation of
+this interface that handles signature verification.</p>
 
 <p>First, we need a generic <code>Signed</code> type:</p>
 <div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">clientId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
@@ -1357,19 +1672,33 @@ this has been my main job for a while now.</p>
 <span class="kr">type</span><span class="w"> </span><span class="nx">Signed</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">clientId?</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span><span class="w"> </span><span class="nx">signature?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">};</span>
 </pre></div>
 
-<p>This takes any type <code>T</code> and extends it with an optional <code>clientId</code> and <code>signature</code>. Weâll represent client IDs as strings.</p>
+<p>This takes any type <code>T</code> and extends it with an optional <code>clientId</code> and
+<code>signature</code>. Weâll represent client IDs as strings.</p>
 
-<p>Now we can decorate any payload in our transport with these optional <code>clientID</code> and <code>signature</code>, which we can then validate using the functions we just implemented. The reason these are optional is that we have states when signing is unavailable: before clients exchange public keys. During the key exchange steps, no message can be signed, since no client knows the public key of any other client. These messages canât be signed. Once keys are exchanged, all subsequent messages <em>should</em> be signed, and weâll enforce that in <code>SignedTransport</code>.</p>
+<p>Now we can decorate any payload in our transport with these optional <code>clientID</code>
+and <code>signature</code>, which we can then validate using the functions we just
+implemented. The reason these are optional is that we have states when signing
+is unavailable: before clients exchange public keys. During the key exchange
+steps, no message can be signed, since no client knows the public key of any
+other client. These messages canât be signed. Once keys are exchanged, all
+subsequent messages <em>should</em> be signed, and weâll enforce that in
+<code>SignedTransport</code>.</p>
 
-<p>We also need a <code>KeyStore</code>. This keeps track of which public key belongs to each client, to help with our signature verification (meaning we keep track of which public key is Aliceâs, which one is Bobâs and when we get a message from Alice we know which key to use to verify authenticity).</p>
+<p>We also need a <code>KeyStore</code>. This keeps track of which public key belongs to each
+client, to help with our signature verification (meaning we keep track of which
+public key is Aliceâs, which one is Bobâs and when we get a message from Alice
+we know which key to use to verify authenticity).</p>
 <div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">KeyStore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Map</span><span class="o">&lt;</span><span class="nx">ClientId</span><span class="p">,</span><span class="w"> </span><span class="nx">Key</span><span class="o">&gt;</span><span class="p">;</span>
 </pre></div>
 
-<p>We also need a <code>ClientKey</code> type, representing a single client ID/private key pair:</p>
+<p>We also need a <code>ClientKey</code> type, representing a single client ID/private key
+pair:</p>
 <div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">ClientKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span><span class="w"> </span><span class="nx">privateKey</span><span class="o">:</span><span class="w"> </span><span class="kt">Key</span><span class="w"> </span><span class="p">};</span>
 </pre></div>
 
-<p>With these additional type definitions in place, we can start building our <code>SignedTransport&lt;T&gt;</code>. This is a decorator that takes an <code>ITransport&lt;Signed&lt;T&gt;&gt;</code>. Weâll first look at the constructor:</p>
+<p>With these additional type definitions in place, we can start building our
+<code>SignedTransport&lt;T&gt;</code>. This is a decorator that takes an <code>ITransport&lt;Signed&lt;T&gt;&gt;</code>.
+Weâll first look at the constructor:</p>
 <div class="highlight"><pre><span/><span class="kd">class</span><span class="w"> </span><span class="nx">SignedTransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">EventEmitter</span><span class="w"> </span><span class="k">implements</span><span class="w"> </span><span class="nx">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kr">constructor</span><span class="p">(</span>
 <span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">transport</span><span class="o">:</span><span class="w"> </span><span class="kt">ITransport</span><span class="o">&lt;</span><span class="nx">Signed</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="p">,</span>
@@ -1387,17 +1716,44 @@ this has been my main job for a while now.</p>
 
 <p>This new class has 3 private properties. Letâs discuss them in turn.</p>
 
-<p><code>transport</code> is our underlying <code>ITransport&lt;Signed&lt;T&gt;&gt;</code>. The idea is we can instantiate a <code>FluidTransport</code> (or other transport if needed, though for this project I have no plans of using another transport than Fluid), then pass it in the constructor here. Then <code>SignedTransport</code> will use the provided instance for <code>postAction()</code> and <code>actionPosted</code>, simply adding signature verification over it.</p>
+<p><code>transport</code> is our underlying <code>ITransport&lt;Signed&lt;T&gt;&gt;</code>. The idea is we can
+instantiate a <code>FluidTransport</code> (or other transport if needed, though for this
+project I have no plans of using another transport than Fluid), then pass it in
+the constructor here. Then <code>SignedTransport</code> will use the provided instance for
+<code>postAction()</code> and <code>actionPosted</code>, simply adding signature verification over it.</p>
 
-<p>The <code>clientKey</code> should be this clientâs ID and private key. This class is not concerned with key generation, just signature and verification, so weâll have to generate the key pair somewhere else and pass it. Weâll use this to sign our outgoing payloads.</p>
+<p>The <code>clientKey</code> should be this clientâs ID and private key. This class is not
+concerned with key generation, just signature and verification, so weâll have to
+generate the key pair somewhere else and pass it. Weâll use this to sign our
+outgoing payloads.</p>
 
-<p>We also pass in a <code>keyStore</code>. This should have the client ID to public key mapping for all players in the game. We use this to figure out which public key to use to validate each posted action.</p>
+<p>We also pass in a <code>keyStore</code>. This should have the client ID to public key
+mapping for all players in the game. We use this to figure out which public key
+to use to validate each posted action.</p>
+
+<h3>Existing actions</h3>
+
+<p><code>getActions()</code> simply calls the underlying transport - we are not doing
+signature verification on existing messages, since they were likely sent before
+the signed transport was created and cannot be verified.</p>
+<div class="highlight"><pre><span/><span class="o">*</span><span class="nx">getActions</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">getActions</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">yield</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We only validate incoming actions.</p>
 
 <h3>Incoming actions</h3>
 
-<p>The constructor body hooks up the <code>actionPosted</code> event to the <code>transport</code>âs <code>actionPosted</code>. So whenever the underlying transport fires the event, the <code>SignedTransport</code> will also fire an <code>actionPosted</code> event. But instead of just passing <code>value</code> through, we call <code>verifySignature()</code> on the <code>value</code> first.</p>
+<p>The constructor body hooks up the <code>actionPosted</code> event to the <code>transport</code>âs
+<code>actionPosted</code>. So whenever the underlying transport fires the event, the
+<code>SignedTransport</code> will also fire an <code>actionPosted</code> event. But instead of just
+passing <code>value</code> through, we call <code>verifySignature()</code> on the <code>value</code> first.</p>
 
-<p>Letâs look at <code>verifySignature</code> next (this is also part of the <code>SignedTransport</code> class):</p>
+<p>Letâs look at <code>verifySignature</code> next (this is also part of the <code>SignedTransport</code>
+class):</p>
 <div class="highlight"><pre><span/><span class="k">private</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="nx">verifySignature</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Signed</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">value</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="nx">value</span><span class="p">.</span><span class="nx">signature</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Message missing signature"</span><span class="p">);</span>
@@ -1433,21 +1789,31 @@ this has been my main job for a while now.</p>
 <span class="cm">/* ... */</span>
 </pre></div>
 
-<p>Since <code>value</code> is a <code>Signed&lt;T&gt;</code>, we should have a <code>clientId</code> and a <code>signature</code>. We throw an exception if we canât find them.</p>
+<p>Since <code>value</code> is a <code>Signed&lt;T&gt;</code>, we should have a <code>clientId</code> and a <code>signature</code>.
+We throw an exception if we canât find them.</p>
 
-<p>Next, we clean up <code>value</code> and remove the <code>clientId</code> and <code>signature</code> from the object. As we return this to other layers in our stack, they no longer need this as weâre handling signature verification here.</p>
+<p>Next, we clean up <code>value</code> and remove the <code>clientId</code> and <code>signature</code> from the
+object. As we return this to other layers in our stack, they no longer need this
+as weâre handling signature verification here.</p>
 
-<p>We then try to retrieve the public key of the client from the <code>keyStore</code>. We again throw in case we donât have the key.</p>
+<p>We then try to retrieve the public key of the client from the <code>keyStore</code>. We
+again throw in case we donât have the key.</p>
 
-<p>We use the <code>verifySigntature()</code> function we implemented earlier to ensure the signature is valid. We throw if not.</p>
+<p>We use the <code>verifySigntature()</code> function we implemented earlier to ensure the
+signature is valid. We throw if not.</p>
 
-<p>At this point, we guaranteed that the payload is coming from the client claiming to have sent it. If Alice tries to forge a message and pretend itâs coming from Bob, she wouldnât be able to produce a valid Bob signature (since only Bob has access to his private key). Such a message would not make it past this function.</p>
+<p>At this point, we guaranteed that the payload is coming from the client claiming
+to have sent it. If Alice tries to forge a message and pretend itâs coming from
+Bob, she wouldnât be able to produce a valid Bob signature (since only Bob has
+access to his private key). Such a message would not make it past this function.</p>
 
-<p>If no exceptions were thrown, this function returns a <code>value</code> (with signature cleaned up), ready to be processed by other layers.</p>
+<p>If no exceptions were thrown, this function returns a <code>value</code> (with signature
+cleaned up), ready to be processed by other layers.</p>
 
 <h3>Outgoing actions</h3>
 
-<p>Letâs now look at adding signatures to <code>postAction()</code>. <code>signAction()</code> is another private class member handling signing:</p>
+<p>Letâs now look at adding signatures to <code>postAction()</code>. <code>signAction()</code> is another
+private class member handling signing:</p>
 <div class="highlight"><pre><span/><span class="k">private</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="nx">signAction</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Signed</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">signature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">Signing</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span>
 <span class="w">        </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">value</span><span class="p">),</span>
@@ -1464,9 +1830,12 @@ this has been my main job for a while now.</p>
 <span class="cm">/* ... */</span>
 </pre></div>
 
-<p>We call the <code>sign()</code> function we implemented earlier in this post, passing it the stringified <code>value</code> and our clientâs private key. We then extend <code>value</code> with the corresponding <code>clientId</code> and <code>signature</code>.</p>
+<p>We call the <code>sign()</code> function we implemented earlier in this post, passing it
+the stringified <code>value</code> and our clientâs private key. We then extend <code>value</code>
+with the corresponding <code>clientId</code> and <code>signature</code>.</p>
 
-<p>The <code>postAction()</code> implementation uses this function for signing, before calling the underlyingâs transport <code>postAction()</code>.</p>
+<p>The <code>postAction()</code> implementation uses this function for signing, before calling
+the underlyingâs transport <code>postAction()</code>.</p>
 <div class="highlight"><pre><span/><span class="k">async</span><span class="w"> </span><span class="nx">postAction</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">postAction</span><span class="p">(</span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">signAction</span><span class="p">(</span><span class="nx">value</span><span class="p">));</span>
 <span class="p">}</span>
@@ -1476,17 +1845,35 @@ this has been my main job for a while now.</p>
 
 <h2>Summary</h2>
 
-<p>We started with a simple <code>FluidTransport</code> that uses a  <code>fluid-ledger</code> to implement the <code>postAction()</code> function and <code>actionPosted</code> event, which we need for modeling turn-based games.</p>
+<p>We started with a simple <code>FluidTransport</code> that uses a  <code>fluid-ledger</code> to
+implement the <code>postAction()</code> function and <code>actionPosted</code> event, which we need
+for modeling turn-based games.</p>
 
 <p>Next, we looked at signing and signature verification using <code>subtle</code>.</p>
 
-<p>Finally, we implemented <code>SingedTransport</code>, a decorator over another transport that adds signature singing and verification.</p>
+<p>Finally, we implemented <code>SingedTransport</code>, a decorator over another transport
+that adds signature singing and verification.</p>
 
-<p>The idea is we start with a <code>FluidTransport</code> and perform a key exchange, where each client generates a public/private key pair and broadcasts their ID and public key. Clients store all these in a <code>KeyStore</code>. Once the key exchange is done, we can initialize a <code>SignedTransport</code> that wraps the original <code>FluidTransport</code> and transparently handles signatures.</p>
+<p>The idea is we start with a <code>FluidTransport</code> and perform a key exchange, where
+each client generates a public/private key pair and broadcasts their ID and
+public key. Clients store all these in a <code>KeyStore</code>. Once the key exchange is
+done, we can initialize a <code>SignedTransport</code> that wraps the original
+<code>FluidTransport</code> and transparently handles signatures.</p>
 
-<p>At this point we have all the pieces in place to start looking at semantics: we can exchange data between clients, we can authenticate exchanged messages, and we have the cryptography primitives for Mental Poker (commutative encryption). In the next post weâll look at a state machine that we can use to implement game semantics.</p>
+<p>At this point we have all the pieces in place to start looking at semantics: we
+can exchange data between clients, we can authenticate exchanged messages, and
+we have the cryptography primitives for Mental Poker (commutative encryption).
+In the next post weâll look at a state machine that we can use to implement game
+semantics.</p>
 
-<p>The code covered in this post is available on GitHub in the <a href="https://github.com/vladris/mental-poker-toolkit/"><code>mental-poker-toolkit</code> repo</a>. <code>FluidTransport</code> is implemented under <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/fluid-client"> <code>packages/fluid-transport</code> </a>, <code>SignedTransport</code> is under <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/signed-transport"><code>packages/signed-transport</code></a>, and the signing functions can be found in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/packages/cryptography/src/signing.ts"><code>packages/cryptography/src/signing.ts</code></a>.</p>
+<p>The code covered in this post is available on GitHub in the <a href="https://github.com/vladris/mental-poker-toolkit/"><code>mental-poker-toolkit</code> repo</a>.
+<code>FluidTransport</code> is implemented under <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/fluid-client"><code>packages/fluid-transport</code></a>,
+<code>SignedTransport</code> is under <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/signed-transport"><code>packages/signed-transport</code></a>,
+and the signing functions can be found in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/packages/cryptography/src/signing.ts"><code>packages/cryptography/src/signing.ts</code></a>.</p>
+
+<p><strong>Note:</strong> Since writing this post, the code was refactored so <code>SignedTransport</code>
+doesn't take a direct dependency on the cryptography package, rather signing
+and signature verification is now passed as a <code>ISignatureProvider</code> interface.</p>
 ]]></description>
       <pubDate>Tue, 28 Nov 2023 00:00:00 -0800</pubDate>
     </item>

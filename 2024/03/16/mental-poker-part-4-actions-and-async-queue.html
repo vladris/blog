@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Mental Poker Part 4: Actions and Async Queue &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/light.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>March 16, 2024</span></header>
+<article>
+<h1>Mental Poker Part 4: Actions and Async Queue</h1>
+
+<p>As I was building up the library and looking at state machines that would run
+turns in a game, I realized an async queue would come in handy. The challenge
+with the raw <code>ITransport</code> interface built on top of the Fluid ledger is that if
+you are not the first client to join a session, you end up with a set of ops
+that already exist on the ledger. You need a way to consume both the ops that
+were already sequenced and new incoming ops. An async interface is also easier
+to consume than callbacks.</p>
+
+<p>Before diving into that though, let’s talk about actions.</p>
+
+<h2>Actions</h2>
+
+<p>As a reminder, <em>op</em> is the Fluid Framework term for data being sent/received. In
+Mental Poker we use <em>actions</em>. All actions should be subtypes of <code>BaseAction</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">ClientId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">BaseAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">unknown</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>Every action should have a <code>clientId</code> showing which client it came from, and a
+<code>type</code>.</p>
+
+<p>For example, here’s how we would model a game of Rock/Paper/Scissors:</p>
+
+<ul>
+<li>Both players pick <em>rock</em> or <em>paper</em> or <em>scissors</em>, encrypt their selection,
+and post it on the ledger.</li>
+<li>Next, both players post their encryption key, so the other player can decrypt
+and see the selection.</li>
+</ul>
+
+<p>We model the game in these two steps so regardless of which player moves first,
+the player choices are revealed after they have been put on the ledger. If a
+player would simply post their unencrypted selection, the other player might
+cheat by looking at it before posting their own.</p>
+
+<p>I will cover the Rock/Paper/Scissors implementation in detail in a future post,
+for now, let’s just go over the actions:</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">PlayAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;PlayAction&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">encryptedSelection</span><span class="o">:</span><span class="w"> </span><span class="kt">EncryptedSelection</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">RevealAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;RevealAction&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedSRAKeyPair</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">Action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">PlayAction</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">RevealAction</span><span class="p">;</span>
+</pre></div>
+
+<p>The two actions described above are modeled as <code>PlayAction</code> and <code>RevealAction</code>.
+Both of these have a <code>clientId</code> and <code>type</code>, thus are subtypes of <code>BaseAction</code>.
+Finally, the <code>Action</code> type represents all possible actions in the game.</p>
+
+<p>This becomes relevant as we move higher in the stack of the Mental Poker
+library. Once we start encoding some of the game semantics, we require generic
+types to extend <code>BaseAction</code>. This is what happens with the async queue.</p>
+
+<h2>Async queue</h2>
+
+<p>As I mentioned at the beginning of the article, queues aim to provide a nicer
+API over the transport. The interface is very simple:</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nx">dequeue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>For any type <code>T</code> extending <code>BaseAction</code>, we can <code>enqueue()</code>  a value and we can
+<code>dequeue()</code> a value. Both of the operations are asynchronous.</p>
+
+<p>I’ll show the full implementation then go over the details:</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nx">ActionQueue</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="w"> </span><span class="k">implements</span><span class="w"> </span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span>
+<span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">transport</span><span class="o">:</span><span class="w"> </span><span class="kt">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">preseed</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">transport</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;actionPosted&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">        </span><span class="p">});</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">preseed</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">transport</span><span class="p">.</span><span class="nx">getActions</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">postAction</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">dequeue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">shift</span><span class="p">();</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">result</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nb">Promise</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">((</span><span class="nx">resolve</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="s2">&quot;actionPosted&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">resolve</span><span class="p">(</span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">dequeue</span><span class="p">());</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The implementation maintains an array of <code>T</code>s (actions). The constructor takes a
+<code>transport</code> argument of type <code>ITransport</code> and <code>preseed</code> flag:</p>
+<div class="highlight"><pre><span></span><span class="kr">constructor</span><span class="p">(</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">transport</span><span class="o">:</span><span class="w"> </span><span class="kt">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">preseed</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">transport</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;actionPosted&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">preseed</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">transport</span><span class="p">.</span><span class="nx">getActions</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* ... */</span>
+</pre></div>
+
+<p>The queue starts listening to the <code>actionPosted</code> event and whenever we have an
+incoming value, we push it to the internal queue. If <code>preseed</code> is <code>true</code>, we
+also push all actions already posted to the queue.</p>
+
+<p>The reason we make this optional is that we might end up using multiple queues
+in a game implementation but we only want to consume the actions posted on the
+ledger before we joined the session once. After we are “up to speed”, new
+incoming actions fire events which we can consume in realtime. So we would
+usually create our first queue with <code>preseed</code> set to <code>true</code> and subsequent
+queues with <code>preseed</code> set to <code>false</code>.</p>
+
+<p>Enqueuing a value is trivial - we leverage the transport’s <code>postAction</code> API:</p>
+<div class="highlight"><pre><span></span><span class="cm">/* ... */</span>
+
+<span class="k">async</span><span class="w"> </span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">postAction</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* ... */</span>
+</pre></div>
+
+<p>Dequeuing is a bit more interesting:</p>
+<div class="highlight"><pre><span></span><span class="cm">/* ... */</span>
+
+<span class="k">async</span><span class="w"> </span><span class="nx">dequeue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">shift</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">result</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">Promise</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">((</span><span class="nx">resolve</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">transport</span><span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="s2">&quot;actionPosted&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">resolve</span><span class="p">(</span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">dequeue</span><span class="p">());</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="p">}</span>
+
+<span class="cm">/* ... */</span>
+</pre></div>
+
+<p>First, we call <code>shift()</code> on the queue. This either returns a value or
+<code>undefined</code> if the queue is empty.</p>
+
+<p>If we do get a value, we return a resolved promise right away.</p>
+
+<p>If we don’t have a value, we add a one-time listener to the <code>actionPosted</code>
+event. When a new action is posted, the underlying transport will fire the
+event. Since event listeners are called in the order they subscribed, we are
+guaranteed the listener we added in the constructor fires first, and adds the
+value to <code>queue</code>. We resolve the promise by recursively calling <code>dequeue()</code> and
+awaiting the response.</p>
+
+<p>The reason we do this is we might have multiple callers to <code>dequeue()</code> holding
+on to promises. In this case, we don’t want to resolve all of them with the
+incoming value, rather just the first one. The first recursive call to
+<code>dequeue()</code> should grab the value from the internal <code>queue</code> and return it right
+away, while other recursive callers would end up awaiting again until a new
+value comes in. There&#39;s probably a more efficient non-recursive implementation
+but for our specific use-case (games), we don&#39;t expect many cases where we have
+multiple dequeus pending.</p>
+
+<h2>Using the queue</h2>
+
+<p>There are two main reasons for using this queue rather than relying directly on
+the underlying transport.</p>
+
+<p>First, the underlying transport can have a set of actions (messages) that
+already arrived on the client (which we would retrieve with the <code>getActions()</code>
+method), and some which arrive in real time (which would fire events). The
+queue gives us a unified way to consume both, by calling <code>await dequeue()</code>.</p>
+
+<p>Besides a unified interface, we expect multiple spots in the code to wait for
+an incoming action. This depends on the game implementation, but usually at
+different game states we expect different messages to come in. This is harder
+to achieve waiting for event callbacks and much easier to do via the same
+<code>await dequeue()</code> call.</p>
+
+<h2>Summary</h2>
+
+<p>In this post we looked at <em>actions</em>, the key building blocks of Mental Poker
+games, and an async queue which provides a clean abstraction over the underlying
+transport.</p>
+
+<p>The code covered in this post is available on GitHub in
+the <strong><a href="https://github.com/vladris/mental-poker-toolkit/">mental-poker-toolkit repo</a></strong>.
+<code>BaseAction</code> and the <code>ITransport</code> and <code>IQueue</code> interfaces are part of the core
+types package <strong><a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/types">packages/types</a></strong>.
+<code>ActionQueue</code> is implemented under <strong><a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/action-queue">packages/action-queue</a></strong>.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2024/01/10/notes-on-advent-of-code-2023.html">Notes on Advent of Code 2023</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>
