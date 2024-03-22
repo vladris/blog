@@ -428,11 +428,6 @@ sketched out the state machine for a game of rock-paper-scissors.</li>
 This post covered the <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/state-machine">state-machine package</a>,
 the key exchange is implemented in the <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/primitives">primitives package</a>.</p>
 
-<p>Clients send messages to the Fluid relay service, which orders them in
-the order they came in and broadcasts them to all clients. This is to
-ensure all clients eventually see all the messages sent <em>in the same
-order</em>.</p>
-
 <div class="footnotes">
 <hr/>
 <ol>
@@ -442,7 +437,11 @@ order</em>.</p>
 </li>
 
 <li id="fn2">
-<p><em>Sequenced</em> is a <a href="https://fluidframework.com/">Fluid Framework</a> term. <a href="#fnref2" rev="footnote">↩</a></p>
+<p><em>Sequenced</em> is a <a href="https://fluidframework.com/">Fluid Framework</a> term.
+Clients send messages to the Fluid relay service, which orders them in
+the order they came in and broadcasts them to all clients. This is to
+ensure all clients eventually see all the messages sent <em>in the same
+order</em>. <a href="#fnref2" rev="footnote">↩</a></p>
 </li>
 
 </ol>
