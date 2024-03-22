@@ -1,5 +1,10 @@
 # Mental Poker Part 4: Actions and Async Queue
 
+For an overview on Mental Poker, see [Mental Poker Part 0: An Overview](https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html).
+Other articles in this series: <https://vladris.com/writings/index.html#mental-poker>.
+In the previous [post in the series](https://vladris.com/blog/2023/11/28/mental-poker-part-3-transport.html)
+we covered the transport.
+
 As I was building up the library and looking at state machines that would run
 turns in a game, I realized an async queue would come in handy. The challenge
 with the raw `ITransport` interface built on top of the Fluid ledger is that if
