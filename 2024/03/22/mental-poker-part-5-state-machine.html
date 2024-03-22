@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Mental Poker Part 5: State Machine &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/light.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>March 22, 2024</span></header>
+<article>
+<h1>Mental Poker Part 5: State Machine</h1>
+
+<p>For an overview on Mental Poker, see <a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">Mental Poker Part 0: An Overview</a>.
+Other articles in this series: <a href="https://vladris.com/writings/index.html#mental-poker">https://vladris.com/writings/index.html#mental-poker</a>.
+In the previous <a href="https://vladris.com/blog/2024/03/16/mental-poker-part-4-actions-and-async-queue.html">post in the series</a>
+we covered <em>actions</em> and an async queue implementation.</p>
+
+<p>In this post, we&#39;ll finally look at the infrastructure on top of which we&#39;ll
+model games. The type of games we&#39;re considering can all be modeled as state
+machines<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>. The challenge is we need a generic enough framework that works
+for any game, so let&#39;s consider what they all have in common.</p>
+
+<h2>Transitions</h2>
+
+<p>We can&#39;t tell what the exact states of a game are, as they depend on the
+specific game. But, in general, game play implies transitioning from one
+state to another.</p>
+
+<h3>Local transitions</h3>
+
+<p>In some cases, an action originates on our client. For example: we pick between
+rock, paper, or scissors; we want to draw a card etc. This means we need to run
+some logic on our client, then send an Action over our transport to other
+clients.</p>
+
+<p>To keep things generic and unopinionated, the minimal interface for this is a
+function that takes an action queue and a <code>context</code>.</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">LocalTransition</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="p">,</span><span class="w"> </span><span class="nx">TContext</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+
+<p>We covered the queue in the <a href="https://vladris.com/blog/2024/03/16/mental-poker-part-4-actions-and-async-queue.html">previous post</a>.
+We need this in a local transition because we will run some code then, in most
+cases, we&#39;ll want to enqueue an action and send it to other players. We&#39;ll look
+at an example of this later on in this post.</p>
+
+<p>The <code>context</code> can be anything - this enables the game to pass-through whatever
+data the function needs. Our state machine implementation doesn&#39;t care about
+what that data is, this is just the mechanism to make it available to the code
+in the function.</p>
+
+<p>The function can return either <code>void</code> or a <code>Promise&lt;void&gt;</code> in case it needs to
+be async.</p>
+
+<h3>Remote transitions</h3>
+
+<p>In other cases, an action arrives over the transport. This is an action that
+was sent either by another player, or by us and we receive it back from the
+server after it has been sequenced<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup>.</p>
+
+<p>In this case, our interface is a function that takes the incoming <code>Action</code> and
+a context.</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">Transition</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="p">,</span><span class="w"> </span><span class="nx">TContext</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">TAction</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+
+<p>In this case, we don&#39;t necessarily need access to the queue, since we won&#39;t
+enqueue an action, rather we&#39;re processing one. The <code>context</code> is, again, up to
+the consumer of this API.</p>
+
+<p>The function similarly returns <code>void</code> or a <code>Promise&lt;void&gt;</code> in case it needs to
+be async.</p>
+
+<h3>Runnable transition</h3>
+
+<p>Finally, we need an abstraction over both <code>LocalTransition</code> and <code>Transition</code> so
+when we specify our state machine we can treat them the same way. We&#39;ll use
+<code>RunnableTransition</code> for this:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+
+<p>We expect users of our library to write code in terms of local transitions
+(<code>LocalTransition</code>) and remote transitions (<code>Transition</code>). This type is meant
+to be used internally. Note we are doing some type erasure here as we&#39;re going
+from a generic <code>IQueue</code> to a <code>IQueue&lt;BaseAction&gt;</code>. That&#39;s because we need to
+work with the queue in our library code, but the exact <code>Action</code> types depend on
+the game.</p>
+
+<p>For local transitions, we simply pass through the <code>actionQueue</code>. For remote
+transitions, we dequeue an action and pass that. We&#39;ll see how to do this next.</p>
+
+<p>We&#39;re also normalizing return to be <code>Promise&lt;void&gt;</code> regardless of whether the
+transition function originally returned <code>void</code> or <code>Promise&lt;void&gt;</code>.</p>
+
+<h2>State Machine</h2>
+
+<p>Our state machine is implemented as a set of functions. First, we have a few
+factory functions. <code>local()</code> creates a <code>RunnableTransition</code> from a
+<code>LocalTransition</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">local</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="p">,</span><span class="w"> </span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">transition</span><span class="o">:</span><span class="w"> </span><span class="kt">LocalTransition</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="p">,</span><span class="w"> </span><span class="nx">TContext</span><span class="o">&gt;</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nb">Promise</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span>
+<span class="w">            </span><span class="nx">transition</span><span class="p">(</span><span class="nx">queue</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We call <code>Promise.resolve()</code> to get a <code>Promise</code> regardless of whether the given
+<code>transition</code> is a synchronous or asynchronous function.</p>
+
+<p><code>remote()</code> converts a remote transition into a <code>RunnableTransition</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">transition</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="p">,</span><span class="w"> </span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">transition</span><span class="o">:</span><span class="w"> </span><span class="kt">Transition</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="p">,</span><span class="w"> </span><span class="nx">TContext</span><span class="o">&gt;</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">dequeue</span><span class="p">();</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nb">Promise</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">transition</span><span class="p">(</span><span class="nx">action</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">TAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">));</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Here, we dequeue an action, then pass it to the given transition.</p>
+
+<p>In many cases, we expect multiple players to take the same action, for example
+each player picks between rock, paper, or scissors - in this case, we will
+expect one remote action coming in from each player (including us), of the same
+type. Most times we want to treat these actions the same way, which means we
+want to run the same <code>Transition</code> function for each. The <code>repeat()</code> function
+takes a <code>RunnableTransition</code> and repeats it a given number of times:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">repeat</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">transition</span><span class="o">:</span><span class="w"> </span><span class="kt">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">times</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">Array</span><span class="p">(</span><span class="nx">times</span><span class="p">).</span><span class="nx">fill</span><span class="p">(</span><span class="nx">transition</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This gives as an array of <code>RunnableTransitions</code> we can execute in sequence.</p>
+
+<p>Finally, we might want to combine the output of calling <code>local()</code> with the
+output of calling <code>repeat()</code> into a longer sequence of <code>RunnableTransitions</code> we
+can run - the first function gives us a <code>RunnableTransition</code>, the second
+function gives us an array of <code>RunnableTransition</code>s. To address this, we
+provide <code>sequence</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">sequence</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">transitions</span><span class="o">:</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="nx">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="nx">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">[]</span>
+<span class="w">    </span><span class="p">)[]</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">transitions</span><span class="p">.</span><span class="nx">flat</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This function takes an array of <code>RunnableTransition</code>s, or an array of
+arrays, and calls <code>flat()</code> on this to flatten nested array into a single, flat
+list.</p>
+
+<p>Once we have a sequence of transitions, we can run them using <code>run()</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">run</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">sequence</span><span class="o">:</span><span class="w"> </span><span class="kt">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="p">[],</span>
+<span class="w">    </span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">transition</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">sequence</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">transition</span><span class="p">(</span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We simply execute each <code>RunnableTransition</code> in turn.</p>
+
+<p>Understandably, this has all been abstract. Let&#39;s now see how we can use these
+functions to model interactions.</p>
+
+<h2>Interactions</h2>
+
+<p>Let&#39;s look at a simple example: key exchange: in order to secure our transport,
+we want each client to share a public key, then sign each subsequent message
+with their corresponding private key.</p>
+
+<h3>Key exchange</h3>
+
+<p>We looked at securing the transport layer in <a href="https://vladris.com/blog/2023/11/28/mental-poker-part-3-transport.html">this post</a>.
+We haven&#39;t discussed the key negotiation though.</p>
+
+<p>Let&#39;s create the following protocol: as each client joins the game, they post
+a public key. For an <code>N</code> player game, each client should expect <code>N</code> remote
+transitions consisting of clients publishing public keys. Once all of these
+were processed, we should have all public keys for all clients and can create
+a <code>SignedTransport</code>.</p>
+
+<p>Let&#39;s sketch out the state machine:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">makeKeyExchangeSequence</span><span class="p">(</span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">KeyExchangeAction</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// Post public key ...</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">((</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyExchangeAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// Store incoming public key ...</span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="nx">players</span><span class="p">)</span>
+<span class="w">    </span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Note we create a <code>LocalTransition</code> in which we post our own public key, and we
+repeat the remote transition handling an incoming public key (remember with
+Fluid we expect the server to also send us back whatever we post).</p>
+
+<p>Clients can join the game at different times, so we don&#39;t know in what order
+the keys will come in but, luckily, each <code>Action</code> has a <code>clientId</code> so we know
+who&#39;s key it is.</p>
+
+<p>We&#39;ll look at the implementation of the transitions but first let&#39;s see what
+are the <code>KeyExchangeAction</code> and <code>CryptoContext</code>:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">KeyExchangeAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">Key</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">CryptoContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">me</span><span class="o">:</span><span class="w"> </span><span class="kt">PublicPrivateKeyPair</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">keyStore</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyStore</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+
+<p><code>KeyExchange</code> is an action consisting of <code>clientId</code> and <code>publicKey</code>, with the
+<code>type</code> set to <code>&quot;KeyExchange&quot;</code>.</p>
+
+<p><code>CryptoContext</code> is the context needed by the transitions implementing the key
+exchange - that is we need to know our own <code>clientId</code>, our public-private
+key pair, and we need a <code>keyStore</code>, which is a map of <code>clientId</code> to public key.
+We looked at the <code>KeyStore</code> and the other key types in a previous blog post, but
+here they are again for reference:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">Key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">PublicPrivateKeyPair</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">Key</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">privateKey</span><span class="o">:</span><span class="w"> </span><span class="kt">Key</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">KeyStore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Map</span><span class="o">&lt;</span><span class="nx">ClientId</span><span class="p">,</span><span class="w"> </span><span class="nx">Key</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+
+<p>With these in place, let&#39;s look at the implementation of the transitions:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">makeKeyExchangeSequence</span><span class="p">(</span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span>
+<span class="w">            </span><span class="k">async</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">KeyExchangeAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="c1">// Post public key</span>
+<span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">context.me.publicKey</span><span class="p">,</span>
+<span class="w">                </span><span class="p">});</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span>
+<span class="w">            </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span>
+<span class="w">                </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyExchangeAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="c1">// This should be a KeyExchangeAction</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+
+<span class="w">                    </span><span class="c1">// Protocol expects clients to post an ID</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Expected client ID&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+
+<span class="w">                    </span><span class="c1">// Protocol expects each client to only post once and to have a unique ID</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">keyStore</span><span class="p">.</span><span class="nx">has</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span>
+<span class="w">                            </span><span class="s2">&quot;Same client posted key multiple times&quot;</span>
+<span class="w">                        </span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+
+<span class="w">                    </span><span class="nx">context</span><span class="p">.</span><span class="nx">keyStore</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">publicKey</span><span class="p">);</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">),</span>
+<span class="w">            </span><span class="nx">players</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">    </span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><code>sm</code> stands for <q>state machine</q>. The functions described above live in a
+<code>StateMachine</code> namespace aliased to <code>sm</code>.</p>
+
+<p>Our local transition is simple: we enqueue a <code>KeyExchangeAction</code>, sending our
+<code>clientId</code> and <code>publicKey</code> from the <code>CryptoContext</code>.</p>
+
+<p>When a remote action comes in, we perform the required validations:</p>
+
+<ul>
+<li>Ensure it is a <code>KeyExchangeAction</code>.</li>
+<li>Ensure it has a <code>clinetId</code>.</li>
+<li>Ensure the same client doesn&#39;t post two different public keys.</li>
+</ul>
+
+<p>Finally, we store the <code>clientId</code> and <code>publicKey</code>.</p>
+
+<p>The end-to-end implementation for key exchange, relying on the state machine,
+is here:</p>
+<div class="highlight"><pre><span></span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeCryptoContext</span><span class="p">(</span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">CryptoContext</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">clientId</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">me</span><span class="o">:</span><span class="w"> </span><span class="kt">await</span><span class="w"> </span><span class="nx">Signing</span><span class="p">.</span><span class="nx">generatePublicPrivateKeyPair</span><span class="p">(),</span>
+<span class="w">        </span><span class="nx">keyStore</span><span class="o">:</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="nb">Map</span><span class="o">&lt;</span><span class="nx">ClientId</span><span class="p">,</span><span class="w"> </span><span class="nx">Key</span><span class="o">&gt;</span><span class="p">(),</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">keyExchange</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">makeCryptoContext</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">keyExchangeSequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">makeKeyExchangeSequence</span><span class="p">(</span><span class="nx">players</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="nx">keyExchangeSequence</span><span class="p">,</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">[</span><span class="nx">context</span><span class="p">.</span><span class="nx">me</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">keyStore</span><span class="p">]</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kd">const</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><code>makeCryptoContext()</code> is a helper function to initialize a <code>CryptoContext</code>
+instance - it takes a <code>clientId</code>, generates a public-private key pair, and
+initializes an empty key store.</p>
+
+<p><code>keyExchange()</code> calls the functions we defined previously to get a
+<code>CryptoContext</code>, the key exchange sequence, and calls the state machine&#39;s
+<code>run()</code> to execute the key exchange.</p>
+
+<p>Once done, it returns the client&#39;s public-private key pair, and the key store.</p>
+
+<p>From a caller&#39;s perspective, the protocol handling key exchange is now
+abstracted away behind the <code>keyExchange()</code> function. The caller doesn&#39;t have to
+worry about the mechanics of exchanging keys, rather can just call this and get
+back all the required data to create a <code>SignedTransport</code>.</p>
+
+<h3>Rock-paper-scissors</h3>
+
+<p>As a second example, we&#39;ll sketch out the state machine for a game of
+rock-paper-scissors. We won&#39;t dive into all the implementation details. At a
+high level, here is how we play a game of rock-paper-scissors:</p>
+
+<ul>
+<li>Each player picks from <em>rock</em>, <em>paper</em>, or <em>scissors</em>, encrypts their
+selection, and posts it.</li>
+<li>Once selections are posted, each player posts the key they used to encrypt.</li>
+</ul>
+
+<p>This two-step ensures players are committed to a selection and can&#39;t cheat by
+observing what the other player picked and picking afterwards.</p>
+
+<p>The state machine for this game is:</p>
+
+<ul>
+<li>A local transition in which we make our local selection.</li>
+<li>Two remote transitions, getting from the server our selection and the other
+player&#39;s.</li>
+<li>A local transition in which we share our encryption key.</li>
+<li>Two remote transitions, getting the encryption keys from the server.</li>
+</ul>
+
+<p>The state machine is:</p>
+<div class="highlight"><pre><span></span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">    </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Post our play action</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">    </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Both player and opponent need to post their encrypted selection</span>
+<span class="w">    </span><span class="p">}),</span><span class="w"> </span><span class="mf">2</span><span class="p">),</span>
+<span class="w">    </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Post our reveal action</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">    </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">reveal</span><span class="o">:</span><span class="w"> </span><span class="kt">RevealAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Both player and opponent need to reveal their selection</span>
+<span class="w">    </span><span class="p">}),</span><span class="w"> </span><span class="mf">2</span><span class="p">)</span>
+<span class="p">]);</span>
+</pre></div>
+
+<p>We won&#39;t fill in the functions in this post but this gives you an idea of how
+we can model a more complex set of steps using our library.</p>
+
+<h2>Summary</h2>
+
+<p>In this post we looked at a state machine we can use to implement games:</p>
+
+<ul>
+<li>The state machine needs to be very unopinionated as each game implements
+its own logic, defines its own <code>Action</code> types, and has its own relevant
+context.</li>
+<li>Local transitions are functions we initiate locally and they usually end
+with an action being posted.</li>
+<li>Remote transitions are functions we run in response to actions arriving
+from the servers - these could&#39;ve been originated by us or by another
+client.</li>
+<li><code>RunnableTransition</code> is a common type that can wrap local or remote
+transitions.</li>
+<li>We can combine transitions by repeating them, or concatenating them into
+sequences. Once we have a sequence of transitions, we can run it to
+implement a protocol.</li>
+<li>We saw how key exchange can be implemented on top of a state machine and
+sketched out the state machine for a game of rock-paper-scissors.</li>
+</ul>
+
+<p>The Mental Poker Toolkit is <a href="https://github.com/vladris/mental-poker-toolkit">here</a>.
+This post covered the <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/state-machine">state-machine package</a>,
+the key exchange is implemented in the <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/packages/primitives">primitives package</a>.</p>
+
+<p>Clients send messages to the Fluid relay service, which orders them in
+the order they came in and broadcasts them to all clients. This is to
+ensure all clients eventually see all the messages sent <em>in the same
+order</em>.</p>
+
+<div class="footnotes">
+<hr>
+<ol>
+
+<li id="fn1">
+<p><a href="https://en.wikipedia.org/wiki/Finite-state_machine">https://en.wikipedia.org/wiki/Finite-state_machine</a>.&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p><em>Sequenced</em> is a <a href="https://fluidframework.com/">Fluid Framework</a> term.&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2024/03/16/mental-poker-part-4-actions-and-async-queue.html">Mental Poker Part 4: Actions and Async Queue</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>
