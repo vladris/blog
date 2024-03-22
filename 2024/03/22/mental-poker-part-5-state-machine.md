@@ -438,7 +438,7 @@ the key exchange is implemented in the [primitives package](https://github.com/v
 [^1]: <https://en.wikipedia.org/wiki/Finite-state_machine>.
 
 [^2]: *Sequenced* is a [Fluid Framework](https://fluidframework.com/) term.
-Clients send messages to the Fluid relay service, which orders them in
-the order they came in and broadcasts them to all clients. This is to
-ensure all clients eventually see all the messages sent *in the same
-order*.
+    Clients send messages to the Fluid relay service, which orders them in
+    the order they came in and broadcasts them to all clients. This is to
+    ensure all clients eventually see all the messages sent *in the same
+    order*.
