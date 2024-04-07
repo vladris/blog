@@ -8,6 +8,374 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2024/04/07/mental-poker-part-6-shuffling-implementation.html</link>
+      <guid>https://vladris.com/blog/2024/04/07/mental-poker-part-6-shuffling-implementation.html</guid>
+      <title><![CDATA[Mental Poker Part 6: Shuffling Implementation]]></title>
+      <description><![CDATA[<h1>Mental Poker Part 6: Shuffling Implementation</h1>
+
+<p>For an overview on Mental Poker, see <a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">Mental Poker Part 0: An Overview</a>.
+Other articles in this series: <a href="https://vladris.com/writings/index.html#mental-poker">https://vladris.com/writings/index.html#mental-poker</a>.
+In the previous <a href="https://vladris.com/blog/2024/03/22/mental-poker-part-5-state-machine.html">post in the series</a>
+we covered the state machine we use to implement game logic.</p>
+
+<p>We now have all the pieces in place to look at a card shuffling algorithm.
+Shuffling cards in a game of Mental Poker is one of the key innovations for
+this type of zero-trust games. We went over the cryptography aspects of
+shuffling in <a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">Part 1</a>.</p>
+
+<p>Let's review the algorithm:</p>
+
+<blockquote>
+<ul>
+<li>Alice takes a deck of cards (an array), shuffles the deck, generates
+a secret key \(K_A\), and encrypts each card with \(K_A\).</li>
+<li>Alice hands the shuffled and encrypted deck to Bob. At this point,
+Bob doesn't know what order the cards are in (since Alice encrypted
+the cards in the shuffled deck).</li>
+<li>Bob takes the deck, shuffles it, generates a secret key \(K_B\), and
+encrypts each card with \(K_B\).</li>
+<li>Bob hands the deck to Alice. At this point, neither Alice nor Bob
+know what order the cards are in. Alice got the deck back reshuffled
+and re-encrypted by Bob, so she no longer knows where each card
+ended up. Bob reshuffled an encrypted deck, so he also doesn't know
+where each card is.</li>
+</ul>
+
+<p>At this point the cards are shuffled. In order to play, Alice and Bob
+  also need the capability to look at individual cards. In order to enable
+  this, the following steps must happen:</p>
+
+<ul>
+<li>Alice decrypts the shuffled deck with her secret key \(K_A\). At this
+point she still doesn't know where each card is, as cards are still
+encrypted with \(K_B\).</li>
+<li>Alice generates a new set of secret keys, one for each card in the
+deck. Assuming a 52-card deck, she generates
+\(K_{A_1} ... K_{A_{52}}\) and encrypts each card in the deck with one
+of the keys.</li>
+<li>Alice hands the deck of cards to Bob. At this point, each card is
+encrypted by Bob's key, \(B_K\), and one of Alice's keys, \(K_{A_i}\).</li>
+<li>Bob decrypts the cards using his key \(K_B\). He still doesn't know
+where each card is, as now the cards are encrypted with Alice's
+keys.</li>
+<li>Bob generates another set of secret keys, \(K_{B_1} ... K_{B_{52}}\),
+and encrypts each card in the deck.</li>
+<li>Now each card in the deck is encrypted with a unique key that only
+Alice knows and a unique key only Bob knows.</li>
+</ul>
+
+<p>If Alice wants to look at a card, she asks Bob for his key for that
+  card. For example, if Alice draws the first card, encrypted with
+  \(K_{A_1}\) and \(K_{B_1}\), she asks Bob for \(K_{B_1}\). If Bob sends her
+  \(K_{B_1}\), she now has both keys to decrypt the card and <q>look</q> at it.
+  Bob still can't decrypt it because he doesn't have \(K_{A_1}\).</p>
+
+<p>This way, as long as both Alice and Bob agree that one of them is
+  supposed to <q>see</q> a card, they exchange keys as needed to enable this.</p>
+</blockquote>
+
+<h2>Implementation</h2>
+
+<p>While we covered the algorithm before, we didn't have the infrastructure in
+place to implement this. We now do.</p>
+
+<h3>Types</h3>
+
+<p>We'll start by describing our shuffle actions. As we just saw in the above
+recap, we have 2 steps:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">ShuffleAction1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">BaseAction</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Shuffle1"</span><span class="p">;</span><span class="w"> </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="p">};</span>
+<span class="kr">type</span><span class="w"> </span><span class="nx">ShuffleAction2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">BaseAction</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Shuffle2"</span><span class="p">;</span><span class="w"> </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="p">};</span>
+</pre></div>
+
+<p>We only need to pass around the deck of cards (encrypted or not), so we extend
+the <code>BaseAction</code> type (which includes <code>ClientId</code> and <code>type</code>) to pin the type
+and add the deck.</p>
+
+<p>We need more data in the context though:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">ShuffleContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span>
+<span class="w">    </span><span class="nx">imFirst</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">keyProvider</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyProvider</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">commonKey?</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">privateKeys?</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">[];</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>We need to know our <code>clientId</code>, whether we are first or second in the turn
+order, we need a <code>keyProvider</code> to generate encryption keys, a <code>commonKey</code>
+(that's for the first encryption step) and <code>privateKeys</code> (for the second
+encryption step). We'll use the context later on, when we stich everything
+together. Before that, let's look at the basic shuffling functions.</p>
+
+<h3>Shuffling primitives</h3>
+
+<p>First, we need a function that shuffles an array:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">shuffleArray</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">arr</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="nx">T</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">currentIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">arr</span><span class="p">.</span><span class="nx">length</span><span class="p">,</span><span class="w">  </span><span class="nx">randomIndex</span><span class="p">;</span>
+<span class="w">  </span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nx">currentIndex</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span>
+<span class="w">      </span><span class="nx">randomIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nx">currentIndex</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">currentIndex</span><span class="o">--</span><span class="p">;</span>
+<span class="w">  </span>
+<span class="w">      </span><span class="p">[</span><span class="nx">arr</span><span class="p">[</span><span class="nx">currentIndex</span><span class="p">],</span><span class="w"> </span><span class="nx">arr</span><span class="p">[</span><span class="nx">randomIndex</span><span class="p">]]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="nx">arr</span><span class="p">[</span><span class="nx">randomIndex</span><span class="p">],</span><span class="w"> </span><span class="nx">arr</span><span class="p">[</span><span class="nx">currentIndex</span><span class="p">]];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">arr</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>We won't go into the details of this, as it's a generic shuffling function, not
+specific to Mental Poker, but a required piece.</p>
+
+<p>Let's look at the two shuffling steps next. First step, in which we shuffle
+and encrypt all cards with the same key:</p>
+<div class="highlight"><pre><span/><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">shuffle1</span><span class="p">(</span><span class="nx">keyProvider</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyProvider</span><span class="p">,</span><span class="w"> </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="p">[</span><span class="nx">SRAKeyPair</span><span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="p">[]]</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">commonKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">keyProvider</span><span class="p">.</span><span class="nx">make</span><span class="p">();</span>
+
+<span class="w">    </span><span class="nx">deck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">shuffleArray</span><span class="p">(</span><span class="nx">deck</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">card</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">SRA</span><span class="p">.</span><span class="nx">encryptString</span><span class="p">(</span><span class="nx">card</span><span class="p">,</span><span class="w"> </span><span class="nx">commonKey</span><span class="p">)));</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">[</span><span class="nx">commonKey</span><span class="p">,</span><span class="w"> </span><span class="nx">deck</span><span class="p">];</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>The <code>shuffle1()</code> function takes a <code>keyProvider</code>, a <code>deck</code>, and returns a
+promise of a shuffled deck plus the key used to encrypt it.</p>
+
+<p>The function is pretty straight-forward: we generate a new key, we encrypt
+each card with it, then we shuffle the deck. We return the key and the now
+shuffled and encrypted deck.</p>
+
+<p>Both players need to perform the first step, after which both Alice and Bob
+have encrypted the deck with \(K_A\) and \(K_B\) respectively, so neither
+knows the order of the cards.</p>
+
+<p>The next step, according to our algorithm, is for each player to decrypt the
+deck with their key and encrypt each card individually with a unique key:</p>
+<div class="highlight"><pre><span/><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">shuffle2</span><span class="p">(</span><span class="nx">commonKey</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">,</span><span class="w"> </span><span class="nx">keyProvider</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyProvider</span><span class="p">,</span><span class="w"> </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="p">[</span><span class="nx">SRAKeyPair</span><span class="p">[],</span><span class="w"> </span><span class="kt">string</span><span class="p">[]]</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">privateKeys</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+
+<span class="w">    </span><span class="nx">deck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">deck</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">card</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">SRA</span><span class="p">.</span><span class="nx">decryptString</span><span class="p">(</span><span class="nx">card</span><span class="p">,</span><span class="w"> </span><span class="nx">commonKey</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">deck</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">privateKeys</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">keyProvider</span><span class="p">.</span><span class="nx">make</span><span class="p">());</span>
+<span class="w">        </span><span class="nx">deck</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SRA</span><span class="p">.</span><span class="nx">encryptString</span><span class="p">(</span><span class="nx">deck</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span><span class="w"> </span><span class="nx">privateKeys</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">[</span><span class="nx">privateKeys</span><span class="p">,</span><span class="w"> </span><span class="nx">deck</span><span class="p">];</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><code>shuffle2()</code> is also fairly straight-forward. It takes the <code>commonKey</code> from
+step 1, a <code>keyProvider</code>, and the encrypted <code>deck</code>.</p>
+
+<p>First, it decrypts all cards using the <code>commonKey</code> (note the cards are still
+encrypted by the other player). Next, it uses the <code>keyProvider</code> to generate
+a key for each card, and encrypts each card with the key. The function returns
+the private keys generated, and the re-encrypted deck.</p>
+
+<p>We now have all the basics in place. Here's how we put it all together:</p>
+
+<h3>Shuffling state machine</h3>
+
+<p>Here is the state machine that describes the shuffling steps:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">makeShuffleSequence</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">ShuffleAction1</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">context</span><span class="p">.</span><span class="nx">imFirst</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">return</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="p">[</span><span class="nx">context</span><span class="p">.</span><span class="nx">commonKey</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">shuffle1</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">keyProvider</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">);</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Shuffle1"</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">context.deck</span><span class="p">,</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleAction1</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"Shuffle1"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">deck</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">ShuffleAction1</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">imFirst</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">return</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="p">[</span><span class="nx">context</span><span class="p">.</span><span class="nx">commonKey</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">shuffle1</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">keyProvider</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">);</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Shuffle1"</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">context.deck</span><span class="p">,</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleAction1</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"Shuffle1"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">deck</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">ShuffleAction2</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">context</span><span class="p">.</span><span class="nx">imFirst</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">return</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="p">[</span><span class="nx">context</span><span class="p">.</span><span class="nx">privateKeys</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">shuffle2</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">commonKey</span><span class="o">!</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">keyProvider</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">);</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Shuffle2"</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">context.deck</span><span class="p">,</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleAction2</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"Shuffle2"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">deck</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">ShuffleAction2</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">imFirst</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">return</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="p">[</span><span class="nx">context</span><span class="p">.</span><span class="nx">privateKeys</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">shuffle2</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">commonKey</span><span class="o">!</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">keyProvider</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">);</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Shuffle2"</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">context.deck</span><span class="p">,</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleAction2</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"Shuffle2"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">deck</span><span class="p">;</span>
+<span class="w">        </span><span class="p">})</span>
+<span class="w">    </span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Note we are limiting this to a 2-player game, though we can easily generalize
+to more players if needed.</p>
+
+<p>This is a longer function so let's break it down:</p>
+
+<ul>
+<li>We start with a local transition: if we are not the first player (based on
+some previously established turn order), we do nothing. Else we run
+<code>shuffle1()</code> and post the encrypted deck as a <code>Shuffle1</code> action.</li>
+<li>Next, we expect a <code>Shuffle1</code> action to arrive - either the one we just posted
+(if <code>imFirst</code> is <code>true</code>) or incoming from the other player. We store the
+encrypted and shuffled deck.</li>
+<li>Then, we call <code>shuffle1()</code> if we are <em>not</em> the first player - if we are <em>not</em>
+the first player, then it is our turn to shuffle now. We post another
+<code>Shuffle1</code> action.</li>
+<li>We again expect a <code>Shuffle1</code> action to arrive and update the deck.</li>
+</ul>
+
+<p>At this point, both players performed the first step of the shuffle, so the
+deck is encrypted with \(K_A\) And \(K_B\) and neither players knows the turn order.
+We move on to the second step of the shuffle, where each player calls
+<code>shuffle2()</code> to decrypt the deck and re-encrypt each individual card. Again,
+depending on whether we are first or not, we take action or wait:</p>
+
+<ul>
+<li>If <code>imFirst</code> is <code>true</code>, call <code>shuffle2()</code> and post a <code>Shuffle2</code> action.</li>
+<li>Expect a <code>Shuffle2</code> action and update the deck.</li>
+<li>If <code>imFirst</code> is <em>not</em> <code>true</code>, call <code>shuffle2()</code> and post a <code>Shuffle2</code> action.</li>
+<li>Expect a <code>Shuffle2</code> action and update the deck.</li>
+</ul>
+
+<p>A helper function to run this state machine given an async queue:</p>
+<div class="highlight"><pre><span/><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">shuffle</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">turnOrder</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[],</span>
+<span class="w">    </span><span class="nx">sharedPrime</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[],</span>
+<span class="w">    </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">keySize</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">128</span><span class="w"> </span><span class="c1">// Key size, defaults to 128 bytes</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="p">[</span><span class="nx">SRAKeyPair</span><span class="p">[],</span><span class="w"> </span><span class="kt">string</span><span class="p">[]]</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="mf">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Shuffle only implemented for exactly two players"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">ShuffleContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">clientId</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">deck</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">imFirst</span><span class="o">:</span><span class="w"> </span><span class="kt">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">turnOrder</span><span class="p">[</span><span class="mf">0</span><span class="p">],</span>
+<span class="w">        </span><span class="nx">keyProvider</span><span class="o">:</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="nx">KeyProvider</span><span class="p">(</span><span class="nx">sharedPrime</span><span class="p">,</span><span class="w"> </span><span class="nx">keySize</span><span class="p">)</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">shuffleSequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">makeShuffleSequence</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="nx">shuffleSequence</span><span class="p">,</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">[</span><span class="nx">context</span><span class="p">.</span><span class="nx">privateKeys</span><span class="o">!</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">deck</span><span class="p">];</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We need our <code>clientId</code>, the turn order (whether we go first or not), a shared
+large prime (to seed other encryption keys), an unshuffled deck, a queue, and,
+optionally, a <code>keySize</code>.</p>
+
+<p>From the input, we create a <code>ShuffleContext</code> with the required data, then we
+generate the state machine by calling the function we discussed previously,
+and we run the state machine using the given <code>actionQueue</code> and generated
+<code>context</code>.</p>
+
+<p>We return the private keys with which we encrypted each individual card, and
+the shuffled and encrypted deck.</p>
+
+<h3>Notes on performance</h3>
+
+<p>Shuffling a full deck of 52 cards with large enough key sizes gets noticeably
+slow. Note that we need to generate an encryption key for each card, which
+involves searching for large prime numbers. The more secure we want the
+encryption to be, the larger the number of bits we want in the key, the longer
+it takes to find a key.</p>
+
+<p>This can be mitigated with some loading/progress UI while shuffling. For the
+<a href="https://github.com/vladris/mental-poker-toolkit/tree/main/demos/discard">demo discard game</a>
+in <code>mental-poker-toolkit</code>, I used a smaller deck (only cards from <code>9</code> to <code>A</code>)
+and a smaller key size (64 bits).</p>
+
+<p>When implementing a game, it might be a good idea to start generating
+encryption keys asynchronously as soon as possible - note though that the
+players need to agree on a shared large prime before key generation can begin.</p>
+
+<h2>Summary</h2>
+
+<p>In this post we looked at an implementation of card shuffling.</p>
+
+<ul>
+<li>We recapped the shuffling algorithm for Mental Poker, which enables playing
+zero-trust card games.</li>
+<li>We implemented the two steps of shuffling as <code>shuffle1()</code> and <code>shuffle2()</code>.</li>
+<li>We defined the state machine that models 2-player shuffling.</li>
+<li>We went over a helper function that runs the state machine and outputs the
+shuffled deck.</li>
+<li>We briefly discussed performance of shuffling.</li>
+</ul>
+
+<p>The Mental Poker Toolkit is <a href="https://github.com/vladris/mental-poker-toolkit">here</a>.
+This post covered card shuffling, which is implemented in the <code>primitives</code>
+package in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/packages/primitives/src/shuffle.ts">shuffle.ts</a>.</p>
+]]></description>
+      <pubDate>Sun, 07 Apr 2024 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2024/03/22/mental-poker-part-5-state-machine.html</link>
       <guid>https://vladris.com/blog/2024/03/22/mental-poker-part-5-state-machine.html</guid>
       <title><![CDATA[Mental Poker Part 5: State Machine]]></title>
