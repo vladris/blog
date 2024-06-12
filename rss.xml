@@ -8,6 +8,498 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html</link>
+      <guid>https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html</guid>
+      <title><![CDATA[Mental Poker Part 7: Primitives]]></title>
+      <description><![CDATA[<h1>Mental Poker Part 7: Primitives</h1>
+
+<p>For an overview on Mental Poker, seeÂ <strong><a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">Mental Poker Part 0: An
+Overview</a></strong>.
+Other articles in this
+seriesÂ <strong><a href="https://vladris.com/writings/index.html#mental-poker">here</a></strong>.
+In the previousÂ <strong><a href="https://vladris.com/blog/2024/04/07/mental-poker-part-6-shuffling-implementation.html">post in the
+series</a></strong>Â we
+saw how to implement shuffling on top of our primitives.</p>
+
+<p>It this post, weâll look at a few other primitives useful for implementing a
+game on top of this toolkit.</p>
+
+<h2>Creating a transport</h2>
+
+<p>We talked about <a href="https://fluidframework.com/">Fluid Framework</a> in previous
+posts. In <a href="https://vladris.com/blog/2023/06/04/mental-poker-part-2-fluid-ledger.html">part
+2</a>,
+we discussed the Fluid ledger, a distributed data structure which forms the
+basis of our game message exchange. In <a href="https://vladris.com/blog/2023/11/28/mental-poker-part-3-transport.html">part
+3</a>, we
+talked about our <code>ITransport</code> interface and how we can implement it given a
+ledger. We haveât covered how to get a ledger. </p>
+
+<p>Letâs go back down the stack, all the way to Fluid Framework. Fluid Framework
+expects clients to agree on the basic layout of the distributed data structures
+theyâre working with. These data structures are packaged in a <em>container</em>. Note
+this container has nothing to do with Docker containers, itâs simply a
+definition for a set of data structures.</p>
+
+<p>Weâll look at a simple implementation of joining a Fluid session and using a
+container that includes only a ledger. We wonât even try to connect to an
+instance of the Azure Fluid Relay service, rather weâll use a local server.
+Instructions for connecting to a service hosted in Azure are
+<a href="https://learn.microsoft.com/en-us/azure/azure-fluid-relay/how-tos/connect-fluid-azure-service">here</a>.
+For our local server, we need a stub user and an <code>AzureLocalConnectionConfig</code>
+including an <code>InsecureTokenProvider</code> - this is all plumbing to connect to a
+local instance of the Fluid Relay service:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">"userId"</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">"userName"</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">localConnectionConfig</span><span class="o">:</span><span class="w"> </span><span class="kt">AzureLocalConnectionConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"local"</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">tokenProvider</span><span class="o">:</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="nx">InsecureTokenProvider</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="p">),</span>
+<span class="w">    </span><span class="nx">endpoint</span><span class="o">:</span><span class="w"> </span><span class="s2">"http://localhost:7070"</span><span class="p">,</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>With this connection config, we can now define a simple container containing a <code>Ledger</code>:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getLedger</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">AzureClient</span><span class="p">({</span><span class="w"> </span><span class="nx">connection</span><span class="o">:</span><span class="w"> </span><span class="kt">localConnectionConfig</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">containerSchema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">initialObjects</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">myLedger</span><span class="o">:</span><span class="w"> </span><span class="kt">Ledger</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">container</span><span class="o">:</span><span class="w"> </span><span class="kt">IFluidContainer</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">containerId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">hash</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">containerId</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">({</span><span class="w"> </span><span class="nx">container</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">client</span><span class="p">.</span><span class="nx">getContainer</span><span class="p">(</span>
+<span class="w">            </span><span class="nx">containerId</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">containerSchema</span>
+<span class="w">        </span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">({</span><span class="w"> </span><span class="nx">container</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">client</span><span class="p">.</span><span class="nx">createContainer</span><span class="p">(</span><span class="nx">containerSchema</span><span class="p">));</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">container</span><span class="p">.</span><span class="nx">attach</span><span class="p">();</span>
+<span class="w">        </span><span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">hash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">id</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">ledger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">container</span><span class="p">.</span><span class="nx">initialObjects</span><span class="p">.</span><span class="nx">myLedger</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Ledger</span><span class="o">&lt;</span><span class="kt">string</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">makeFluidClient</span><span class="p">(</span><span class="nx">ledger</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We check the browser windowâs URL: if it ends with a GUID, we load the
+container; if not, we create a new container and add its GUID to the browser
+windowâs URL. This makes it easy to connect two local clients to the same
+session:</p>
+
+<ul>
+<li>We launch our web app and the first client will create a container and get a
+GUID.</li>
+<li>We then copy/paste the URL into a separate tab and the second client will
+connect to the same session and load the container identified by the GUID.</li>
+</ul>
+
+<p>The code above can be found in the
+<a href="https://github.com/vladris/mental-poker-toolkit/tree/main/demos/transport"><code>demos/transport</code></a>
+package. This is used by the other demo apps. Note you need to run the Fluid
+Framework local service: <code>npx @fluidframework/azure-local-service@latest</code>.</p>
+
+<p>We now have a simple abstraction, <code>getLedger()</code>, that wraps all the Fluid
+Framework-specifics and gives us back an <code>ITransport</code> interface (implemented as
+a <code>FluidTransport</code>).</p>
+
+<h2>Upgrading the transport</h2>
+
+<p>We are building a turn-based, cryptographically secure game, so the first step
+is to ensure our channel is secure and clients canât spoof each other.</p>
+
+<p>In <a href="https://vladris.com/blog/2023/11/28/mental-poker-part-3-transport.html">part
+3</a> we
+looked at the <code>ITransport</code> interface, the <code>FluidTransport</code> implementation which
+leverages the Fluid protocol for communication, and the <code>SignedTransport</code>
+implementation which wraps the <code>FluidTransport</code> and enhances it with signature
+verification.</p>
+
+<blockquote>
+<p><strong>Recap of signing</strong>: in cryptography, we do signing using a public/private
+key pair. These are both generated from a shared seed. Alice can sign a message
+using her private key and anyone that has the public key, including Bob, can
+verify that the signature is indeed Aliceâs.</p>
+
+<p>So given a public/private key pair \(&lt;K_private, K_public&gt;\) and some payload
+\(P\), singing is a function that produces a signature given the payload and
+private key \(sign(P, K_private) -&gt; signature\). Signature verification is a
+function that takes a payload, signature, and public key and tells us whether
+the signature was indeed produced by the corresponding private key \(verify(P,
+signature, K_public) -&gt; true/false\).</p>
+</blockquote>
+
+<p>The neat thing about public/private key cryptography is that the public key,
+which is required for validation, is not a secret - only the private key is.
+Nobody can spoof a signature unless they have the private key (which isnât
+shared), but everyone with the public key can verify that the signature comes
+from the private key owner.</p>
+
+<p>So if we start with a <code>FluidTransport</code>, we need our clients to exchange public
+keys. Each client generates a public/private key pair, and posts its client ID
+and public key. We use these to populate the key store.</p>
+
+<p>We can implement this on top of the state machine we saw in <a href="https://vladris.com/blog/2024/03/22/mental-poker-part-5-state-machine.html">part
+5</a>.
+First, we define our action and context. As a reminder, the action is what we
+send over the wire and expect to receive. The context is an object we make
+available to the code we run whenever an action appears over the transport.</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">KeyExchangeAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">Key</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">CryptoContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">me</span><span class="o">:</span><span class="w"> </span><span class="kt">PublicPrivateKeyPair</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">keyStore</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyStore</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>In our case our action contains the <code>ClientId</code>, the <code>type</code> (which is
+<code>KeyExchange</code>), and a public key. Each client is expected to post this over the
+transport. The context contains our <code>ClientId</code> (so we can tell whether the
+message came from us or someone else), our public/private key pair, and the
+<code>KeyStore</code> in which we put all <code>ClientId</code>-to-<code>Key</code> mappings.</p>
+
+<p>A helper function to create the <code>CryptoContext</code>:</p>
+<div class="highlight"><pre><span/><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">makeCryptoContext</span><span class="p">(</span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">CryptoContext</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">clientId</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">me</span><span class="o">:</span><span class="w"> </span><span class="kt">await</span><span class="w"> </span><span class="nx">Signing</span><span class="p">.</span><span class="nx">generatePublicPrivateKeyPair</span><span class="p">(),</span>
+<span class="w">        </span><span class="nx">keyStore</span><span class="o">:</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="nb">Map</span><span class="o">&lt;</span><span class="nx">ClientId</span><span class="p">,</span><span class="w"> </span><span class="nx">Key</span><span class="o">&gt;</span><span class="p">(),</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This leverages the cryptography primitives in our toolkit to generate a
+public/private key pair.</p>
+
+<p>Our sequence to be executed by the state machine is:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">makeKeyExchangeSequence</span><span class="p">(</span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span>
+<span class="w">            </span><span class="k">async</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">KeyExchangeAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">context.me.publicKey</span><span class="p">,</span>
+<span class="w">                </span><span class="p">});</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span>
+<span class="w">            </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span>
+<span class="w">                </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyExchangeAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Expected client ID"</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">keyStore</span><span class="p">.</span><span class="nx">has</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span>
+<span class="w">                            </span><span class="s2">"Same client posted key multiple times"</span>
+<span class="w">                        </span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+
+<span class="w">                    </span><span class="nx">context</span><span class="p">.</span><span class="nx">keyStore</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">publicKey</span><span class="p">);</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">),</span>
+<span class="w">            </span><span class="nx">players</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">    </span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Refer to <a href="https://vladris.com/blog/2024/03/22/mental-poker-part-5-state-machine.html">part
+5</a>
+for the state machine details and a more in-depth explanation of local
+actions/transitions etc. Our sequence starts with a local action, meaning
+originating from our client: we post our client ID and public key. Then, for the
+given number of <code>players</code> we expect in the session, we repeatedly expect an
+incoming action of type <code>KeyExchangeAction</code>.</p>
+
+<p>In other words, our protocol require each client to start by posting their
+public key, and each client should expect as many such key postings as clients
+in the game.</p>
+
+<p>We handle some error cases:</p>
+
+<ul>
+<li>If the incoming action type is not a <code>KeyExchangeAction</code>, one of the clients
+didnât respect the protocol, so we bail.</li>
+<li>If we donât have a client ID, we also bail.</li>
+<li>Same if we already saw a key for this client ID - this means either a
+malicious client is trying to pretend to be another client ID, or a bug in how
+the protocol was implemented. Regardless, we have to bail.</li>
+</ul>
+
+<p>If we didnât hit any of these issues, then we store the client ID and key in the
+<code>KeyStore</code> instance. Once the state machine executes this sequence, each client has enough
+information to create a <code>SignedTransport</code>. Here is a helper function to perform
+the whole key exchange:</p>
+<div class="highlight"><pre><span/><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">keyExchange</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">makeCryptoContext</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">keyExchangeSequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">makeKeyExchangeSequence</span><span class="p">(</span><span class="nx">players</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="nx">keyExchangeSequence</span><span class="p">,</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">[</span><span class="nx">context</span><span class="p">.</span><span class="nx">me</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">keyStore</span><span class="p">]</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kd">const</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This function takes as input the expected number of players, the ID of this
+client, and an action queue (as discussed in <a href="https://vladris.com/blog/2024/03/16/mental-poker-part-4-actions-and-async-queue.html">part
+4</a>).
+The implementation is straight-forward:</p>
+
+<ol>
+<li>We create a <code>context</code>.</li>
+<li>We generate a key exchange sequence by calling the function we just saw.</li>
+<li>We use our state machine to run the sequence.</li>
+<li>We return our private key and the <code>KeyStore</code> (the key store contains only
+public keys).</li>
+</ol>
+
+<p>And here is a helper function that upgrades a transport to a signed one:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">upgradeTransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">transport</span><span class="o">:</span><span class="w"> </span><span class="kt">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">keyPair</span><span class="p">,</span><span class="w"> </span><span class="nx">keyStore</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">keyExchange</span><span class="p">(</span>
+<span class="w">        </span><span class="nx">players</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">clientId</span><span class="p">,</span>
+<span class="w">        </span><span class="ow">new</span><span class="w"> </span><span class="nx">ActionQueue</span><span class="p">(</span>
+<span class="w">            </span><span class="nx">transport</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">unknown</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">ITransport</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">            </span><span class="kc">true</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ActionQueue</span><span class="p">(</span>
+<span class="w">        </span><span class="ow">new</span><span class="w"> </span><span class="nx">SignedTransport</span><span class="p">(</span>
+<span class="w">            </span><span class="nx">transport</span><span class="p">,</span>
+<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="nx">clientId</span><span class="p">,</span><span class="w"> </span><span class="nx">privateKey</span><span class="o">:</span><span class="w"> </span><span class="kt">keyPair.privateKey</span><span class="w"> </span><span class="p">},</span>
+<span class="w">            </span><span class="nx">keyStore</span><span class="p">,</span>
+<span class="w">            </span><span class="ow">new</span><span class="w"> </span><span class="nx">SignatureProvider</span><span class="p">()</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This function takes the number of players, our client ID, and an <code>ITransport</code>
+which doesnât support signature verification. It executes the key exchange, then
+creates a <code>SignedTransport</code> since it now has all the pieces needed for that.
+This function goes a step further, and also initializes an async queue on top of
+the singed transport.</p>
+
+<p>A game that uses the toolkit can go from start to a queue over a signed
+transport in 3 steps:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">ledger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getLedger</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="p">();</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">randomClientId</span><span class="p">();</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">upgradeTransport</span><span class="p">(</span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">ledger</span><span class="p">);</span>
+</pre></div>
+
+<p>In this example, we call <code>getLedger()</code>, which we discussed in the first part of
+this post, we generate a unique client ID, then we call <code>upgradeTransport()</code>.
+With these 3 lines of code, we get an <code>ActionQueue</code> over a <code>SignedTransport</code>.</p>
+
+<h2>Establishing turn order and shared large prime</h2>
+
+<p>The last primitive weâll look at in this post is another key component of Mental
+Poker: having clients agree who goes first, and agree on a shared large prime
+(this shared prime is used to generate SRA keys, as discussed in <a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">part
+1</a>).</p>
+
+<p>These can be separate steps but we can combine them to be more efficient. To
+establish turn order, we can leverage the ledger distributed data structure
+which guarantees all clients get all ops in the same sequence: each client posts
+<em>something</em>, then we simply use the order in which clients see these posts as
+the turn order.</p>
+
+<p>Hereâs a sketch of the state machine for this:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">EstablishTurnOrderAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">BaseAction</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">EstablishTurnOrderContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">turnOrder</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">[];</span>
+<span class="p">};</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">makeEstablishTurnOrderSequence</span><span class="p">(</span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">EstablishTurnOrderAction</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"EstablishTurnOrder"</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">((</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"EstablishTurnOrder"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">find</span><span class="p">((</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Same client posted prime multiple times"</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">);</span><span class="w"> </span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="nx">players</span><span class="p">)</span>
+<span class="w">    </span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Our <code>EstablishTurnOrderAction</code> is an alias for <code>BaseAction</code>, as it doesnât
+contain any additional information, just the client ID. The context contains our
+<code>clientId</code> and the turn order array we need to populate.</p>
+
+<p>The state machine posts our clientID as an action of type <code>EstablishTurnOrder</code>
+action. Then for the given number of players, we expect an action of this type.
+We check that incoming action is of this type, then we check we donât see the
+same action coming multiple times from the same client. Finally, we add the
+received <code>clientId</code> to the <code>turnOrder</code> array.</p>
+
+<p>And thatâs it - once this executes, all clients will end up with the same
+<code>turnOrder</code> array and will know whether it is their turn to act, or they should
+be waiting for another client to take a turn.</p>
+
+<p>We can extend this implementation to also establish a shared prime: each client
+posts a prime, then the first one to arrive to others âwinsâ and becomes the
+shared prime.</p>
+
+<p>Weâll update our <code>EstablishTurnOrderAction</code> to include a prime:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">SerializedPrime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">EstablishTurnOrderAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">BaseAction</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">prime</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedPrime</span><span class="w"> </span><span class="p">};</span>
+</pre></div>
+
+<p>We need to define a <code>SerializedPrime</code> (as a string) to work around the fact that
+we canât serialize <code>BigInt</code>s using <code>JSON.stringify()</code>, which is what weâre using
+to serialize actions.</p>
+
+<p>We extend our context to also include the shared prime:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">EstablishTurnOrderContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">prime</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">turnOrder</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">[];</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>Our state machine also gets updated:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">makeEstablishTurnOrderSequence</span><span class="p">(</span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">EstablishTurnOrderAction</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"EstablishTurnOrder"</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">prime</span><span class="o">:</span><span class="w"> </span><span class="kt">BigIntUtils.bigIntToString</span><span class="p">(</span><span class="nx">BigIntUtils</span><span class="p">.</span><span class="nx">randPrime</span><span class="p">()),</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">((</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"EstablishTurnOrder"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">context</span><span class="p">.</span><span class="nx">prime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">BigIntUtils</span><span class="p">.</span><span class="nx">stringToBigInt</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">prime</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">find</span><span class="p">((</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Same client posted prime multiple times"</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">);</span><span class="w"> </span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="nx">players</span><span class="p">)</span>
+<span class="w">    </span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The only changes are:</p>
+
+<ol>
+<li>When we enqueue our action, we generate a random prime and serialize it (we
+have a utility function that does this, which I wonât describe here).</li>
+<li>If our <code>turnOrder</code> array is empty, meaning we just received the first action,
+we set the <code>prime</code> in the context.</li>
+</ol>
+
+<p>With these changes, after we run this state machine we have both the turn order
+and a prime all clients agree on.</p>
+
+<p>To make calling this easier, we provide a function to initialize the context:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">makeEstablishTurnOrderContext</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">EstablishTurnOrderContext</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">clientId</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">prime</span><span class="o">:</span><span class="w"> </span><span class="kt">undefined</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">turnOrder</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Then putting it all together:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">establishTurnOrder</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">players</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">makeEstablishTurnOrderContext</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">establishTurnOrderSequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">makeEstablishTurnOrderSequence</span><span class="p">(</span><span class="nx">players</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="nx">establishTurnOrderSequence</span><span class="p">,</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">[</span><span class="nx">context</span><span class="p">.</span><span class="nx">prime</span><span class="o">!</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">]</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kd">const</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We create a context, we create the state machine, then we run it. The function
+returns the shared prime and the turn order.</p>
+
+<h2>Summary</h2>
+
+<p>In this post we covered a few primitives or building blocks we can use for
+building games:</p>
+
+<ul>
+<li>Creating a Fluid transport, and abstracting all the details under a
+<code>getLedger()</code> function. The code for this is in the <code>demo/transport</code> package,
+in
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/transport/src/container.ts"><code>container.ts</code></a>.</li>
+<li>Upgrading the Fluid transport to a <code>SignedTransport</code> which signs outbound
+actions and verifies signatures of incoming actions. The code for this is in
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/packages/primitives/src/upgradeTransport.ts"><code>packages/primitives/upgradeTransport.ts</code></a>.</li>
+<li>Establish turn order for the players and agreeing on a shared large prime. The
+code for this is in
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/packages/primitives/src/establishTurnOrder.ts"><code>packages/primitives/establishTurnOrder.ts</code></a>.</li>
+</ul>
+
+<p>With the primitives out of the way, in the next post weâll look at the
+high-level of modeling a game using the toolkit.</p>
+]]></description>
+      <pubDate>Wed, 12 Jun 2024 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2024/04/07/mental-poker-part-6-shuffling-implementation.html</link>
       <guid>https://vladris.com/blog/2024/04/07/mental-poker-part-6-shuffling-implementation.html</guid>
       <title><![CDATA[Mental Poker Part 6: Shuffling Implementation]]></title>
@@ -20486,7 +20978,7 @@ Fibonacci number</em>.</p>
 
 <p>Directly translating the definition above into an algorithm to compute
 the n-th Fibonacci number yields:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">fib</span><span class="p">(</span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">i32</span> <span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">fib</span><span class="p">(</span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 
@@ -20506,7 +20998,7 @@ sequence end up being computed over and over again.</p>
 
 <p>A better way to generate the nth Fibonacci number is to build it
 bottom-up, starting from \(F_0\) and \(F_1\):</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">fib2</span><span class="p">(</span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">i32</span> <span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">fib2</span><span class="p">(</span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
@@ -20600,7 +21092,7 @@ in:</p>
 <p>Assuming we have a function for exponentiating 2x2 matrices <code>exp2x2</code>, we
 can implement an algorithm to compute the nth Fibonacci number like
 this:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">fib3</span><span class="p">(</span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">i32</span> <span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">fib3</span><span class="p">(</span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 
@@ -20616,7 +21108,7 @@ this:</p>
 <p>The complexity of this algorithm is given by the complexity of <code>exp2x2</code>.
 A simple implementation of matrix exponentiation given a matrix
 multiplication function <code>mul2x2</code> is:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">exp2x2</span><span class="p">(</span><span class="n">a</span>: <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">exp2x2</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">        </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span>
 <span class="w">        </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span>
@@ -20633,7 +21125,7 @@ multiplication function <code>mul2x2</code> is:</p>
 <p>This function computes <code>a^n</code> by starting with the identity matrix and
 multiplying it with a n times. The function for multiplying two 2x2
 matrices is trivial:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">mul2x2</span><span class="p">(</span><span class="n">a</span>: <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">b</span>: <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="w"> </span>-&gt; <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">mul2x2</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">b</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="p">[</span>
 <span class="w">        </span><span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
 <span class="w">        </span><span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
@@ -20658,7 +21150,7 @@ odd, we do the same but multiply by the base (for example
 \(x^9 = (x*x)^4 *
 x\)). This is a recursive algorithm which halves <code>n</code> at each step, so we
 have logarithmic time and space complexity.</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">fast_exp2x2</span><span class="p">(</span><span class="n">a</span>: <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">fast_exp2x2</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fast_exp2x2</span><span class="p">(</span><span class="n">mul2x2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">),</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
@@ -20688,7 +21180,7 @@ if n is odd, return egyptian_mul(a + a, (n - 1) / 2) + a
 </pre></div>
 
 <p>An implementation in Rust is:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">egyptian_mul</span><span class="p">(</span><span class="n">a</span>: <span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">i32</span> <span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">egyptian_mul</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">egyptian_mul</span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
@@ -20713,12 +21205,12 @@ generalize these to an algorithm that given an initial value <code>a</code> of a
 type <code>T</code>, an operation <code>op(T, T) -&gt; T</code>, and <code>n</code>, the number of times to
 apply <code>op</code>, provides an efficient computation using doubling and
 halving:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">op_n_times</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span>: <span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="n">op</span>: <span class="kp">&amp;</span><span class="nc">Op</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">T</span>
-<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">T</span>: <span class="nb">Copy</span><span class="p">,</span>
-<span class="w">          </span><span class="n">Op</span>: <span class="nb">Fn</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">T</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">op_n_times</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Op</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">T</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">T</span><span class="p">:</span><span class="w"> </span><span class="nb">Copy</span><span class="p">,</span>
+<span class="w">          </span><span class="n">Op</span><span class="p">:</span><span class="w"> </span><span class="nb">Fn</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">T</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op_n_times</span>::<span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op_n_times</span><span class="p">::</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
@@ -20729,14 +21221,14 @@ halving:</p>
 
 <p>We can express Egyptian multiplication (<code>egyptian_mul</code>) as addition
 applied <code>n</code> times:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">egyptian_mul</span><span class="p">(</span><span class="n">a</span>: <span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">i32</span> <span class="p">{</span>
-<span class="w">    </span><span class="n">op_n_times</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">std</span>::<span class="n">ops</span>::<span class="n">Add</span>::<span class="n">add</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">egyptian_mul</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">op_n_times</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">std</span><span class="p">::</span><span class="n">ops</span><span class="p">::</span><span class="n">Add</span><span class="p">::</span><span class="n">add</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
 
 <p>Similarly, we can express fast matrix exponentiation (<code>fast_exp2x2</code>) as
 matrix multiplication applied <code>n</code> times:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">fast_exp2x2</span><span class="p">(</span><span class="n">a</span>: <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">fast_exp2x2</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="p">[[</span><span class="kt">i32</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">op_n_times</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mul2x2</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
@@ -20757,9 +21249,9 @@ Fibonacci number is <code>354224848179261915075</code>, which does not fit in an
 arbitrary precision number. First is <code>fib2</code>:</p>
 <div class="highlight"><pre><span/><span class="k">extern</span><span class="w"> </span><span class="k">crate</span><span class="w"> </span><span class="n">num</span><span class="p">;</span>
 
-<span class="k">use</span><span class="w"> </span><span class="n">num</span>::<span class="n">bigint</span>::<span class="p">{</span><span class="n">BigUint</span><span class="p">,</span><span class="w"> </span><span class="n">ToBigUint</span><span class="p">};</span>
+<span class="k">use</span><span class="w"> </span><span class="n">num</span><span class="p">::</span><span class="n">bigint</span><span class="p">::{</span><span class="n">BigUint</span><span class="p">,</span><span class="w"> </span><span class="n">ToBigUint</span><span class="p">};</span>
 
-<span class="k">fn</span> <span class="nf">fib2</span><span class="p">(</span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">BigUint</span><span class="w"> </span><span class="p">{</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">fib2</span><span class="p">(</span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">BigUint</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mf">0.</span><span class="n">to_biguint</span><span class="p">().</span><span class="n">unwrap</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
 
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.</span><span class="n">to_biguint</span><span class="p">().</span><span class="n">unwrap</span><span class="p">();</span>
@@ -20777,7 +21269,7 @@ arbitrary precision number. First is <code>fib2</code>:</p>
 
 <p>For <code>fib4</code>, we need to update <code>mul2x2</code> to work with <code>BigUint</code> array
 references, so we don't copy <code>BigUint</code> arrays:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">mul2x2</span><span class="p">(</span><span class="n">a</span>: <span class="kp">&amp;</span><span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">b</span>: <span class="kp">&amp;</span><span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="w"> </span>-&gt; <span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">mul2x2</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">b</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="p">[</span>
 <span class="w">        </span><span class="p">[</span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
 <span class="w">        </span><span class="p">[</span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
@@ -20790,11 +21282,11 @@ instead of <code>T</code>. Note this version still works with <code>i32</code> a
 numbers, but now the operation is expected to take two references
 instead of two values. On the other hand we no longer require that <code>T</code>
 has the <code>Copy</code> trait:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">op_n_times</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span>: <span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="n">op</span>: <span class="kp">&amp;</span><span class="nc">Op</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">T</span>
-<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">Op</span>: <span class="nb">Fn</span><span class="p">(</span><span class="o">&amp;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">T</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">T</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">op_n_times</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Op</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">T</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">Op</span><span class="p">:</span><span class="w"> </span><span class="nb">Fn</span><span class="p">(</span><span class="o">&amp;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">T</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">T</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op_n_times</span>::<span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op_n_times</span><span class="p">::</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">Op</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">result</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
@@ -20804,11 +21296,11 @@ has the <code>Copy</code> trait:</p>
 </pre></div>
 
 <p>Then we can update our <code>fib4</code> implementation to use <code>BigUint</code>:</p>
-<div class="highlight"><pre><span/><span class="k">fn</span> <span class="nf">fast_exp2x2</span><span class="p">(</span><span class="n">a</span>: <span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">fn</span><span class="w"> </span><span class="nf">fast_exp2x2</span><span class="p">(</span><span class="n">a</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="p">[[</span><span class="n">BigUint</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">op_n_times</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mul2x2</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span>
 <span class="p">}</span>
 
-<span class="k">fn</span> <span class="nf">fib4</span><span class="p">(</span><span class="n">n</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">BigUint</span><span class="w"> </span><span class="p">{</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">fib4</span><span class="p">(</span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">BigUint</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mf">0.</span><span class="n">to_biguint</span><span class="p">().</span><span class="n">unwrap</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mf">1.</span><span class="n">to_biguint</span><span class="p">().</span><span class="n">unwrap</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
 
@@ -20830,13 +21322,13 @@ example <code>fib4(10_000)</code> is:</p>
 
 <p>We can benchmark these implementations using Rust's built-in
 benchmarking:</p>
-<div class="highlight"><pre><span/>#<span class="cp">#[bench]</span>
-<span class="k">fn</span> <span class="nf">fib4_bench</span><span class="p">(</span><span class="n">b</span>: <span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="n">Bencher</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="p">#</span><span class="cp">#[bench]</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">fib4_bench</span><span class="p">(</span><span class="n">b</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="n">Bencher</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">b</span><span class="p">.</span><span class="n">iter</span><span class="p">(</span><span class="o">||</span><span class="w"> </span><span class="n">fib4</span><span class="p">(</span><span class="n">N</span><span class="p">));</span>
 <span class="p">}</span>
 
-#<span class="cp">#[bench]</span>
-<span class="k">fn</span> <span class="nf">fib2_bench</span><span class="p">(</span><span class="n">b</span>: <span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="n">Bencher</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="p">#</span><span class="cp">#[bench]</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">fib2_bench</span><span class="p">(</span><span class="n">b</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="n">Bencher</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">b</span><span class="p">.</span><span class="n">iter</span><span class="p">(</span><span class="o">||</span><span class="w"> </span><span class="n">fib2</span><span class="p">(</span><span class="n">N</span><span class="p">));</span>
 <span class="p">}</span>
 </pre></div>
@@ -24490,11 +24982,11 @@ ensures no dangling references appear. In C++:</p>
 that type of reference: once an object gets freed, &amp; references and
 non-owning pointers to it are left dangling. On the other hand, this
 does not compile in Rust:</p>
-<div class="highlight"><pre><span/><span class="k">struct</span> <span class="nc">Foo</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span/><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{</span>
 <span class="p">}</span>
 
-<span class="k">struct</span> <span class="nc">Bar</span><span class="o">&lt;'</span><span class="na">a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">foo</span>: <span class="kp">&amp;</span><span class="o">'</span><span class="na">a</span> <span class="nc">Foo</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Bar</span><span class="o">&lt;'</span><span class="na">a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">foo</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="o">'</span><span class="na">a</span><span class="w"> </span><span class="nc">Foo</span>
 <span class="p">}</span>
 
 <span class="o">..</span><span class="p">.</span>
@@ -24502,7 +24994,7 @@ does not compile in Rust:</p>
 <span class="kd">let</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="p">{};</span>
-<span class="w">    </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Bar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">foo</span>: <span class="kp">&amp;</span><span class="nc">foo</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Bar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">foo</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">foo</span><span class="w"> </span><span class="p">};</span>
 <span class="p">}</span>
 <span class="c1">// compiler correctly shows `foo` dropped here while still borrowed</span>
 </pre></div>

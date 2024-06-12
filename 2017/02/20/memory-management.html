@@ -339,11 +339,11 @@ ensures no dangling references appear. In C++:</p>
 that type of reference: once an object gets freed, &amp; references and
 non-owning pointers to it are left dangling. On the other hand, this
 does not compile in Rust:</p>
-<div class="highlight"><pre><span></span><span class="k">struct</span> <span class="nc">Foo</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{</span>
 <span class="p">}</span>
 
-<span class="k">struct</span> <span class="nc">Bar</span><span class="o">&lt;&#39;</span><span class="na">a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">foo</span>: <span class="kp">&amp;</span><span class="o">&#39;</span><span class="na">a</span> <span class="nc">Foo</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Bar</span><span class="o">&lt;&#39;</span><span class="na">a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">foo</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="o">&#39;</span><span class="na">a</span><span class="w"> </span><span class="nc">Foo</span>
 <span class="p">}</span>
 
 <span class="o">..</span><span class="p">.</span>
@@ -351,7 +351,7 @@ does not compile in Rust:</p>
 <span class="kd">let</span><span class="w"> </span><span class="n">bar</span><span class="p">;</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="p">{};</span>
-<span class="w">    </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Bar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">foo</span>: <span class="kp">&amp;</span><span class="nc">foo</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Bar</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">foo</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">foo</span><span class="w"> </span><span class="p">};</span>
 <span class="p">}</span>
 <span class="c1">// compiler correctly shows `foo` dropped here while still borrowed</span>
 </pre></div>
