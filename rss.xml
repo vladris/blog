@@ -8,6 +8,446 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2024/06/24/mental-poker-part-8-rock-paper-scissors.html</link>
+      <guid>https://vladris.com/blog/2024/06/24/mental-poker-part-8-rock-paper-scissors.html</guid>
+      <title><![CDATA[Mental Poker Part 8: Rock-Paper-Scissors]]></title>
+      <description><![CDATA[<h1>Mental Poker Part 8: Rock-Paper-Scissors</h1>
+
+<p>For an overview on Mental Poker, seeÂ <strong><a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">Mental Poker Part 0: An
+Overview</a></strong>.
+Other articles in this
+series:Â <strong><a href="https://vladris.com/writings/index.html#mental-poker">https://vladris.com/writings/index.html#mental-poker</a></strong>.
+In the previousÂ <strong><a href="https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html">post in the
+series</a></strong>Â we
+looked at some low-level building blocks. It this post, weâll finally see how to
+implement a game end-to-end using the toolkit. Weâll start with a simple game:
+rock-paper-scissors.</p>
+
+<h2>Overview</h2>
+
+<p>Weâll build this game as a React app, using the toolkit. Weâll be using
+<a href="https://redux.js.org/">Redux</a> for state management - Redux provides a good way
+of binding game state to the UI, which works well with our toolkit.</p>
+
+<p>The full code for this is in the
+<a href="https://github.com/vladris/mental-poker-toolkit/tree/main/demos/rock-paper-scissors"><code>demos/rock-paper-scissors</code></a>
+app.</p>
+
+<h2>Model</h2>
+
+<p>Since we got a lot of the primitives out of the way in the previous post (Fluid
+connection, getting a <code>SignedTransport</code> etc.), in this post we can focus on the
+higher level semantics of modeling the game.</p>
+
+<p>Weâll play a round of rock-paper-scissors as follows:</p>
+
+<ul>
+<li>Both players post their selection (<code>rock</code> or <code>paper</code> or <code>scissors</code>) encrypted.</li>
+<li>Both players reveal their decryption key.</li>
+</ul>
+
+<p>This 2-step protects against cheating: before the game proceeds, both players
+need to make a selection. But the other player doesnât know what the selection
+is until the decryption key is provided. Note for this particular game, turn
+order doesnât matter.</p>
+
+<p>Weâll start with a few type definitions:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">PlaySelection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Rock"</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">"Paper"</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">"Scissors"</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">EncryptedSelection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+</pre></div>
+
+<p><code>PlaySelection</code> represents the possible plays, <code>EncryptedSelection</code> is the
+string representation of an encrypted <code>PlaySelection</code>.</p>
+
+<p>Our game model will have 2 actions:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">PlayAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"PlayAction"</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">encryptedSelection</span><span class="o">:</span><span class="w"> </span><span class="kt">EncryptedSelection</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">RevealAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"RevealAction"</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedSRAKeyPair</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">Action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">PlayAction</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">RevealAction</span><span class="p">;</span>
+</pre></div>
+
+<p><code>PlayAction</code> is the first step, when players post their encrypted choice.
+<code>RevealAction</code> is the second step, revealing the encryption key. Weâll use the
+SRA algorithm for encryption since we have it in our toolkit, but for this game
+any encryption algorithm would work.</p>
+
+<p>Weâll also need a couple more type definitions for the game state:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">GameStatus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Waiting"</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">"Ready"</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">"Win"</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">"Loss"</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">"Draw"</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">PlayValue</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Selection"</span><span class="p">;</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">PlaySelection</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Encrypted"</span><span class="p">;</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">EncryptedSelection</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"None"</span><span class="p">;</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">undefined</span><span class="w"> </span><span class="p">};</span>
+</pre></div>
+
+<p>The <code>GameStatus</code> represents the different states the client can be in:</p>
+
+<ul>
+<li><code>Waiting</code> for another player to connect or for round to finish.</li>
+<li><code>Ready</code> to play.</li>
+<li><code>Win</code>, <code>Loss</code>, <code>Draw</code> - the result after playing a round.</li>
+</ul>
+
+<p>The <code>PlayValue</code> represents the current state of a playerâs pick. It can be
+either an encrypted selection, a revealed selection, or nothing (at the start of
+the game).</p>
+
+<p>Before implementing the game state machine, letâs look at the Redux store.</p>
+
+<h2>Store</h2>
+
+<p>I wonât go into the details of Redux in this post - please refer to the
+<a href="https://redux.js.org/">Redux</a> documentation for that. Weâll be using the <a href="https://redux-toolkit.js.org/">Redux
+Toolkit</a> to streamline setting up our store.</p>
+
+<p>We will maintain 6 pieces of state:</p>
+
+<ul>
+<li>Our ID.</li>
+<li>The other playerâs ID.</li>
+<li>The Mental Poker async queue we implement the game on top of.</li>
+<li>The game status (<code>GameStatus</code> above).</li>
+<li>Our play (<code>PlayValue</code> above).</li>
+<li>The other playerâs play (also a <code>PlayValue</code>).</li>
+</ul>
+
+<p>Weâll use the Redux Toolkit <code>createAction</code> helper to define the update functions
+for these:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">updateId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="kt">string</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">"id/update"</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateOtherPlayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="kt">string</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">"otherPlayer/update"</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateQueue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="s2">"queue/update"</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateGameStatus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="nx">GameStatus</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">"gameStatus/update"</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateMyPlay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="nx">PlayValue</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">"myPlay/update"</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateTheirPlay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="nx">PlayValue</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">"theirPlay/update"</span><span class="p">);</span>
+</pre></div>
+
+<p>Weâll also need reducers (another Redux concept) for updating the values. We can implement a helper function to create these:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">makeUpdateReducer</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">initialValue</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">updateAction</span><span class="o">:</span><span class="w"> </span><span class="kt">ReturnType</span><span class="o">&lt;</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&gt;</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">createReducer</span><span class="p">({</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">initialValue</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">(</span><span class="nx">builder</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">builder</span><span class="p">.</span><span class="nx">addCase</span><span class="p">(</span><span class="nx">updateAction</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">state</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">payload</span><span class="p">;</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Finally, we set up our Redux store as:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">configureStore</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">reducer</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span><span class="w"> </span><span class="nx">updateId</span><span class="p">),</span>
+<span class="w">        </span><span class="nx">otherPlayer</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="p">(</span><span class="s2">"Not joined"</span><span class="p">,</span><span class="w"> </span><span class="nx">updateOtherPlayer</span><span class="p">),</span>
+<span class="w">        </span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="o">&lt;</span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">            </span><span class="kc">undefined</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">updateQueue</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="nx">myPlay</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="o">&lt;</span><span class="nx">PlayValue</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"None"</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">undefined</span><span class="w"> </span><span class="p">},</span>
+<span class="w">            </span><span class="nx">updateMyPlay</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="nx">theirPlay</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="o">&lt;</span><span class="nx">PlayValue</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"None"</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">undefined</span><span class="w"> </span><span class="p">},</span>
+<span class="w">            </span><span class="nx">updateTheirPlay</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="nx">gameStatus</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="p">(</span><span class="s2">"Waiting"</span><span class="p">,</span><span class="w"> </span><span class="nx">updateGameStatus</span><span class="p">),</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">middleware</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">getDefaultMiddleware</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">        </span><span class="nx">getDefaultMiddleware</span><span class="p">({</span>
+<span class="w">            </span><span class="nx">serializableCheck</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>We initialize the store with the default values:</p>
+
+<ul>
+<li>We donât have an ID.</li>
+<li>The other player hasnât joined yet.</li>
+<li>We donât have an async queue.</li>
+<li>Neither player has any play.</li>
+<li>The game state is <code>Waiting</code> (for other player to connect).</li>
+</ul>
+
+<p>Thatâs about it for Redux setup - again, I wonât cover what reducers are, how
+Redux manages state changes etc.</p>
+
+<h2>Playing a round</h2>
+
+<p>Weâll implement playing a round of rock-paper-scissors in the function <code>async
+function playRound(selection: PlaySelection)</code>. We invoke this with our selection
+(rock, paper, or scissors).</p>
+
+<p>First, we need to get a few references:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">store</span><span class="p">;</span>
+
+<span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">"Waiting"</span><span class="p">));</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">queue</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">kp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SRA</span><span class="p">.</span><span class="nx">genereateKeyPair</span><span class="p">(</span><span class="nx">BigIntUtils</span><span class="p">.</span><span class="nx">randPrime</span><span class="p">());</span>
+</pre></div>
+
+<p>First, we get a reference to the Redux store. Then we update the game status to
+<code>Waiting</code>. We get a reference to the async queue from the Redux store and,
+finally, we generate an SRA key pair. The <code>generateKeyPair()</code> and <code>randPrime()</code>
+functions we discussed all the way in <a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">part
+1</a>,
+when we covered cryptography. The <code>dispatch()</code> and <code>getState()</code> are standard
+Redux calls.</p>
+
+<p>Now letâs look at the state machine modeling a round. It consists of the
+following sequence:</p>
+
+<ol>
+<li>Post our encrypted selection.</li>
+<li>Expect to receive 2 encrypted selections (ours and the opponentâs).</li>
+<li>Post our encryption key to reveal our selection.</li>
+<li>Expect to receive 2 encryption keys (ours and the opponentâs).</li>
+</ol>
+
+<p>We can run this state machine with the Redux store as context:</p>
+<div class="highlight"><pre><span/><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">playAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"PlayAction"</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">encryptedSelection</span><span class="o">:</span><span class="w"> </span><span class="kt">SRA.encryptString</span><span class="p">(</span><span class="nx">selection</span><span class="p">,</span><span class="w"> </span><span class="nx">kp</span><span class="p">),</span>
+<span class="w">            </span><span class="p">};</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">playAction</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">play</span><span class="o">:</span><span class="w"> </span><span class="kt">PlayAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">action</span><span class="w"> </span><span class="o">=</span>
+<span class="w">            </span><span class="nx">play</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span>
+<span class="w">                </span><span class="o">?</span><span class="w"> </span><span class="nx">updateMyPlay</span>
+<span class="w">                </span><span class="o">:</span><span class="w"> </span><span class="kt">updateTheirPlay</span><span class="p">;</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span>
+<span class="w">                </span><span class="nx">action</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Encrypted"</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">play.encryptedSelection</span><span class="w"> </span><span class="p">})</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="mf">2</span><span class="p">),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">revealAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"RevealAction"</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeySerializationHelper.serializeSRAKeyPair</span><span class="p">(</span><span class="nx">kp</span><span class="p">),</span>
+<span class="w">            </span><span class="p">};</span>
+<span class="w">            </span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">revealAction</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">reveal</span><span class="o">:</span><span class="w"> </span><span class="kt">RevealAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">action</span><span class="w"> </span><span class="o">=</span>
+<span class="w">                </span><span class="nx">reveal</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span>
+<span class="w">                    </span><span class="o">?</span><span class="w"> </span><span class="nx">updateMyPlay</span>
+<span class="w">                    </span><span class="o">:</span><span class="w"> </span><span class="kt">updateTheirPlay</span><span class="p">;</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">originalValue</span><span class="w"> </span><span class="o">=</span>
+<span class="w">                </span><span class="nx">reveal</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span>
+<span class="w">                    </span><span class="o">?</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">()</span><span class="nx">.myPlay.value</span>
+<span class="w">                    </span><span class="o">:</span><span class="w"> </span><span class="kt">context.getState</span><span class="p">().</span><span class="nx">theirPlay</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span>
+<span class="w">                </span><span class="nx">action</span><span class="p">({</span>
+<span class="w">                    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"Selection"</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">SRA.decryptString</span><span class="p">(</span>
+<span class="w">                        </span><span class="nx">originalValue</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">EncryptedSelection</span><span class="p">,</span>
+<span class="w">                        </span><span class="nx">SRAKeySerializationHelper</span><span class="p">.</span><span class="nx">deserializeSRAKeyPair</span><span class="p">(</span><span class="nx">reveal</span><span class="p">.</span><span class="nx">key</span><span class="p">)</span>
+<span class="w">                    </span><span class="p">)</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">PlaySelection</span><span class="p">,</span>
+<span class="w">                </span><span class="p">})</span>
+<span class="w">            </span><span class="p">);</span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="mf">2</span><span class="p">)</span>
+<span class="w">    </span><span class="p">]),</span><span class="w"> </span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">);</span>
+</pre></div>
+
+<p>We first define a <code>local</code> transition - we enqueue our <code>PlayAction</code>.</p>
+
+<p>We then repeat 2 times a <code>transition</code>. We update the Redux store accordingly: if
+the received client ID is ours, we call <code>updateMyPlay()</code>, otherwise we call
+<code>updateTheirPlay()</code> with the encrypted value.</p>
+
+<p>Next, we enqueue our <code>RevealAction</code>.</p>
+
+<p>We then again repeat 2 times a <code>transition</code>. If the incoming client ID is ours,
+we call <code>updateMyPlay()</code> and decrypt the <code>originalValue</code> (<code>myPlay.value</code>) with
+the received key, otherwise we call <code>updateTheirPlay()</code> and decrypt the
+<code>originalValue</code> (<code>theirPlay.value</code>) with the received key.</p>
+
+<p>Note how this code updates the Redux store directly, by using it as the context
+for the state machine.</p>
+
+<p>Once the state machine finishes, we should have both our play and the opponentâs
+play, so we can determine the winner and update the game state accordingly:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">myPlay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">myPlay</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">theirPlay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">theirPlay</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span>
+
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">myPlay</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">theirPlay</span><span class="p">.</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">"Draw"</span><span class="p">));</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">(</span><span class="nx">myPlay</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"Rock"</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">theirPlay</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"Scissors"</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">    </span><span class="p">(</span><span class="nx">myPlay</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"Paper"</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">theirPlay</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"Rock"</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">    </span><span class="p">(</span><span class="nx">myPlay</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"Scissors"</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">theirPlay</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"Paper"</span><span class="p">)</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">"Win"</span><span class="p">));</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">"Loss"</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>And thatâs it in terms of game mechanics. Finally, letâs look at a simple UI for
+the game.</p>
+
+<h2>UI</h2>
+
+<p>Weâll build the UI using React. First, letâs create a component that provides
+the rock-paper-scissors options as 3 buttons:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">ButtonsViewProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">disabled</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">onPlay</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">play</span><span class="o">:</span><span class="w"> </span><span class="kt">PlaySelection</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">ButtonsView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">disabled</span><span class="p">,</span><span class="w"> </span><span class="nx">onPlay</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ButtonsViewProps</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">button</span><span class="w"> </span><span class="nx">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">disabled</span><span class="p">}</span><span class="w"> </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onPlay</span><span class="p">(</span><span class="s2">"Rock"</span><span class="p">)}</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">200</span><span class="p">}}</span><span class="o">&gt;</span><span class="err">ðª¨</span><span class="o">&lt;</span><span class="err">/button&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">button</span><span class="w"> </span><span class="nx">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">disabled</span><span class="p">}</span><span class="w"> </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onPlay</span><span class="p">(</span><span class="s2">"Paper"</span><span class="p">)}</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">200</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span><span class="err">ð</span><span class="o">&lt;</span><span class="err">/button&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">button</span><span class="w"> </span><span class="nx">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">disabled</span><span class="p">}</span><span class="w"> </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onPlay</span><span class="p">(</span><span class="s2">"Scissors"</span><span class="p">)}</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">200</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span><span class="err">âï¸</span><span class="o">&lt;</span><span class="err">/button&gt;</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Our properties are a boolean that determines whether buttons should be enabled
+or disabled and an <code>onPlay()</code> callback.</p>
+
+<p>Our view is also very simple:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">useSelector</span><span class="o">:</span><span class="w"> </span><span class="kt">TypedUseSelectorHook</span><span class="o">&lt;</span><span class="nx">RootState</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReduxSelector</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">MainView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">idSelector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">otherPlayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">otherPlayer</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">gameStateSelector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">gameStatus</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">Id</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">idSelector</span><span class="p">.</span><span class="nx">value</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">Other</span><span class="w"> </span><span class="nx">player</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">otherPlayer</span><span class="p">.</span><span class="nx">value</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">Status</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">gameStateSelector</span><span class="p">.</span><span class="nx">value</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">ButtonsView</span><span class="w"> </span><span class="nx">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">gameStateSelector</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"Waiting"</span><span class="p">}</span><span class="w"> </span><span class="nx">onPlay</span><span class="o">=</span><span class="p">{</span><span class="nx">playRound</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="err">/ButtonsView&gt;</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The first line is some React-Redux plumbing (via the <code>react-redux</code> package),
+which allows us to grab data from the Redux store and put it in the UI.</p>
+
+<p>Weâll be showing our ID, the other playerâs ID, the game status, and the 3
+buttons. The buttons are enabled as long as the game state is no <code>Waiting</code>. Once
+the user clicks a button, we simply call the <code>playRound()</code> function we looked at
+in the previous section.</p>
+
+<p>Rendering all of this on the page:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ReactDOM</span><span class="p">.</span><span class="nx">createRoot</span><span class="p">(</span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">"root"</span><span class="p">)</span><span class="o">!</span><span class="p">);</span>
+<span class="nx">root</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="nx">Provider</span><span class="w"> </span><span class="nx">store</span><span class="o">=</span><span class="p">{</span><span class="nx">store</span><span class="p">}</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">MainView</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="err">/Provider&gt;</span>
+<span class="p">);</span>
+</pre></div>
+
+<p>Here, <code>Provider</code> comes from the <code>react-redux</code> package and makes the Redux store
+available to the React components.</p>
+
+<h2>Initialization</h2>
+
+<p>We now have all the pieces into place, the only bit of code we havenât covered
+is initializing the game:</p>
+<div class="highlight"><pre><span/><span class="nx">getLedger</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="p">().</span><span class="nx">then</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">ledger</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">randomClientId</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateId</span><span class="p">(</span><span class="nx">id</span><span class="p">));</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">upgradeTransport</span><span class="p">(</span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">ledger</span><span class="p">);</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateQueue</span><span class="p">(</span><span class="nx">queue</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">action</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">ledger</span><span class="p">.</span><span class="nx">getActions</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateOtherPlayer</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">));</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">"Ready"</span><span class="p">));</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>The steps are:</p>
+
+<ul>
+<li>We connect to the Fluid session and get a reference to the <code>ledger</code>, as we saw
+in the <a href="https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html">previous
+post</a>.</li>
+<li>We generate a random client ID (Iâm not covering the <code>randomClientId()</code>
+function in this post, but you can find the implementation in
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/packages/primitives/src/randomClientId.ts"><code>packages/primitives/src/randomClientId.ts</code></a>).</li>
+<li>Update our ID in the Redux store.</li>
+<li>We call <code>upgradeTransport()</code> (also discussed in the <a href="https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html">previous
+post</a>).</li>
+<li>Update the Redux store with a reference to the async queue.</li>
+<li>We retrieve and store the other playerâs ID.</li>
+<li>We update the game status to <code>Ready</code> (from the default, which is <code>Waiting</code>).</li>
+</ul>
+
+<p>The steps are pretty self-explanatory, maybe except getting the other playerâs
+ID. The way that works is as follows: <code>getActions()</code> returns all actions posted
+on the ledger so far. We look for an action where the client ID is different
+than our client ID and store that as the other playerâs ID. We are guaranteed to
+see at least one action from the other player, as we ran <code>upgradeTransport()</code>,
+which under the hood performs a public key exchange.</p>
+
+<p>And thatâs it - we have an end-to-end game of rock-paper-scissors.</p>
+
+<h2>Summary</h2>
+
+<p>We looked at implementing rock-paper-scissors using the Mental Poker toolkit.
+The full source code for the demo is under
+<a href="https://github.com/vladris/mental-poker-toolkit/tree/main/demos/rock-paper-scissors"><code>demos/rock-paper-scissors</code></a>.</p>
+
+<ul>
+<li>Instructions on how to run the game in
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/README.md">README.md</a>.</li>
+<li>The game model is implemented in
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/model.ts"><code>model.ts</code></a>.</li>
+<li>The Redux store is implemented in
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/store.ts"><code>store.ts</code></a>.</li>
+<li>The two React components are</li>
+<li><a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/buttonsView.tsx"><code>buttonsView.tsx</code></a>
+and
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/mainView.tsx"><code>mainView.tsx</code></a>.</li>
+<li>Initialization happens in
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/index.tsx"><code>index.tsx</code></a>.</li>
+</ul>
+
+<p>Note how easy it is to model a game if we rely on the toolkitâs primitives. We
+implement the game logic in the model, relying on the toolkitâs capabilities. We
+use Redux to store game state, which we can easily bind to a React view. That
+said, this was a very simple game. In the next post weâll look at implementing a
+card game.</p>
+]]></description>
+      <pubDate>Mon, 24 Jun 2024 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html</link>
       <guid>https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html</guid>
       <title><![CDATA[Mental Poker Part 7: Primitives]]></title>
