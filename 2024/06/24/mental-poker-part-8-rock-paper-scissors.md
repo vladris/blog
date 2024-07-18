@@ -425,13 +425,13 @@ The full source code for the demo is under
 [`demos/rock-paper-scissors`](https://github.com/vladris/mental-poker-toolkit/tree/main/demos/rock-paper-scissors).
 
 * Instructions on how to run the game in
-  [README.md](https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/README.md).
+  [`README.md`](https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/README.md).
 * The game model is implemented in
   [`model.ts`](https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/model.ts).
 * The Redux store is implemented in
   [`store.ts`](https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/store.ts).
 * The two React components are
-* [`buttonsView.tsx`](https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/buttonsView.tsx)
+  [`buttonsView.tsx`](https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/buttonsView.tsx)
   and
   [`mainView.tsx`](https://github.com/vladris/mental-poker-toolkit/blob/main/demos/rock-paper-scissors/src/mainView.tsx).
 * Initialization happens in
