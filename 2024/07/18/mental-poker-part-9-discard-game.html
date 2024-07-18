@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Mental Poker Part 9: Discard Game &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/light.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>July 18, 2024</span></header>
+<article>
+<h1>Mental Poker Part 9: Discard Game</h1>
+
+<p>For an overview on Mental Poker, see <a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">Mental Poker Part 0: An
+Overview</a>.
+Other articles in this
+series: <strong><a href="https://vladris.com/writings/index.html#mental-poker">https://vladris.com/writings/index.html#mental-poker</a></strong>.
+In the previous <a href="https://vladris.com/blog/2024/06/24/mental-poker-part-8-rock-paper-scissors.html">post in the series</a>
+we looked at building a simple game of rock-paper-scissors. In this post we&#39;ll
+look at implementing a card game.</p>
+
+<h2>Overview</h2>
+
+<p>We&#39;ll build a discard game - players take turns discarding a card that must
+match either the suit or the value of the card on top of the discard pile. The
+player who discards their whole hand first wins.</p>
+
+<p>We&#39;re implementing a simple game as the focus is not on the game-specific logic,
+rather how to leverage the Mental Poker toolkit.</p>
+
+<p>The full code for this is in the
+<a href="https://github.com/vladris/mental-poker-toolkit/tree/main/demos/discard"><code>demos/discard</code></a>
+app. The best way to read this post is side by side with the code.</p>
+
+<p>We&#39;ll follow a similar structure to the rock-paper-scissors game we looked at in
+the <a href="https://vladris.com/blog/2024/06/24/mental-poker-part-8-rock-paper-scissors.htm">previous
+post</a>:</p>
+
+<ul>
+<li>A <em>model</em> implementing the game logic.</li>
+<li>A Redux <em>store</em> maintaining game state.</li>
+<li>A React <em>UI</em> bound to the store.</li>
+</ul>
+
+<h2>Model</h2>
+
+<p>First, let&#39;s look at how we implement the deck of cards and associated logic.</p>
+
+<h3>Deck</h3>
+
+<p>We&#39;ll represent a card as a string, for example <code>&quot;9:hearts&quot;</code> is the 9 of hearts.
+The function <code>getDeck()</code> initializes as unshuffled deck of cards:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">getDeck</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;9&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;10&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;J&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Q&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;K&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;A&quot;</span><span class="p">])</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">suit</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;hearts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;diamonds&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;clubs&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;spades&quot;</span><span class="p">])</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">deck</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;:&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">suit</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">deck</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We&#39;re using fewer cards (from 9 to Aces) for this demo as the more cards we have
+the more prime numbers we need to find to encrypt them and it slows things down.
+Rather than implementing some loading UI, we&#39;ll just use fewer cards for the
+example.</p>
+
+<p>We need a helper function to tell us whether two cards match either value or
+suit:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">matchSuitOrValue</span><span class="p">(</span><span class="nx">a</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">aValue</span><span class="p">,</span><span class="w"> </span><span class="nx">aSuit</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">a</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">bValue</span><span class="p">,</span><span class="w"> </span><span class="nx">bSuit</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">b</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">aValue</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">bValue</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">aSuit</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">bSuit</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Finally, we want a class to wrap a deck and implement the functions needed for
+using it:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">Deck</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">myCards</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">othersCards</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">drawPile</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">discardPile</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">decryptedCards</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">othersKeys</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+
+<span class="w">    </span><span class="kr">constructor</span><span class="p">(</span>
+<span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="nx">encryptedCards</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[],</span>
+<span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="nx">myKeys</span><span class="o">:</span><span class="w"> </span><span class="kt">SRAKeyPair</span><span class="p">[],</span>
+<span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="nx">store</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">drawPile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">encryptedCards</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">i</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">...</span>
+</pre></div>
+
+<p>We initialize the class with an array of encrypted cards (the shuffled deck) as
+<code>encryptedCards</code>, our set of SRA keys (<code>myKeys</code>) and the Redux store (<code>store</code>).</p>
+
+<p>We also need to track cards (by index):</p>
+
+<ul>
+<li>The cards in our hand (<code>myCards</code>).</li>
+<li>The cards in the other player&#39;s hand (<code>othersCards</code>).</li>
+<li>The draw pile (<code>drawPile</code>).</li>
+<li>The discard pile (<code>discardPile</code>).</li>
+</ul>
+
+<p>As the other player shares their encryption keys (when they reveal a card to
+us), we&#39;ll store them in the <code>othersKeys</code> array. Similarly, as we decrypt cards,
+we&#39;ll store them in <code>decryptedCards</code> - this is just for convenience, so we don&#39;t
+have to keep decrypting the same values over and over.</p>
+
+<p>We assume we&#39;re starting with a shuffled deck of cards as a draw pile, with no
+player having cards in hand - so we initialize <code>drawPile</code> to the indexes of
+<code>encryptedCards</code>.</p>
+
+<p>Some helper functions:</p>
+<div class="highlight"><pre><span></span><span class="p">...</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nx">getKey</span><span class="p">(</span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">SRAKeySerializationHelper</span><span class="p">.</span><span class="nx">serializeSRAKeyPair</span><span class="p">(</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">myKeys</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">getKeyFromHand</span><span class="p">(</span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">SRAKeySerializationHelper</span><span class="p">.</span><span class="nx">serializeSRAKeyPair</span><span class="p">(</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">myKeys</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">myCards</span><span class="p">[</span><span class="nx">index</span><span class="p">]]</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">cardAt</span><span class="p">(</span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">decryptedCards</span><span class="p">[</span><span class="nx">index</span><span class="p">])</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">partial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SRA</span><span class="p">.</span><span class="nx">decryptString</span><span class="p">(</span>
+<span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">encryptedCards</span><span class="p">[</span><span class="nx">index</span><span class="p">],</span>
+<span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">myKeys</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span>
+<span class="w">            </span><span class="p">);</span>
+
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">decryptedCards</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SRA</span><span class="p">.</span><span class="nx">decryptString</span><span class="p">(</span>
+<span class="w">                </span><span class="nx">partial</span><span class="p">,</span>
+<span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">othersKeys</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span>
+<span class="w">            </span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">decryptedCards</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span><span class="o">!</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">getDrawIndex</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">drawPile</span><span class="p">[</span><span class="mf">0</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nx">canIMove</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">drawPile</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">||</span>
+<span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">myCards</span><span class="p">.</span><span class="nx">some</span><span class="p">((</span><span class="nx">index</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">                </span><span class="nx">matchSuitOrValue</span><span class="p">(</span>
+<span class="w">                    </span><span class="k">this</span><span class="p">.</span><span class="nx">cardAt</span><span class="p">(</span><span class="nx">index</span><span class="p">),</span>
+<span class="w">                    </span><span class="k">this</span><span class="p">.</span><span class="nx">cardAt</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1</span><span class="p">])</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">...</span>
+</pre></div>
+
+<p>These are pretty self-explanatory:</p>
+
+<ul>
+<li><code>getKey()</code> returns our SRA key at <code>index</code>.</li>
+<li><code>getKeyFromHand()</code> returns our SRA key for a card in our hand (at <code>index</code>).</li>
+<li><code>cardAt()</code> returns the decrypted card at <code>index</code>. This assumes we can decrypt
+the card. If we are already storing it in <code>decryptedCards</code>, we return it from
+there; otherwise we decrypt it using our key and the other player&#39;s key, then
+store it in <code>decryptedCards</code>.</li>
+<li><code>getDrawIndex()</code> returns the index at the top of the discard pile.</li>
+<li><code>canIMove()</code> returns <code>true</code> if we can discard a card. If the discard pile is
+empty, we can discard anything; otherwise at least one of the cards in our
+hand needs to match the suit or value of the card on top of the discard pile.</li>
+</ul>
+
+<p>We also need to implement some functions that mutate the deck (in which case we
+also need to update our view-model so our UI reflects the changes):</p>
+<div class="highlight"><pre><span></span><span class="p">...</span>
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">myDraw</span><span class="p">(</span><span class="nx">serializedSRAKeyPair</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedSRAKeyPair</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">drawPile</span><span class="p">.</span><span class="nx">shift</span><span class="p">()</span><span class="o">!</span><span class="p">;</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">myCards</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">othersKeys</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span><span class="w"> </span><span class="o">=</span>
+<span class="w">            </span><span class="nx">SRAKeySerializationHelper</span><span class="p">.</span><span class="nx">deserializeSRAKeyPair</span><span class="p">(</span>
+<span class="w">                </span><span class="nx">serializedSRAKeyPair</span>
+<span class="w">            </span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">updateViewModel</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">othersDraw</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">othersCards</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">drawPile</span><span class="p">.</span><span class="nx">shift</span><span class="p">()</span><span class="o">!</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">updateViewModel</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">myDiscard</span><span class="p">(</span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">cardIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">myCards</span><span class="p">.</span><span class="nx">splice</span><span class="p">(</span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="mf">1</span><span class="p">)[</span><span class="mf">0</span><span class="p">];</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">cardIndex</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">updateViewModel</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">othersDiscard</span><span class="p">(</span>
+<span class="w">        </span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">serializedSRAKeyPair</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedSRAKeyPair</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">cardIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">othersCards</span><span class="p">.</span><span class="nx">splice</span><span class="p">(</span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="mf">1</span><span class="p">)[</span><span class="mf">0</span><span class="p">];</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">othersKeys</span><span class="p">[</span><span class="nx">cardIndex</span><span class="p">]</span><span class="w"> </span><span class="o">=</span>
+<span class="w">            </span><span class="nx">SRAKeySerializationHelper</span><span class="p">.</span><span class="nx">deserializeSRAKeyPair</span><span class="p">(</span>
+<span class="w">                </span><span class="nx">serializedSRAKeyPair</span>
+<span class="w">            </span><span class="p">);</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">cardIndex</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">updateViewModel</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">...</span>
+</pre></div>
+
+<p>The actions are:</p>
+
+<ul>
+<li><code>myDraw()</code> - we draw a card from the top of the draw pile. We need the other
+player&#39;s key for this card, given as the <code>serializedSRAKeyPair</code> argument.</li>
+<li><code>othersDraw()</code> - other player draws a card from the top of the draw pile. Note
+the <code>Deck</code> class just maintains state, so is not responsible for sharing our
+key for that card with the other player - rather we just update the state
+(<code>othersCards</code> and <code>drawPile</code>).</li>
+<li><code>myDiscard()</code> - we discard a card. We take the <code>index</code> of the card as an
+argument.</li>
+<li><code>othersDiscard()</code> - other player discards a card. We take the <code>index</code> of the
+card and the other player&#39;s SRA key as arguments.</li>
+</ul>
+
+<p>Note all these functions end up calling <code>updateViewModel()</code>. That&#39;s because all
+of the functions change state, so we need to update our Redux store and reflect
+the changes on the UI:</p>
+<div class="highlight"><pre><span></span><span class="p">...</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="nx">updateViewModel</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span>
+<span class="w">            </span><span class="nx">updateDeckViewModel</span><span class="p">({</span>
+<span class="w">                </span><span class="nx">drawPile</span><span class="o">:</span><span class="w"> </span><span class="kt">this.drawPile.length</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">discardPile</span><span class="o">:</span><span class="w"> </span><span class="kt">this.discardPile.map</span><span class="p">((</span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">cardAt</span><span class="p">(</span><span class="nx">i</span><span class="p">)),</span>
+<span class="w">                </span><span class="nx">myCards</span><span class="o">:</span><span class="w"> </span><span class="kt">this.myCards.map</span><span class="p">((</span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">cardAt</span><span class="p">(</span><span class="nx">i</span><span class="p">)),</span>
+<span class="w">                </span><span class="nx">othersHand</span><span class="o">:</span><span class="w"> </span><span class="kt">this.othersCards.length</span><span class="p">,</span>
+<span class="w">            </span><span class="p">})</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We haven&#39;t looked at the Redux <code>store</code> yet. We&#39;ll cover this later on but here
+we dispatch a deck view-model update. The deck view-model contains the size of
+the draw pile, the cards in the discard pile and our hand, and the number of
+cards in the other player&#39;s hand.</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">DeckViewModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">drawPile</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">discardPile</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span>
+<span class="w">    </span><span class="nx">myCards</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span>
+<span class="w">    </span><span class="nx">othersHand</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">defaultDeckViewModel</span><span class="o">:</span><span class="w"> </span><span class="kt">DeckViewModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">drawPile</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">discardPile</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nx">myCards</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nx">othersHand</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>These is all the deck management logic we need. Let&#39;s move on to game <em>actions</em>.</p>
+
+<h3>Dealing</h3>
+
+<p>We&#39;ll be using the library-provided shuffle. We covered this in <a href="https://vladris.com/blog/2024/04/07/mental-poker-part-6-shuffling-implementation.html">part
+6</a>
+so we won&#39;t go over it again. This is exposed by as a <code>shuffle()</code> function. So
+assuming our deck is shuffled, the first action we need to handle is <em>dealing</em>
+cards. In Mental Poker, dealing a card to Bob means Alice needs to share her key
+to that card. Then Bob can use his key and Alice&#39;s key to <q>see</q> the card, while
+Alice cannot see it since she doesn&#39;t have Bob&#39;s key. This is the equivalent of
+Bob holding a card in his hand.</p>
+
+<p>We define a <code>DealAction</code>:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">DealAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DealAction&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">cards</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[];</span>
+<span class="w">    </span><span class="nx">keys</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedSRAKeyPair</span><span class="p">[];</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Here, <code>cards</code> are the indexes of the cards in the deck and <code>keys</code> are the
+corresponding SRA keys for each card. Here&#39;s the state machine for dealing cards
+to both players:</p>
+<div class="highlight"><pre><span></span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">deal</span><span class="p">(</span><span class="nx">imFirst</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">,</span><span class="w"> </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">queue</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;Dealing&quot;</span><span class="p">));</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">cards</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Array</span><span class="p">(</span><span class="nx">count</span><span class="p">).</span><span class="nx">fill</span><span class="p">(</span><span class="mf">0</span><span class="p">).</span><span class="nx">map</span><span class="p">((</span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">imFirst</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">count</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">i</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">keys</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">cards</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">card</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">getKey</span><span class="p">(</span><span class="nx">card</span><span class="p">)</span><span class="o">!</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span><span class="w"> </span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DealAction&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">cards</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">keys</span><span class="w"> </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">DealAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;DealAction&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">return</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">deck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">;</span>
+
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">cards</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">imFirst</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">cards</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Unexpected card index&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+<span class="w">                    </span><span class="k">await</span><span class="w"> </span><span class="nx">deck</span><span class="p">.</span><span class="nx">myDraw</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">keys</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+<span class="w">                </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">await</span><span class="w"> </span><span class="nx">deck</span><span class="p">.</span><span class="nx">othersDraw</span><span class="p">();</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">cards</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">imFirst</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">await</span><span class="w"> </span><span class="nx">deck</span><span class="p">.</span><span class="nx">othersDraw</span><span class="p">();</span>
+<span class="w">                </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">cards</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">cards</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Unexpected card index&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+<span class="w">                    </span><span class="k">await</span><span class="w"> </span><span class="nx">deck</span><span class="p">.</span><span class="nx">myDraw</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">keys</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="mf">2</span><span class="p">)</span>
+<span class="w">    </span><span class="p">]),</span><span class="w"> </span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">store</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>In preparation of dealing, we:</p>
+
+<ul>
+<li>Get the async <code>queue</code> from the <code>store</code>.</li>
+<li>We update the game status to <code>Dealing</code> (more details on this later).</li>
+<li>We determine which cards the <em>other</em> player needs - if we&#39;re fist, we get the
+first <code>count</code> cards so the other player will get the next <code>count</code> ones;
+otherwise they get the first <code>count</code> cards and we get the next ones.</li>
+<li>We also get the set of keys we need to share with the other player so they can
+decrypt the cards they are dealt.</li>
+</ul>
+
+<p>With this done, our state machine consists of:</p>
+
+<ul>
+<li>A local transition: we enqueue a <code>DealAction</code> with the <code>cards</code> and <code>keys</code> we
+determined the other player gets.</li>
+<li>A remote transition, repeated twice: we expect to see two <code>DealAction</code>
+actions. If we see the one we sent out (the <code>clientId</code> matches our <code>clientId</code>)
+we can ignore it. If we see the <code>DealAction</code> from the other player, we update
+the deck. If we are first to draw, then we call <code>deck.myDraw()</code> <code>count</code> times,
+then <code>deck.othersDraw()</code> <code>count</code> times; otherwise we do it the other way
+around - call <code>deck.othersDraw()</code> <code>count</code> times, then call <code>deck.myDraw()</code>
+<code>count</code> times.</li>
+</ul>
+
+<p>Local transitions and remote transitions are explained in <a href="https://vladris.com/blog/2024/03/22/mental-poker-part-5-state-machine.html">part
+5</a>,
+in which we talked about the state machine.</p>
+
+<h3>Drawing cards</h3>
+
+<p>Drawing a card is a two-step process. We need to tell the other player we intend
+to draw a card (from the draw pile), and they need to give us their key to that
+card. Similarly, if the other player tells us they want to draw a card, we give
+them our key to that card.</p>
+
+<p>We need two actions:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">DrawRequestAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DrawRequest&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">cardIndex</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">DrawResponseAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DrawResponse&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">cardIndex</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedSRAKeyPair</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>If we want to draw a card, here is our state machine:</p>
+<div class="highlight"><pre><span></span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">drawCard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">queue</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;Waiting&quot;</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span><span class="w"> </span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DrawRequest&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">cardIndex</span><span class="o">:</span><span class="w"> </span><span class="kt">context.getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">getDrawIndex</span><span class="p">()</span><span class="w"> </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">((</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">DrawRequestAction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;DrawRequest&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">DrawResponseAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;DrawResponse&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">myDraw</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">key</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">    </span><span class="p">],</span><span class="w"> </span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">store</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;OthersTurn&quot;</span><span class="p">));</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">waitForOpponent</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We again get the async <code>queue</code> from the <code>store</code> and update the game status. Then
+we run the state machine consisting of 3 transitions:</p>
+
+<ul>
+<li>A local transition in which we post our <code>DrawRequest</code> action.</li>
+<li>A remote transition in which we expect to see our <code>DrawRequest</code>.</li>
+<li>A remote transition in which we expect the other player to respond with a
+<code>DrawResponse</code> action, giving us the key and allowing us to draw a card.</li>
+</ul>
+
+<p>Finally, after running the state machine and drawing the card, we update the
+game status again to other player&#39;s turn and call <code>waitForOpponent()</code>, which
+we&#39;ll cover later.</p>
+
+<p>This fully implements us drawing a card from the top of the discard pile and
+updating the deck.</p>
+
+<h3>Discarding cards</h3>
+
+<p>Similar to drawing cards, we need to implement discarding cards. Discarding a
+card is easier - we don&#39;t need a key from the other player, rather we just
+provide the key to the card we&#39;re discarding such that the other player can
+<q>see</q> it.</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">DiscardRequestAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DiscardRequest&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">cardIndex</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">SerializedSRAKeyPair</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Our <code>DiscardRequestAction</code> contains the card index and our key.</p>
+
+<p>The corresponding state machine:</p>
+<div class="highlight"><pre><span></span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">discardCard</span><span class="p">(</span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">queue</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;Waiting&quot;</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">([</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DiscardRequest&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">cardIndex</span><span class="o">:</span><span class="w"> </span><span class="kt">index</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">context.getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">getKeyFromHand</span><span class="p">(</span><span class="nx">index</span><span class="p">)});</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">DiscardRequestAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;DiscardRequest&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">myDiscard</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">cardIndex</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">    </span><span class="p">],</span><span class="w"> </span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">store</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">myCards</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;Win&quot;</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;OthersTurn&quot;</span><span class="p">));</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">waitForOpponent</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>As usual, we get the <code>queue</code> and update game state. Then we run the state
+machine:</p>
+
+<ul>
+<li>A local transition posts a <code>DiscardRequest</code> with the card index and key.</li>
+<li>A remote transition in which we should see our own <code>DiscardRequest</code> - since
+this round-tripped, we can now update the deck.</li>
+</ul>
+
+<p>After running the state machine, we need to check whether we discarded the last
+card in our hand. If we did, we can update the game state to us winning.
+Otherwise we wait for the other player&#39;s move.</p>
+
+<h3>Can&#39;t move</h3>
+
+<p>The last action we need to look at is the situation in which we can&#39;t discard
+any card (no matching suit or value) and we also can&#39;t draw a card (draw pile is
+empty). In this case we lose the game. Since it is our turn, we need to let the
+other player know that we&#39;re not pondering our next move, rather that we can&#39;t
+do anything and we lose. We&#39;ll model this as a simple <code>CantMoveAction</code>:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">CantMoveAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;CantMove&quot;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This action has no payload. The state machine is also very simple:</p>
+<div class="highlight"><pre><span></span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">cantMove</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">queue</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">store.getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;CantMove&quot;</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;Loss&quot;</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>At the end of it, we update the game status to us losing.</p>
+
+<p>So far, we have the 3 possible actions we can take when it is our turn:</p>
+
+<ul>
+<li>Draw a card (via <code>drawCard()</code>).</li>
+<li>Discard a card (via <code>discardCard()</code>).</li>
+<li>Can&#39;t draw, can&#39;t discard (via <code>cantMove()</code>).</li>
+</ul>
+
+<p>Next, we need to model responding to the other player&#39;s move.</p>
+
+<h3>Opponent&#39;s turn</h3>
+
+<p>The opponent can take the same actions as we can, so we don&#39;t need to declare
+any new action types, rather we need a state machine that responds to actions
+incoming from the other player:</p>
+<div class="highlight"><pre><span></span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">waitForOpponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">queue</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">othersAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">dequeue</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">othersAction</span><span class="p">.</span><span class="kr">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;DrawRequest&quot;</span><span class="o">:</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">run</span><span class="p">([</span>
+<span class="w">                </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">othersAction</span><span class="p">.</span><span class="nx">cardIndex</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">getDrawIndex</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid card index for draw&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+
+<span class="w">                    </span><span class="k">await</span><span class="w"> </span><span class="nx">queue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
+<span class="w">                        </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">store.getState</span><span class="p">().</span><span class="nx">id</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span>
+<span class="w">                        </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DrawResponse&quot;</span><span class="p">,</span>
+<span class="w">                        </span><span class="nx">cardIndex</span><span class="o">:</span><span class="w"> </span><span class="kt">othersAction.cardIndex</span><span class="p">,</span>
+<span class="w">                        </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">store.getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">getKey</span><span class="p">(</span><span class="nx">othersAction</span><span class="p">.</span><span class="nx">cardIndex</span><span class="p">)</span>
+<span class="w">                    </span><span class="p">})}),</span>
+<span class="w">                </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">DrawResponseAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;DrawResponse&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+
+<span class="w">                    </span><span class="k">await</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">othersDraw</span><span class="p">();</span>
+<span class="w">                </span><span class="p">})],</span><span class="w"> </span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">store</span><span class="p">);</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;MyTurn&quot;</span><span class="p">));</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;DiscardRequest&quot;</span><span class="o">:</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">!</span><span class="p">.</span><span class="nx">othersDiscard</span><span class="p">(</span><span class="nx">othersAction</span><span class="p">.</span><span class="nx">cardIndex</span><span class="p">,</span><span class="w"> </span><span class="nx">othersAction</span><span class="p">.</span><span class="nx">key</span><span class="p">);</span>
+
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">othersHand</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;Loss&quot;</span><span class="p">));</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">deck</span><span class="p">.</span><span class="nx">value</span><span class="o">?</span><span class="p">.</span><span class="nx">canIMove</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;MyTurn&quot;</span><span class="p">));</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">cantMove</span><span class="p">();</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;CantMove&quot;</span><span class="o">:</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;Win&quot;</span><span class="p">));</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We dequeue an action, then we respond based on its type:</p>
+
+<ul>
+<li>If this is a <code>DrawRequest</code>, we send a <code>DrawResponse</code>. We implement this as a
+simple state machine with a local transition (our <code>DrawResponse</code>) and a remote
+transition in which we expect to see our response round-tripped. We also check
+to ensure the draw request card index matches the top of the draw pile
+(otherwise the other player might trick us and draw some other card).</li>
+<li>If this is a <code>DiscardRequest</code>, we update the deck. If the other player
+discarded their last card, we lose. Otherwise, if we can move, we update game
+status to <code>MyTurn</code> and let the user pick which card to discard etc. But if we
+can&#39;t move - can&#39;t discard anything, can&#39;t draw, then we automatically call
+<code>cantMove()</code> to mark the fact we lost.</li>
+<li>If this is a <code>CantMove</code>, the other player lost so we update game status to
+<code>Win</code>.</li>
+</ul>
+
+<p>Note for the discard request, to keep things simple, we aren&#39;t checking whether
+the move is legal. If we want to secure the implementation, we should check that
+the card the other player is discarding matches either the suit or value of the
+card on top of the discard pile.</p>
+
+<h3>Actions and status</h3>
+
+<p>We already covered all possible actions:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">Action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">DealAction</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">DrawRequestAction</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">DrawResponseAction</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">DiscardRequestAction</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">CantMoveAction</span><span class="p">;</span>
+</pre></div>
+
+<p>The possible game status:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">GameStatus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Waiting&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;Shuffling&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;Dealing&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;MyTurn&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;OthersTurn&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;Win&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;Loss&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;Draw&quot;</span><span class="p">;</span>
+</pre></div>
+
+<p>We just implemented all the game logic - the possible actions a player can take,
+and the request/response needed to model the game of discard. We have the full
+model, so let&#39;s move on to the Redux store.</p>
+
+<h2>Store</h2>
+
+<p>Like in the <a href="https://vladris.com/blog/2024/06/24/mental-poker-part-8-rock-paper-scissors.html">previous
+post</a>,
+we will be using <a href="https://redux.js.org/">Redux</a> and the <a href="https://redux-toolkit.js.org/">Redux
+Toolkit</a>.</p>
+
+<p>The sate we&#39;ll be maintaining:</p>
+
+<ul>
+<li>Our ID.</li>
+<li>The other player&#39;s ID.</li>
+<li>The Mental Poker async queue we implement the game on top of.</li>
+<li>The game status (<code>GameStatus</code> in our model).</li>
+<li>The deck (represented by an instance of <code>Deck</code>).</li>
+<li>The deck view-model (providing just enough data to bind to the UI).</li>
+</ul>
+
+<p>Using <code>createAction</code> from the Redux Toolkit:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">updateId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="kt">string</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">&quot;id/update&quot;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateOtherPlayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="kt">string</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">&quot;otherPlayer/update&quot;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateQueue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="s2">&quot;queue/update&quot;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateGameStatus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="nx">GameStatus</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">&quot;gameStatus/update&quot;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateDeck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="nx">Deck</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">&quot;deck/update&quot;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">updateDeckViewModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&lt;</span><span class="nx">DeckViewModel</span><span class="o">&gt;</span><span class="p">(</span><span class="s2">&quot;deckViewModel/update&quot;</span><span class="p">);</span>
+</pre></div>
+
+<p>We&#39;ll also use the same helper to create Redux reducers as for
+rock-paper-scissors:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">makeUpdateReducer</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">initialValue</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">updateAction</span><span class="o">:</span><span class="w"> </span><span class="kt">ReturnType</span><span class="o">&lt;</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">createAction</span><span class="o">&gt;</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">createReducer</span><span class="p">({</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">initialValue</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">(</span><span class="nx">builder</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">builder</span><span class="p">.</span><span class="nx">addCase</span><span class="p">(</span><span class="nx">updateAction</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">state</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">payload</span><span class="p">;</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Our Redux store is:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">configureStore</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">reducer</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">updateId</span><span class="p">),</span>
+<span class="w">        </span><span class="nx">otherPlayer</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="p">(</span><span class="s2">&quot;Not joined&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">updateOtherPlayer</span><span class="p">),</span>
+<span class="w">        </span><span class="nx">queue</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="o">&lt;</span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">            </span><span class="kc">undefined</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">updateQueue</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="nx">gameStatus</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="p">(</span><span class="s2">&quot;Waiting&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">updateGameStatus</span><span class="p">),</span>
+<span class="w">        </span><span class="nx">deck</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="o">&lt;</span><span class="nx">Deck</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="o">&gt;</span><span class="p">(</span><span class="kc">undefined</span><span class="p">,</span><span class="w"> </span><span class="nx">updateDeck</span><span class="p">),</span>
+<span class="w">        </span><span class="nx">deckViewModel</span><span class="o">:</span><span class="w"> </span><span class="kt">makeUpdateReducer</span><span class="o">&lt;</span><span class="nx">DeckViewModel</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">defaultDeckViewModel</span><span class="p">,</span><span class="w"> </span><span class="nx">updateDeckViewModel</span><span class="p">),</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">middleware</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">getDefaultMiddleware</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">        </span><span class="nx">getDefaultMiddleware</span><span class="p">({</span>
+<span class="w">            </span><span class="nx">serializableCheck</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>This is all we need to connect the model with the view.</p>
+
+<h2>UI</h2>
+
+<p>We&#39;ll use React. </p>
+
+<h3>Card</h3>
+
+<p>The first component we need is a card:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">CardViewProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">card</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">onClick</span><span class="o">?:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">suiteMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">([</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">&quot;hearts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;♥&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">&quot;diamonds&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;♦&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">&quot;clubs&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;♣&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">&quot;spades&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;♠&quot;</span><span class="p">]</span>
+<span class="p">]);</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">CardView</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FC</span><span class="o">&lt;</span><span class="nx">CardViewProps</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">card</span><span class="p">,</span><span class="w"> </span><span class="nx">onClick</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">card</span><span class="o">?</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mf">0</span><span class="p">];</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">suite</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">card</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">suiteMap</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">card</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mf">1</span><span class="p">])</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">suite</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;♥&quot;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">suite</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;♦&quot;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;red&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;black&quot;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">70</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="kt">100</span><span class="p">,</span><span class="w"> </span><span class="nx">borderColor</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;black&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderWidth</span><span class="o">:</span><span class="w"> </span><span class="kt">1</span><span class="p">,</span><span class="w"> </span><span class="nx">borderStyle</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;solid&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="kt">5</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                    </span><span class="nx">backgroundColor</span><span class="o">:</span><span class="w"> </span><span class="kt">card</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;white&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;darkred&quot;</span><span class="p">}}</span><span class="w"> </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onClick</span><span class="p">}</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="kt">card</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;block&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">paddingLeft</span><span class="o">:</span><span class="w"> </span><span class="kt">15</span><span class="p">,</span><span class="w"> </span><span class="nx">paddingRight</span><span class="o">:</span><span class="w"> </span><span class="kt">15</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">p</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginTop</span><span class="o">:</span><span class="w"> </span><span class="kt">20</span><span class="p">,</span><span class="w"> </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span><span class="w"> </span><span class="nx">textAlign</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;left&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="kt">25</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span><span class="p">{</span><span class="kt">number</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">p</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginTop</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span><span class="w"> </span><span class="nx">textAlign</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;right&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="kt">30</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span><span class="p">{</span><span class="nx">suite</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This renders a <code>card</code> which can be a <code>string</code> or <code>undefined</code>. If it is a string,
+we render the value and suit. Otherwise we render the <q>back</q> of the card - a
+dark red rectangle. Cards have an optional <code>onClick()</code> event.</p>
+
+<h3>Hand</h3>
+
+<p>A <code>HandView</code> renders several cards:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">HandViewProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">prefix</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">cards</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)[];</span>
+<span class="w">    </span><span class="nx">onClick</span><span class="o">?:</span><span class="w"> </span><span class="p">(</span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">HandView</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FC</span><span class="o">&lt;</span><span class="nx">HandViewProps</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">cards</span><span class="p">,</span><span class="w"> </span><span class="nx">prefix</span><span class="p">,</span><span class="w"> </span><span class="nx">onClick</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;flex&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">flexDirection</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;row&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">justifyContent</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;center&quot;</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span><span class="p">{</span>
+<span class="w">            </span><span class="nx">cards</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">card</span><span class="p">,</span><span class="w"> </span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">CardView</span><span class="w"> </span><span class="nx">key</span><span class="o">=</span><span class="p">{</span><span class="nx">prefix</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;:&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">i</span><span class="p">}</span><span class="w"> </span><span class="nx">card</span><span class="o">=</span><span class="p">{</span><span class="w"> </span><span class="nx">card</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">onClick</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">onClick</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="o">/&gt;</span><span class="p">)</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This can be the player&#39;s hand, where we should have <code>string</code> values for each
+card and an <code>onClick()</code> event hooked up for when the player clicks on a card to
+discard it. It can also be the other player&#39;s hand, in which case we should have
+<code>undefined</code> values for each card and just show their backs.</p>
+
+<h3>Table</h3>
+
+<p><code>MainView</code> implements a view of the whole table:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">useSelector</span><span class="o">:</span><span class="w"> </span><span class="kt">TypedUseSelectorHook</span><span class="o">&lt;</span><span class="nx">RootState</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReduxSelector</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">MainView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">idSelector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">otherPlayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">otherPlayer</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">gameStateSelector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">gameStatus</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">deckViewModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">deckViewModel</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">myTurn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">gameStateSelector</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;MyTurn&quot;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">canDiscard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">matchSuitOrValue</span><span class="p">(</span>
+<span class="w">            </span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">myCards</span><span class="p">[</span><span class="nx">index</span><span class="p">],</span>
+<span class="w">            </span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">[</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1</span><span class="p">]);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">Id</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">idSelector</span><span class="p">.</span><span class="nx">value</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">Other</span><span class="w"> </span><span class="nx">player</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">otherPlayer</span><span class="p">.</span><span class="nx">value</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">Status</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">gameStateSelector</span><span class="p">.</span><span class="nx">value</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="kt">200</span><span class="p">,</span><span class="w"> </span><span class="nx">textAlign</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;center&quot;</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">HandView</span><span class="w"> </span><span class="nx">prefix</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;others&quot;</span><span class="p">}</span><span class="w"> </span><span class="nx">cards</span><span class="o">=</span><span class="p">{</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Array</span><span class="p">(</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">othersHand</span><span class="p">).</span><span class="nx">fill</span><span class="p">(</span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="kt">200</span><span class="p">,</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;flex&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">flexDirection</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;row&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">justifyContent</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;center&quot;</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="kt">deckViewModel.value.drawPile</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;block&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="kt">5</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">myTurn</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">drawCard</span><span class="p">()}</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span>
+<span class="w">                </span><span class="o">&lt;</span><span class="nx">span</span><span class="o">&gt;</span><span class="p">{</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">drawPile</span><span class="p">}</span><span class="w"> </span><span class="nx">card</span><span class="p">{</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">drawPile</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;s&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/span&gt;</span>
+<span class="w">                </span><span class="o">&lt;</span><span class="nx">CardView</span><span class="w"> </span><span class="nx">card</span><span class="o">=</span><span class="p">{</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="kt">deckViewModel.value.discardPile.length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;block&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="kt">5</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span>
+<span class="w">                </span><span class="o">&lt;</span><span class="nx">span</span><span class="o">&gt;</span><span class="p">{</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">length</span><span class="p">}</span><span class="w"> </span><span class="nx">card</span><span class="p">{</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;s&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/span&gt;</span>
+<span class="w">                </span><span class="o">&lt;</span><span class="nx">CardView</span><span class="w"> </span><span class="nx">card</span><span class="o">=</span><span class="p">{</span><span class="w"> </span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">[</span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">discardPile</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1</span><span class="p">]</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="kt">200</span><span class="p">,</span><span class="w"> </span><span class="nx">textAlign</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;center&quot;</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">HandView</span>
+<span class="w">                </span><span class="nx">prefix</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mine&quot;</span><span class="p">}</span>
+<span class="w">                </span><span class="nx">cards</span><span class="o">=</span><span class="p">{</span><span class="w"> </span><span class="nx">deckViewModel</span><span class="p">.</span><span class="nx">value</span><span class="p">.</span><span class="nx">myCards</span><span class="w"> </span><span class="p">}</span>
+<span class="w">                </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{(</span><span class="nx">index</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">myTurn</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">canDiscard</span><span class="p">(</span><span class="nx">index</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">discardCard</span><span class="p">(</span><span class="nx">index</span><span class="p">)</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+</pre></div>
+
+<p>This consists of:</p>
+
+<ul>
+<li>A top display showing our ID, the other player&#39;s ID, and the game status.</li>
+<li>The other player&#39;s hand (we&#39;ll only see the back of the cards).</li>
+<li>The draw pile - if there&#39;s no more cards in the draw pile, we don&#39;t show
+anything; otherwise we show the back of a card and the number of cards in the
+pile.</li>
+<li>The discard pile - if nothing discarded yet, we don&#39;t show anything; otherwise
+we show the card on top of the discard pile and the number of cards in the
+pile.</li>
+<li>Our hand.</li>
+</ul>
+
+<p>If it is our turn, we hook up <code>drawCard()</code> to the draw pile&#39;s <code>onClick()</code> and
+for each card we can discard, we hook up <code>discardCard()</code> to the card&#39;s
+<code>onClick()</code>.</p>
+
+<p>And that&#39;s it. Rendering it all on the page:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ReactDOM</span><span class="p">.</span><span class="nx">createRoot</span><span class="p">(</span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;root&quot;</span><span class="p">)</span><span class="o">!</span><span class="p">);</span>
+<span class="nx">root</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="nx">Provider</span><span class="w"> </span><span class="nx">store</span><span class="o">=</span><span class="p">{</span><span class="nx">store</span><span class="p">}</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">MainView</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="err">/Provider&gt;</span>
+<span class="p">);</span>
+</pre></div>
+
+<p>Here, <code>Provider</code> comes from the <code>react-redux</code> package and makes the Redux store
+available to the React components.</p>
+
+<h2>Initialization</h2>
+
+<p>Like with rock-paper-scissors, let&#39;s look at how we initialize the game:</p>
+<div class="highlight"><pre><span></span><span class="nx">getLedger</span><span class="o">&lt;</span><span class="nx">Action</span><span class="o">&gt;</span><span class="p">().</span><span class="nx">then</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">ledger</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">randomClientId</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateId</span><span class="p">(</span><span class="nx">id</span><span class="p">));</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">upgradeTransport</span><span class="p">(</span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">ledger</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateQueue</span><span class="p">(</span><span class="nx">queue</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">action</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">ledger</span><span class="p">.</span><span class="nx">getActions</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateOtherPlayer</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">));</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">sharedPrime</span><span class="p">,</span><span class="w"> </span><span class="nx">turnOrder</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">establishTurnOrder</span><span class="p">(</span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">queue</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="s2">&quot;Shuffling&quot;</span><span class="p">));</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">keys</span><span class="p">,</span><span class="w"> </span><span class="nx">deck</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">shuffle</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">turnOrder</span><span class="p">,</span><span class="w"> </span><span class="nx">sharedPrime</span><span class="p">,</span><span class="w"> </span><span class="nx">getDeck</span><span class="p">(),</span><span class="w"> </span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="mf">64</span><span class="p">);</span>
+<span class="w"> </span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">imFirst</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">turnOrder</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">id</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateDeck</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">Deck</span><span class="p">(</span><span class="nx">deck</span><span class="p">,</span><span class="w"> </span><span class="nx">keys</span><span class="p">,</span><span class="w"> </span><span class="nx">store</span><span class="p">)));</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">deal</span><span class="p">(</span><span class="nx">imFirst</span><span class="p">,</span><span class="w"> </span><span class="mf">5</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">updateGameStatus</span><span class="p">(</span><span class="nx">imFirst</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;MyTurn&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;OthersTurn&quot;</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">imFirst</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">waitForOpponent</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">});</span>
+</pre></div>
+
+<ul>
+<li>We connect to the Fluid session and get a reference to the <code>ledger</code>, as we saw
+in <a href="https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html">part 7</a>.</li>
+<li>We generate a random client ID (using the implementation
+in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/packages/primitives/src/randomClientId.ts"><code>packages/primitives/src/randomClientId.ts</code></a>).</li>
+<li>Update our ID in the Redux store.</li>
+<li>We call <code>upgradeTransport()</code> (also discussed in <a href="https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html">part 7</a>).</li>
+<li>Update the Redux store with a reference to the async queue.</li>
+<li>We retrieve and store the other player’s ID.</li>
+<li>We get the shared prime and establish turn order (also covered in <a href="https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html">part 7</a>).</li>
+<li>We update the game status to <code>Shuffling</code>.</li>
+<li>We shuffle the deck using the <code>shuffle()</code> primitive and get back our keys and
+encrypted cards.</li>
+<li>Determine whether we are first (based on established turn order) and store
+this in <code>imFirst</code>.</li>
+<li>We instantiate a <code>Deck</code> and store in the Redux <code>store</code>.</li>
+<li>Deal 5 cards to each player using <code>deal()</code>.</li>
+<li>Update state again, based on whether we are first or not to <code>MyTurn</code> or
+<code>OthersTurn</code>.</li>
+<li>If we&#39;re not first to play, call <code>waitForOpponent()</code>.</li>
+</ul>
+
+<p>This initialization is a bit longer than the one for rock-paper-scissors, since
+we have to shuffle and deal cards, and the order in which the players go is
+important.</p>
+
+<h2>Summary</h2>
+
+<p>We looked at implementing a discard card game using the Mental Poker toolkit.
+The full source code for the demo is under <a href="https://github.com/vladris/mental-poker-toolkit/tree/main/demos/discard"><code>demos/discard</code></a>.</p>
+
+<ul>
+<li>Instructions on how to run the game in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/discard/README.md"><code>README.md</code></a>.</li>
+<li>Deck management is implemented in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/discard/src/deck.ts"><code>deck.ts</code></a>.</li>
+<li>The rest of the model is implemented in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/discard/src/model.ts"><code>model.ts</code></a>.</li>
+<li>The Redux store is implemented in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/discard/src/store.ts"><code>store.ts</code></a>.</li>
+<li>The React components are here:
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/discard/src/cardView.tsx"><code>cardView.tsx</code></a>,
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/discard/src/handView.tsx"><code>handView.tsx</code></a>,
+<a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/discard/src/mainView.tsx"><code>mainView.tsx</code></a>.</li>
+<li>Initialization happens in <a href="https://github.com/vladris/mental-poker-toolkit/blob/main/demos/discard/src/index.tsx"><code>index.tsx</code></a>.</li>
+</ul>
+
+<p>We finally put the whole toolkit to its intended use and built an end-to-end interactive, 2-player card game.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2024/06/24/mental-poker-part-8-rock-paper-scissors.html">Mental Poker Part 8: Rock-Paper-Scissors</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>
