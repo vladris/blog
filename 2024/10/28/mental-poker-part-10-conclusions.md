@@ -2,10 +2,10 @@
 
 This blog post will wrap up the [Mental Poker
 series](https://vladris.com/writings/index.html#mental-poker). I started
-thinking about this 3 years ago, and worked on a [Mental Poker
+thinking about this in 2021, and worked on a [Mental Poker
 Toolkit](https://github.com/vladris/mental-poker-toolkit) library as a
 side-project. The blog posts in the series were written as I was exploring the
-tech. Here I aim to bring all the learnings together in a final recap.
+tech. Here I aim to bring all the pieces together in a final recap.
 
 ## Inception
 
