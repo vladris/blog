@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Mental Poker Part 10: Conclusions &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/light.css" type="text/css">
+<link rel="stylesheet" href="../../../static/pygments.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<header><span>October 28, 2024</span></header>
+<article>
+<h1>Mental Poker Part 10: Conclusions</h1>
+
+<p>This blog post will wrap up the <a href="https://vladris.com/writings/index.html#mental-poker">Mental Poker
+series</a>. I started
+thinking about this 3 years ago, and worked on a <a href="https://github.com/vladris/mental-poker-toolkit">Mental Poker
+Toolkit</a> library as a
+side-project. The blog posts in the series were written as I was exploring the
+tech. Here I aim to bring all the learnings together in a final recap.</p>
+
+<h2>Inception</h2>
+
+<p>This all started with <a href="https://fluidframework.com/">Fluid Framework</a>. As the
+team was building out the framework, we used hackathons to implement various
+applications of Fluid. Since Fluid powers real time collaboration, team members
+came up with all sorts of ideas. For example, when I joined the team, I built a
+simple collaborative coloring app where multiple clients can simultaneously
+color a black and white drawing. A recurring theme was games - building
+multiplayer games on top of the framework. The challenge with building games is
+hiding information. In Fluid, all data is synchronized to all clients and there
+is no central authority. The <a href="https://learn.microsoft.com/en-us/azure/azure-fluid-relay/">Azure Fluid
+Relay</a> isn’t running
+app code, so there isn’t an easy way to maintain hidden state for a game (e.g.
+cards in hand).</p>
+
+<p>I was looking for a way to do this and learned about <a href="https://en.m.wikipedia.org/wiki/Mental_poker">mental
+poker</a>. Mental Poker is a way to
+play games with private information in a zero-trust environment, without relying
+on a central authority to, for example, deal cards. This is a good fit for
+Fluid. As a side-project, I decided to build a library to enable development of
+this type of games that would work with Fluid as the underlying communication
+mechanism.</p>
+
+<p>So how do players agree on which cards they are dealt, without knowing their
+opponent&#39;s hand?</p>
+
+<h2>Cryptography</h2>
+
+<p>The first big piece I covered was cryptography. Mental Poker relies on
+commutative encryption but most commonly used encryption algorithms are
+non-commutative. Commutative here meaning that if both Alice and Bob encrypt
+something with their keys, it doesn&#39;t matter the order in which they apply their
+keys to decrypt.</p>
+
+<p>Since I couldn&#39;t find a library that provides a symmetric encryption algorithm,
+I implemented the SRA algorithm (SRA, not RSA - same people&#39;s initials,
+different algorithm). Also ended up implementing a bunch of BigInt math, all
+covered in <a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">Mental Poker Part 1:
+Cryptography</a>.
+The blog post covers in detail how shuffling a deck of cards works and what are
+the cryptography primitives used.</p>
+
+<h2>Ledger</h2>
+
+<p>Next, looking at game modeling, I decided a good way to represent a turn-based
+game is an append-only list. Each game step is a node in the list.</p>
+
+<p>Fluid Framework relies on Distributed Data Structures (DDSes) to maintain state
+and synchronize it across clients. I implemented this ledger as a Fluid
+Framework DDS <a href="https://github.com/vladris/fluid-ledger">here</a>. This is outside
+of the <a href="https://github.com/vladris/mental-poker-toolkit">mental-poker-toolkit
+repo</a>, since it is generally
+useful outside of Mental Poker.</p>
+
+<p>The DDS is the lowest-level representation of a game. I covered this in <a href="https://vladris.com/blog/2023/06/04/mental-poker-part-2-fluid-ledger.html">Mental
+Poker Part 2: Fluid
+Ledger</a>.</p>
+
+<h2>Transport</h2>
+
+<p>Wrapping up the plumbing, I looked as a simple abstraction over the transport
+layer. This is a very simple interface:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Transport interface</span>
+<span class="k">export</span><span class="w"> </span><span class="kr">declare</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">ITransport</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Get all the actions that have been posted so far</span>
+<span class="w">    </span><span class="nx">getActions</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">IterableIterator</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Post an action</span>
+<span class="w">    </span><span class="nx">postAction</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Event emitter</span>
+<span class="w">    </span><span class="nx">once</span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;actionPosted&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="k">this</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">on</span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;actionPosted&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="k">this</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">off</span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;actionPosted&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="k">this</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Here, an <em>action</em> is an item on our ledger list. We can get all actions posted
+to the ledger so far, post a new action, and hook up event listeners.</p>
+
+<p>Note the interface doesn&#39;t mention the ledger, so we can swap implementations if
+needed. The toolkit relies on Fluid (the <code>FluidTransport</code> implementation of this
+interface) but this could be swapped out for something else as long as this
+interface is satisfied.</p>
+
+<p>I also implemented a <code>SignedTransport</code> as a decorator, which adds signature
+verification for an existing <code>ITransport</code>. Since there is no central authority
+and multiple clients can be part of a session, to mitigate spoofing we want
+clients to exchange public keys as a first step, then sign all subsequent
+messages with private keys. This a different algorithm than SRA, regular
+asymmetric cryptography signing and signature verification. I implemented this
+on top of
+<a href="https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle"><code>crypto.subtle</code></a>.</p>
+
+<p>I covered all of this in <a href="https://vladris.com/blog/2023/11/28/mental-poker-part-3-transport.html">Mental Poker Part 3:
+Transport</a>.</p>
+
+<h2>Actions</h2>
+
+<p>I briefly mentioned <em>actions</em> in the <strong>Ledger</strong> section. For the Mental Poker
+toolkit, all actions are supposed to contain a <code>clientID</code> property, identifying
+the client, and a <code>type</code>, which is a string literal, used to identify the
+action. Plus any additional payload the action might need.</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">ClientId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">BaseAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">unknown</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+
+<h2>Async Queue</h2>
+
+<p>The async queue is something I haven&#39;t considered when starting the project, but
+I realized using the <code>ITransport</code> interface is cumbersome. While it maps well
+over Fluid, using it to implement games is not ergonomic.</p>
+
+<p>The async queue provides a better interface over the transport:</p>
+<div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">IQueue</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">enqueue</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nx">dequeue</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The implementation itself is fairly straightforward, relying on the <code>ITransport</code>
+APIs and events. With this, clients can enqueue and dequeue actions and await on
+the response.</p>
+
+<p>Both actions and the queue implementation are covered in <a href="https://vladris.com/blog/2024/03/16/mental-poker-part-4-actions-and-async-queue.html">Mental Poker Part 4:
+Actions and Async
+Queue</a>.</p>
+
+<p>Note that by now, running a game using the toolkit can be done by just relying
+on actions and the two queue APIs: <code>enqueue()</code> and <code>dequeue()</code>. Very simple.</p>
+
+<h2>State Machine</h2>
+
+<p>Of course, we need a way to model games. Game rules are implemented as sequences
+of actions. An action is an atomic step. Note that a game move, for example
+drawing a card, doesn&#39;t necessarily map to a single action going over the
+transport. A game move, especially in the context of Mental Poker, can involve
+several steps (actions) taken by the players.</p>
+
+<p>The state machine aims to facilitate game implementation.</p>
+
+<h3>Transitions</h3>
+
+<p>I implemented two core state machine pieces: <em>local transitions</em> and <em>remote
+transitions</em>.</p>
+
+<p>A local transition means an action originates on our client. For example the
+player decides to discard a card or, in a game of rock-paper-scissors, the
+player picks between the 3 options. This means we will run some code and enqueue
+an action:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">LocalTransition</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="p">,</span><span class="w"> </span><span class="nx">TContext</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+
+<p>We take the queue as a parameter. The <code>context</code> can be anything, it&#39;s a way to
+pass additional game state to the function.</p>
+
+<p>A remote transition means we receive an action.</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">Transition</span><span class="o">&lt;</span><span class="nx">TAction</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">BaseAction</span><span class="p">,</span><span class="w"> </span><span class="nx">TContext</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">TAction</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+
+<p>Here, we dequeue an action and invoke the transition, passing the action as an
+argument.</p>
+
+<p>We need both of these transitions to implement a game, but we can provide a
+unified abstraction:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">RunnableTransition</span><span class="o">&lt;</span><span class="nx">TContext</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">BaseAction</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">TContext</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+
+<p>We can adapt a <code>Transition</code> to this type by calling dequeue on the <code>actionQueue</code>
+and passing the resulting action to the <code>Transition</code>.</p>
+
+<p>The state machine takes an array of <code>RunnableTransition</code>s and executes the code
+in sequence. It also provides several helper functions:</p>
+
+<ul>
+<li><code>local()</code>, to create <code>RunnableTransition</code> from a <code>LocalTransition</code>.</li>
+<li><code>transition()</code>, to create a <code>RunnableTransition</code> from a (remote) <code>Transition</code>.</li>
+<li><code>repeat()</code>, to repeat a given <code>RunnableTransition</code> a <code>number</code> of times.</li>
+<li><code>transitions()</code>, to convert several <code>RunnableTransition</code> or
+<code>RunnableTransition[]</code> into a flat array of <code>RunnableTransition</code>.</li>
+</ul>
+
+<p>The post <a href="https://vladris.com/blog/2024/03/22/mental-poker-part-5-state-machine.html">Mental Poker Part 5: State
+Machine</a>
+covers the implementation in details and also shows examples of modeling rules
+as transitions. Here&#39;s a rock-paper-scissors skeleton:</p>
+<div class="highlight"><pre><span></span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
+<span class="w">    </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Post our play action</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">    </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Both player and opponent need to post their encrypted selection</span>
+<span class="w">    </span><span class="p">}),</span><span class="w"> </span><span class="mf">2</span><span class="p">),</span>
+<span class="w">    </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">queue</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Post our reveal action</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">    </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">reveal</span><span class="o">:</span><span class="w"> </span><span class="kt">RevealAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">RootStore</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Both player and opponent need to reveal their selection</span>
+<span class="w">    </span><span class="p">}),</span><span class="w"> </span><span class="mf">2</span><span class="p">)</span>
+<span class="p">]);</span>
+</pre></div>
+
+<h2>Primitives</h2>
+
+<p>We now have all the pieces we need to model games. The toolkit also provides
+common primitives - plug &amp; play state machines to be integrated in games.</p>
+
+<p>An example of this is card shuffling. Given a deck of cards, there is a state
+machine that shuffles this deck according to the Mental Poker steps and hides
+this behind a simple <code>shuffle()</code> function.</p>
+
+<p>I cover the details of this in <a href="https://vladris.com/blog/2024/04/07/mental-poker-part-6-shuffling-implementation.html">Mental Poker Part 6: Shuffling
+Implementation</a>.</p>
+
+<p>Shuffling cards is the canonical example of Mental Poker, but building a game
+requires several other common pieces. A few examples:</p>
+
+<ul>
+<li>Creating a Fluid transport (abstracting the Fluid container and connection
+setup).</li>
+<li>Enabling signature checking, in other words converting a given (unsigned)
+<code>ITransport</code> into a <code>SignedTransport</code>.</li>
+<li>Establishing turn order for multiple players and agreeing on a large shared
+prime (required by RSA).</li>
+</ul>
+
+<p>I covered all of these in <a href="https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html">Mental Poker Part 7:
+Primitives</a>.</p>
+
+<p>All implementation rely on the state machine are expressed as sequences of
+transitions.</p>
+
+<h2>Games</h2>
+
+<p>Finally, I provided a couple of sample games.</p>
+
+<p>The first is rock-paper-scissors. Rock-paper-scissors is interesting because it
+does require some cryptography, but it is much simpler than a card game. Players
+simply pick between rock, paper, or scissors, encrypt their choice, then post it
+(enqueue it). Once both players shared their pick, they share a key the other
+player can use to decrypt their pick. Then we can see who won the game.</p>
+
+<p>The implementation is covered in <a href="https://vladris.com/blog/2024/06/24/mental-poker-part-8-rock-paper-scissors.html">Mental Poker Part 8:
+Rock-Paper-Scissors</a>.</p>
+
+<p>Next, I implemented a more complex game: discard. In this game, players take
+turns discarding cards as long as they can match the value or suit on top of the
+discard pile. If they can&#39;t discard, they draw a card instead. The first player
+to discard their whole hand wins. This is again a fairly simple game in terms of
+rules, but requires more advance semantics like card shuffling, drawing and
+discarding cards etc.</p>
+
+<p>The implementation is covered in <a href="https://vladris.com/blog/2024/07/18/mental-poker-part-9-discard-game.html">Mental Poker Part 9: Discard
+Game</a>.</p>
+
+<h2>Zero-Trust</h2>
+
+<p>Mental Poker enables us to play games in a zero-trust environment without a
+centralized authority. Of course, there are some limitations.</p>
+
+<p>Signature verification mitigates spoofing, but there is no way to guarantee
+other clients aren&#39;t colluding over a secondary channel. This isn&#39;t a limitation
+of Mental Poker, rather in general - even if we play poker with a server
+handling the deal, players can cheat and talk to each other with a separate app.</p>
+
+<p>Cryptography ensures certain type of cheating is impossible. For example in the
+rock-paper-scissors example, a player can&#39;t pretend they picked something else
+once their encrypted pick was shared with the other player. Similarly,
+cryptography enables maintaining private state over a public channel, including
+card shuffling, cards in hand etc.</p>
+
+<p>The state machine helps model games as a sequence of steps. As long as the
+clients agree on the rules and follow the steps, they can play a game. Once a
+player posts an action that the other player doesn&#39;t expect, in other words is
+not correct according to the game semantics, the other player can tell the game
+rules are not respected. That said, there is no simple way to recover from this.
+I call this the <q>flip the table</q> recourse. You can&#39;t really do much, since
+there&#39;s no central authority to arbitrate this, but cryptography and the state
+machine make it easy for you to tell when another player is cheating and, at the
+very least, you can refuse to continue playing.</p>
+
+<p>This was a very fun side-project I worked on, intermittently, for 3 years. I
+learned a lot about Mental Poker and built a reusable toolkit for this type of
+games. All code discussed in the series is available on GitHub:
+<a href="https://github.com/vladris/mental-poker-toolkit/">https://github.com/vladris/mental-poker-toolkit/</a>.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2024/07/18/mental-poker-part-9-discard-game.html">Mental Poker Part 9: Discard Game</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+</body>
+</html>
