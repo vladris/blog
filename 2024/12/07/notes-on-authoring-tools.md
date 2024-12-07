@@ -199,4 +199,4 @@ will be commoditized enough to make the scenarios I'm thinking of lighting up
 extremely cheap if not free.
 
 Next year I will probably write a few blog posts on some of the interesting
-challenges I encountered building this authoring tool.
+challenges I encountered while working on this authoring tool.
