@@ -139,7 +139,7 @@ and stitching this together.
 
 Since I mentioned focused writing, here's a distraction-free experience in full
 screen mode (and some inspiring placeholder text) based on the same editor. Just
-start typing to see it work (might not work great on mobile):
+start typing to see it work:
 
 <div id="demo2" class="editor-wrapper"></div>
 
