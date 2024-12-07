@@ -154,7 +154,7 @@ and stitching this together.</p>
 
 <p>Since I mentioned focused writing, here's a distraction-free experience in full
 screen mode (and some inspiring placeholder text) based on the same editor. Just
-start typing to see it work (might not work great on mobile):</p>
+start typing to see it work:</p>
 
 <div id="demo2" class="editor-wrapper"/>
 
