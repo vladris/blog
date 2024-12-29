@@ -2028,12 +2028,12 @@ key pair. These are both generated from a shared seed. Alice can sign a message
 using her private key and anyone that has the public key, including Bob, can
 verify that the signature is indeed Aliceâs.</p>
 
-<p>So given a public/private key pair \(&lt;K_private, K_public&gt;\) and some payload
+<p>So given a public/private key pair \(&lt;K_{private}, K_{public}&gt;\) and some payload
 \(P\), singing is a function that produces a signature given the payload and
-private key \(sign(P, K_private) -&gt; signature\). Signature verification is a
+private key \(sign(P, K_{private}) -&gt; signature\). Signature verification is a
 function that takes a payload, signature, and public key and tells us whether
 the signature was indeed produced by the corresponding private key \(verify(P,
-signature, K_public) -&gt; true/false\).</p>
+signature, K_{public}) -&gt; true/false\).</p>
 </blockquote>
 
 <p>The neat thing about public/private key cryptography is that the public key,
