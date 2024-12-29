@@ -833,9 +833,9 @@ z_{origin_{3}} + dz_3 * t_3 = z_{origin_{rock}} + dz_{rock} * t_3
 \end{cases}$$
 
 In the above system, we know all of the starting points and vectors of the
-hailstorms. Our unknowns are $t_1, t_2, t_3, x_{origin_{rock}},
-y_{origin_{rock}}, z_{origin_{rock}}, dx_{rock}, dy_{rock}, dz_{rock}$. That's
-9 unknowns to 9 equations, so it should be solvable.
+hailstorms. Our unknowns are $t_1$, $t_2$, $t_3$, $x_{origin_{rock}}$,
+$y_{origin_{rock}}$, $z_{origin_{rock}}$, $dx_{rock}$, $dy_{rock}$, $dz_{rock}$.
+That's 9 unknowns to 9 equations, so it should be solvable.
 
 While this approach works, I didn't want to use a numerical library to solve
 this (I'm trying to keep dependencies at a minimum), and implementing the math
