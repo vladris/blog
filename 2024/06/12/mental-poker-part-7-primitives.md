@@ -115,12 +115,12 @@ key pair. These are both generated from a shared seed. Alice can sign a message
 using her private key and anyone that has the public key, including Bob, can
 verify that the signature is indeed Alice’s.
 >
-> So given a public/private key pair $<K_private, K_public>$ and some payload
+> So given a public/private key pair $<K_{private}, K_{public}>$ and some payload
 $P$, singing is a function that produces a signature given the payload and
-private key $sign(P, K_private) -> signature$. Signature verification is a
+private key $sign(P, K_{private}) -> signature$. Signature verification is a
 function that takes a payload, signature, and public key and tells us whether
 the signature was indeed produced by the corresponding private key $verify(P,
-signature, K_public) -> true/false$.
+signature, K_{public}) -> true/false$.
 
 The neat thing about public/private key cryptography is that the public key,
 which is required for validation, is not a secret - only the private key is.
