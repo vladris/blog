@@ -1,5 +1,5 @@
-@import url(//fonts.googleapis.com/css?family=PT+Sans:400,700,400italic,700italic);
-@import url(//fonts.googleapis.com/css?family=Source+Code+Pro);
+@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro&display=swap);
+@import url(https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,700;1,400;1,700&display=swap);
 
 .highlight {
   overflow: scroll;
@@ -50,22 +50,22 @@ footer {
 a {
   font-weight: bold;
   text-decoration: none;
-  color: #dd0000;
+  color: #9d7cd8;
 }
 
 blockquote {
-  border-left: 10px solid #dd0000;
+  border-left: 10px solid #9d7cd8;
   margin-left: 0;
   margin-right: 30px;
   padding-left: 20px;
 }
 
 body {
-  background-color: #f8fafb;
+  background-color: #fefefe;
   color: #222;
-  font-family: 'PT Sans', Arial, Helvetica, sans-serif;
+  font-family: 'Poppins', Arial, Helvetica, sans-serif;
   font-size: 1em;
-  line-height: 1.4em;
+  line-height: 1.5em;
   margin: auto;
   max-width: 800px;
   padding: 20px;
@@ -159,8 +159,8 @@ tr:nth-child(odd) {
 #index .year {
   font-size: 2em;
   font-weight: bold;
-  margin-bottom: 2em;
-  margin-top: 2em;
+  margin-bottom: 1em;
+  margin-top: 1em;
 }
 
 #index .date {
@@ -172,25 +172,27 @@ tr:nth-child(odd) {
   font-size: 1.5em;
   font-weight: bold;
   text-align: left;
-  margin-bottom: 2em;
+  margin-bottom: 1em;
 }
 
 @media only screen and (min-width: 800px) {
   #index {
     display: grid;
-    grid-template-columns: 40% 60%;
+    grid-template-columns: 20% 80%;
   }
 
   #index .year {
-    grid-column: 1 / span 2;
+    grid-column: 1;
+    text-align: right;
   }
 
   #index .date {
-    margin-bottom: 2em;
-    text-align: center;
+    grid-column: 1;
+    text-align: right;
   }
 
   #index .post {
     grid-column: 2;
+    margin-left: 1em;
   }
 }
