@@ -223,7 +223,7 @@ self-referential functions. We can only pass functions as arguments. How can we
 then implement recursion? With the \(Y\) combinator, of course.</p>
 
 <p>Let&#39;s take an example: we can recursively define factorial as:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fact</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">fact</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
     <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fact</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
@@ -353,7 +353,7 @@ which are production rules, and we process a binary input string by popping the
 head of the string and, if it is equal to <code>1</code>, appending the current production
 rule to the string. We cycle through the production rules at each step. This is
 the code we used in the previous post:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
     <span class="c1"># Keeps track of current production</span>
     <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -396,13 +396,13 @@ a list using <code>PAIR</code>. Our productions can be represented as:</p>
 the tail of the list. Here are simpler implementations of our list processing
 functions over Python tuples (though we know how to do these using only lambda
 terms):</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">head</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-<span class="k">def</span> <span class="nf">tail</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">tail</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-<span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">xs</span> <span class="k">else</span> <span class="p">(</span><span class="n">head</span><span class="p">(</span><span class="n">xs</span><span class="p">),</span> <span class="n">append</span><span class="p">(</span><span class="n">tail</span><span class="p">(</span><span class="n">xs</span><span class="p">),</span> <span class="n">x</span><span class="p">))</span>
 
 <span class="c1"># If we want to cycle through our productions, we can do:</span>
@@ -411,7 +411,7 @@ terms):</p>
 
 <p>We&#39;ll also need a function to concatenate two lists. We can easily build this
 on top of <code>append()</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">concat</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">xs</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">ys</span> <span class="k">else</span> <span class="n">concat</span><span class="p">(</span><span class="n">append</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">head</span><span class="p">(</span><span class="n">ys</span><span class="p">)),</span> <span class="n">tail</span><span class="p">(</span><span class="n">ys</span><span class="p">))</span>
 </pre></div>
 
@@ -421,7 +421,7 @@ with the tail of <code>ys</code>.</p>
 <p>We process our input string as follows: if it is empty, we are done. If not,
 if the head is <code>1</code>, we concatenate our current production to the end of the
 string, and recurse, cycling productions:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
     <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">input</span> <span class="k">else</span> \
         <span class="n">cyclic_tag_system</span><span class="p">(</span>
             <span class="c1"># Cycle productions</span>
@@ -432,7 +432,7 @@ string, and recurse, cycling productions:</p>
 
 <p>Let&#39;s throw in a <code>print()</code> and run this on the same input as our original
 example:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">input</span> <span class="k">else</span> \
         <span class="n">cyclic_tag_system</span><span class="p">(</span>

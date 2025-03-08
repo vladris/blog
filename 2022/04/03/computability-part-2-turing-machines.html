@@ -173,8 +173,8 @@ implement the tape we will be using. Theoretically this is an infinite
 tape. To simulate this in software, we will use a list and whenever we
 move the head left or right beyond the list, we extend the list with an
 additional blank symbol:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Tape</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tape</span><span class="p">,</span> <span class="n">head</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Tape</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tape</span><span class="p">,</span> <span class="n">head</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
         <span class="c1"># Initial tape should have at least one symbol</span>
         <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tape</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)</span>
         <span class="c1"># Tape head should be a valid index</span>
@@ -183,20 +183,20 @@ additional blank symbol:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">tape</span> <span class="o">=</span> <span class="n">tape</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">head</span>
 
-    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbol</span>
 
-    <span class="k">def</span> <span class="nf">move_left</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">move_left</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># If attempting to move left out of bounds, extend tape left</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">-=</span> <span class="mi">1</span>
 
-    <span class="k">def</span> <span class="nf">move_right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">move_right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># If attempting to move right out of bounds, extend tape right</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tape</span><span class="p">):</span>
@@ -205,7 +205,7 @@ additional blank symbol:</p>
 
 <p>We&#39;ll implement a machine that takes a tape, a transition table, and an
 initial state, and runs until it halts:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">machine</span><span class="p">(</span><span class="n">tape</span><span class="p">,</span> <span class="n">transitions</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">machine</span><span class="p">(</span><span class="n">tape</span><span class="p">,</span> <span class="n">transitions</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
         <span class="n">symbol</span> <span class="o">=</span> <span class="n">tape</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
@@ -332,9 +332,9 @@ is <q>Hell World!</q> in Brainfuck:</p>
 
 <p>Since the language definition is so simple, it is very easy to write a
 Brainfuck interpreter:</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="k">def</span> <span class="nf">bf</span><span class="p">(</span><span class="n">program</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">bf</span><span class="p">(</span><span class="n">program</span><span class="p">):</span>
     <span class="c1"># Data array, data pointer, and code pointer</span>
     <span class="n">data</span><span class="p">,</span> <span class="n">dp</span><span class="p">,</span> <span class="n">cp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
 

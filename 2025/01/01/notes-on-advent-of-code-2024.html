@@ -125,7 +125,7 @@ iterations the robots formed a picture!</p>
 as part 1 work, but for vertical pushes, we need to account for wider boxes. I
 implemented two functions for this, first one just tells us if a move is
 possible:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">can_move</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">can_move</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">d</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">d</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;]&quot;</span><span class="p">:</span>
@@ -141,7 +141,7 @@ needs pushing or until it hits a wall, in which case a move is not possible. The
 down is whether we subtract 1 or add 1 to the row <code>i</code>.</p>
 
 <p>If a move is possible, then we can update the grid like this:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">do_move</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">do_move</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
         <span class="k">return</span>
     <span class="k">elif</span> <span class="n">grid</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;[&quot;</span><span class="p">:</span>
@@ -224,7 +224,7 @@ part of the best path. Similarly, if <code>(i, j, &quot;E&quot;)</code> or <code
 <p>We already have all the scores in <code>visted</code>, so I reconstructed the best paths by
 backtracking from the end:</p>
 <div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">backtrack</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">heading</span><span class="p">,</span> <span class="n">score</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">backtrack</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">heading</span><span class="p">,</span> <span class="n">score</span><span class="p">):</span>
     <span class="n">path</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span>
     
     <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">s_i</span> <span class="ow">and</span> <span class="n">j</span> <span class="o">==</span> <span class="n">s_j</span> <span class="ow">and</span> <span class="n">heading</span> <span class="o">==</span> <span class="s2">&quot;E&quot;</span> <span class="ow">and</span> <span class="n">score</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -316,7 +316,7 @@ bits of A).</p>
 
 <p>I implemented a function that takes a value of register A and prints the output
 after one iteration:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="o">%</span> <span class="mi">8</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">^</span> <span class="mi">1</span>
     <span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">b</span>
@@ -344,7 +344,7 @@ the next step to end with <code>1000101</code>.</p>
 we found a solution. We can keep track of which of the solutions we found is the
 smallest one. The whole search function is here:</p>
 <div class="highlight"><pre><span></span><span class="n">best</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">20</span>
-<span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">valid_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">valid_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">best</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">prog</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">valid_suffix</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -402,7 +402,7 @@ whether we matched it or not. With this, the solution is just a few lines of
 code:</p>
 <div class="highlight"><pre><span></span><span class="n">matched</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
 
-<span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">pattern</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">matched</span><span class="p">:</span>
         <span class="n">matched</span><span class="p">[</span><span class="n">pattern</span><span class="p">]</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">towel</span><span class="p">):])</span> <span class="k">for</span> <span class="n">towel</span> <span class="ow">in</span> <span class="n">towels</span> <span class="k">if</span> <span class="n">pattern</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">towel</span><span class="p">))</span>
 
@@ -421,7 +421,7 @@ modifications to the part 1 solution: we consider matching <code>&quot;&quot;</c
 instead of <code>any()</code>, we use <code>sum()</code> in the recursive function:</p>
 <div class="highlight"><pre><span></span><span class="n">matched</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
 
-<span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">pattern</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">matched</span><span class="p">:</span>
         <span class="n">matched</span><span class="p">[</span><span class="n">pattern</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">towel</span><span class="p">):])</span> <span class="k">for</span> <span class="n">towel</span> <span class="ow">in</span> <span class="n">towels</span> <span class="k">if</span> <span class="n">pattern</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">towel</span><span class="p">))</span>
 
@@ -470,7 +470,7 @@ is greater than 100. Here, <code>(dx, dy)</code> is any of <code>[(-2, 0), (0, -
 cheats:</p>
 <div class="highlight"><pre><span></span><span class="n">shortcuts</span> <span class="o">=</span> <span class="mi">0</span>
 
-<span class="k">def</span> <span class="nf">cheat</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cheat</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">shortcuts</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="n">dy</span><span class="p">)</span> <span class="ow">in</span> <span class="n">dist</span> <span class="ow">and</span> <span class="n">dist</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="n">dy</span><span class="p">)]</span> <span class="o">&lt;</span> <span class="n">dist</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">dist</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">-</span> <span class="n">dist</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="n">dy</span><span class="p">)]</span> <span class="o">-</span> <span class="mi">2</span>
@@ -488,7 +488,7 @@ than just 2. That means instead of the hardcoded list of <code>(dx, dy)</code> w
 considered at step 1, we instead need to look for all coordinates <code>(si, sj)</code>
 that are also in <code>dist</code>, with a Manhattan distance of at most 20 from <code>(i, j)</code>.
 I implemented a function that gives us all the candidates:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">candidates</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">candidates</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">si</span><span class="p">,</span> <span class="n">sj</span> <span class="ow">in</span> <span class="n">dist</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">si</span> <span class="o">==</span> <span class="n">i</span> <span class="ow">and</span> <span class="n">sj</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
             <span class="k">continue</span>
@@ -540,7 +540,7 @@ of keypads as graphs:</p>
 
 <p>Note I used an <em>edge-to-node</em> representation. Then I wrote a function to
 computed all possible paths in a given graph between two nodes:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">paths</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">visited</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">paths</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">visited</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">dest</span><span class="p">:</span>
         <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;A&quot;</span><span class="p">)</span>
         <span class="k">return</span>
@@ -562,7 +562,7 @@ computed all possible paths in a given graph between two nodes:</p>
 
 <p>The result is accumulated in the <code>result</code> parameter. With this, I generated all
 possible paths between any two nodes in both graphs:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">map_path</span><span class="p">(</span><span class="n">graph</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">map_path</span><span class="p">(</span><span class="n">graph</span><span class="p">):</span>
     <span class="n">path_map</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">k1</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">k2</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
@@ -611,7 +611,7 @@ one level below to go from any key to any other key:</p>
 <p>These are the best moves for level 1, the robot right below. Then I implemented
 a function which, given a pair of nodes and a depth level, returns the best
 (shortest) combination of keys:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sequence</span><span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="n">dir_pad_moves</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">sequence</span><span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="n">dir_pad_moves</span><span class="p">):</span>
     <span class="n">best</span><span class="p">,</span> <span class="n">best_len</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">10</span>
     <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">)]:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span> <span class="o">:=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">best_moves</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="s2">&quot;A&quot;</span> <span class="o">+</span> <span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">)))</span> <span class="o">&lt;</span> <span class="n">best_len</span><span class="p">:</span>
@@ -654,7 +654,7 @@ initialized with the minimum path length rather than just the path:</p>
 
 <p><code>sequence()</code> now assumes <code>best_moves</code> contains lengths and returns a length
 itself:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sequence</span><span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="n">dir_pad_moves</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">sequence</span><span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="n">dir_pad_moves</span><span class="p">):</span>
     <span class="n">best</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">20</span>
     <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">)]:</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="o">:=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">best_moves</span><span class="p">[</span><span class="n">depth</span><span class="p">][</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="s2">&quot;A&quot;</span> <span class="o">+</span> <span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">)))</span> <span class="o">&lt;</span> <span class="n">best</span><span class="p">:</span>
@@ -686,7 +686,7 @@ part of Advent of Code and puzzles in general.</p>
 was thinking I&#39;ll have to derive some formula to speed up computation, but that
 wasn&#39;t the case. I got the results reasonably fast without having to do anything
 clever. I implemented this function to advance a number one step:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
     <span class="n">n</span> <span class="o">=</span> <span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="mi">64</span><span class="p">)</span> <span class="o">^</span> <span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="mi">16777216</span>
     <span class="n">n</span> <span class="o">=</span> <span class="p">((</span><span class="n">n</span> <span class="o">//</span> <span class="mi">32</span><span class="p">)</span> <span class="o">^</span> <span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="mi">16777216</span>
     <span class="n">n</span> <span class="o">=</span> <span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="mi">2048</span><span class="p">)</span> <span class="o">^</span> <span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="mi">16777216</span>
@@ -706,7 +706,7 @@ iterations, do 2000000) but no. I have a solution that runs in under 1 minute
 and gets the correct result. First, I updated the step function to also return
 the change in the least significant digit between the old value and the new
 value, plus 9 (more on the plus 9 below):</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
     <span class="n">d</span> <span class="o">=</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">10</span>
     <span class="n">n</span> <span class="o">=</span> <span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="mi">64</span><span class="p">)</span> <span class="o">^</span> <span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="mi">16777216</span>
     <span class="n">n</span> <span class="o">=</span> <span class="p">((</span><span class="n">n</span> <span class="o">//</span> <span class="mi">32</span><span class="p">)</span> <span class="o">^</span> <span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="mi">16777216</span>
@@ -798,7 +798,7 @@ checked whether all 3 nodes are connected if one of them starts with <q>t</q>:</
 
 <p>For the second part, I implemented a helper function that checks whether all
 nodes in an arbitrarily long group are connected:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">all_connected</span><span class="p">(</span><span class="n">group</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">all_connected</span><span class="p">(</span><span class="n">group</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">)):</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">)):</span>
             <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[</span><span class="n">group</span><span class="p">[</span><span class="n">j</span><span class="p">]]:</span>
@@ -827,7 +827,7 @@ group:</p>
 </pre></div>
 
 <p>Then I implemented a function to recursively compute the value of a gate:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_val</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_val</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">calc</span><span class="p">[</span><span class="n">v</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">match</span> <span class="n">calc</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
             <span class="k">case</span> <span class="s2">&quot;AND&quot;</span><span class="p">:</span>
@@ -880,19 +880,19 @@ time ordered to make things easier:</p>
 
 <p>I implemented a few helper functions. First one checks that for the given key,
 we have the exact operation between \(x_n\) and \(y_n\):</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">op_n</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">op_n</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">calc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="n">op</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;y</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
 </pre></div>
 
 <p>So <code>op_n(&quot;gcq&quot;, &quot;AND&quot;, 1)</code> would return <code>True</code>. Then I implemented a couple of
 search functions.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">find_key</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find_key</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calc</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">calc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">key</span>
 
 
-<span class="k">def</span> <span class="nf">find_subtree</span><span class="p">(</span><span class="n">root_op</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_subtree</span><span class="p">(</span><span class="n">root_op</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calc</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">calc</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">root_op</span> <span class="ow">and</span> <span class="p">(</span><span class="n">op_n</span><span class="p">(</span><span class="n">calc</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">op</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="ow">or</span> <span class="n">op_n</span><span class="p">(</span><span class="n">calc</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">op</span><span class="p">,</span> <span class="n">n</span><span class="p">)):</span>
             <span class="k">return</span> <span class="n">key</span>
@@ -949,7 +949,7 @@ We search for the correct subtree and return.</p>
 
 <p>Using the same idea, we check the subtrees for the carry rooted at <code>OR</code> and at
 <code>AND</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">check_or</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">check_or</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">op_n</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;AND&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">find_key</span><span class="p">([</span><span class="s2">&quot;AND&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;x00&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;y00&quot;</span><span class="p">])</span>
@@ -966,7 +966,7 @@ We search for the correct subtree and return.</p>
         <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">find_key</span><span class="p">([</span><span class="s2">&quot;AND&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;y</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
 
 
-<span class="k">def</span> <span class="nf">check_and</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_and</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">calc</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;AND&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">find_subtree</span><span class="p">(</span><span class="s2">&quot;AND&quot;</span><span class="p">,</span> <span class="s2">&quot;XOR&quot;</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
 
@@ -1007,7 +1007,7 @@ subtree did the trick.</p>
 
 <p>Without converting the keys and locks to numbers, we simply need to check if any
 two schematics have a <code>#</code> in any one position:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">overlap</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">overlap</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">c1</span> <span class="o">==</span> <span class="s2">&quot;#&quot;</span> <span class="ow">and</span> <span class="n">c2</span> <span class="o">==</span> <span class="s2">&quot;#&quot;</span><span class="p">:</span>
@@ -1040,6 +1040,8 @@ enjoy Advent of Code and hope the tradition continues for many more decades!</p>
 
 <div id="prev"><span>« <a href="../../../2024/12/07/notes-on-authoring-tools.html">Notes on Authoring Tools</a></span></div>
 
+
+<div id="next"><span><a href="../../../2025/03/08/devlog-1-flow.html">DevLog 1: Flow</a> »</span></div>
 
 </nav>
 <footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>

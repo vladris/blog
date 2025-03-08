@@ -55,7 +55,7 @@ its scan radius by computing the Manhattan distance between its coordinates and
 the closest beacon it sees. Once we have this, we intersect each (taxicab)
 circle with the row <code>y=2000000</code>. This gives as a bunch of segments defined by
 <code>(x0, x1)</code> pairs.</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="n">y</span><span class="p">,</span> <span class="n">segments</span> <span class="o">=</span> <span class="mi">2000000</span><span class="p">,</span> <span class="nb">set</span><span class="p">()</span>
 
@@ -73,10 +73,10 @@ circle with the row <code>y=2000000</code>. This gives as a bunch of segments de
 pair of segments, if they intersect, we replace them by their union until no
 segments intersect anymore. Then we simply sum the length
 of each segment:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">intersect</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">intersect</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">s1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">s2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">s2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">s1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-<span class="k">def</span> <span class="nf">union</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">union</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">s1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s2</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">max</span><span class="p">(</span><span class="n">s1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">s2</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
 
 <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
@@ -112,7 +112,7 @@ on taxicab geometry, we can tell how many additional points to the right
 (\(x = x_sensor + radius - abs(y_sensor - y) + 1\)). If <code>x</code> goes beyond
 <code>4000000</code>, we reset it to <code>0</code> and increment <code>y</code>. This is not blazingly fast, but
 does the job in a reasonable amount of time (around 20 seconds on my machine).</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="n">sensors</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -122,7 +122,7 @@ does the job in a reasonable amount of time (around 20 seconds on my machine).</
     <span class="n">radius</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sx</span> <span class="o">-</span> <span class="n">bx</span><span class="p">)</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sy</span> <span class="o">-</span> <span class="n">by</span><span class="p">)</span>
     <span class="n">sensors</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">radius</span><span class="p">))</span>
 
-<span class="k">def</span> <span class="nf">in_range</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">in_range</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensors</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sensor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sensor</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">sensor</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
             <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">sensor</span>
@@ -152,7 +152,7 @@ does the job in a reasonable amount of time (around 20 seconds on my machine).</
 <p>Part 1 is again pretty easy: we can model the valves and tunnels as a graph,
 then use the Floyd-Warshall algorithm to find the distances between each pair of
 valves:</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="n">dist</span><span class="p">,</span> <span class="n">flows</span><span class="p">,</span> <span class="n">to_open</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{},</span> <span class="nb">set</span><span class="p">()</span>
 
@@ -186,7 +186,7 @@ pressure released so far at each step and keep track of the highest value we
 found. This gives us the solution.</p>
 <div class="highlight"><pre><span></span><span class="n">best</span> <span class="o">=</span> <span class="mi">0</span>
 
-<span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="n">current</span><span class="o">=</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="n">opened</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">time</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="n">current</span><span class="o">=</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="n">opened</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">time</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">best</span>
 
     <span class="n">score</span> <span class="o">+=</span> <span class="n">time</span> <span class="o">*</span> <span class="n">flows</span><span class="p">[</span><span class="n">current</span><span class="p">]</span>
@@ -216,7 +216,7 @@ with two ETAs, we need to figure out which of us will reach their destination
 first, and recurse to that time.</p>
 <div class="highlight"><pre><span></span><span class="n">best</span> <span class="o">=</span> <span class="mi">0</span>
 
-<span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="n">me</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">elephant</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">opened</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">time</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="n">me</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">elephant</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">opened</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">time</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">best</span>
 
     <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best</span><span class="p">:</span>
@@ -254,7 +254,7 @@ find the answer. Updated search with cache:</p>
 <div class="highlight"><pre><span></span><span class="n">best</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
 
-<span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="n">me</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">elephant</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">opened</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">time</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="n">me</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">elephant</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">opened</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">time</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">best</span>
 
     <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best</span><span class="p">:</span>
@@ -306,13 +306,13 @@ find the answer. Updated search with cache:</p>
 
 <span class="n">grid</span> <span class="o">=</span> <span class="nb">set</span><span class="p">({(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">)})</span>
 
-<span class="k">def</span> <span class="nf">intersects</span><span class="p">(</span><span class="n">rock</span><span class="p">,</span> <span class="n">grid</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">intersects</span><span class="p">(</span><span class="n">rock</span><span class="p">,</span> <span class="n">grid</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">rock</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">grid</span> <span class="ow">or</span> <span class="n">block</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">block</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">8</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
 
-<span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="n">rock</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">move</span><span class="p">(</span><span class="n">rock</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">{(</span><span class="n">i</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="n">dy</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">rock</span><span class="p">}</span>
 
 <span class="n">rock_i</span><span class="p">,</span> <span class="n">jet_i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
@@ -355,7 +355,7 @@ by <code>period</code> and multiply by <code>growth</code>. We&#39;ll call this 
 more steps: 1000000000000 minus the number of rocks we already simulated modulo
 <code>period</code>. Now we get the height of the top of the tower we simulated and add
 <code>delta_top</code> to it to find the final answer.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">top</span><span class="p">():</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">top</span><span class="p">():</span>
     <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
 
 <span class="n">rock_i</span><span class="p">,</span> <span class="n">jet_i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
@@ -466,10 +466,10 @@ probably smarter caching/pruning we can do but this seems to be good enough.</p>
 going from simulating 24 minutes in part 1 to simulating 32 minutes for fewer
 blueprints in part 2 doesn&#39;t seem to require changing the algorithm. Both parts
 take around 2 minutes to run. It can probably be optimize further.</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">math</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
-<span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">bots</span><span class="p">,</span> <span class="n">costs</span><span class="p">,</span> <span class="n">resources</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">bots</span><span class="p">,</span> <span class="n">costs</span><span class="p">,</span> <span class="n">resources</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">best</span><span class="p">[</span><span class="n">time</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">resources</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
         <span class="k">return</span>
 
@@ -543,7 +543,7 @@ evaluate it from root.</p>
     <span class="n">tree</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
 
-<span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tree</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">tree</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
     
@@ -578,7 +578,7 @@ then we recurse down the <code>right</code> subtree, with an expected value of <
         <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">tree</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
-<span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">tree</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tree</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">tree</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
     
@@ -594,7 +594,7 @@ then we recurse down the <code>right</code> subtree, with an expected value of <
         <span class="k">case</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">v1</span> <span class="o">//</span> <span class="n">v2</span>
 
 
-<span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">eq</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">eq</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">tree</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">eq</span>
 
@@ -627,7 +627,7 @@ then we recurse down the <code>right</code> subtree, with an expected value of <
 <h3>Part 1</h3>
 
 <p>This one was fun but a bit tedious. Part 1 is very easy, we implement movement with wrap-around and stopping when we hit <code>#</code>.</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="n">grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
 <span class="n">dirs</span><span class="p">,</span> <span class="n">grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s1">&#39;(\d+)|L|R&#39;</span><span class="p">,</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])],</span> <span class="n">grid</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
@@ -636,7 +636,7 @@ then we recurse down the <code>right</code> subtree, with an expected value of <
 <span class="n">facing</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
 <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
 
-<span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">move</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
     <span class="n">nx</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">ny</span> <span class="o">=</span> <span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
     <span class="k">match</span> <span class="n">grid</span><span class="p">[</span><span class="n">ny</span><span class="p">][</span><span class="n">nx</span><span class="p">]:</span>
@@ -675,7 +675,7 @@ the cube (e.g. <code>(0, 0)</code>) but that doesn&#39;t matter. Using this enco
 tell when a movement gets us outside the current region. When that happens, we
 have a helper function which helps figure out where we end up and what is the
 new orientation.</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="n">grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
 <span class="n">dirs</span><span class="p">,</span> <span class="n">grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s1">&#39;(\d+)|L|R&#39;</span><span class="p">,</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])],</span> <span class="n">grid</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
@@ -695,7 +695,7 @@ new orientation.</p>
 
 <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
 
-<span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">move</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
     <span class="n">nx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">facing</span><span class="p">[</span><span class="n">d</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">ny</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">facing</span><span class="p">[</span><span class="n">d</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">nd</span> <span class="o">=</span> <span class="n">d</span>
@@ -707,7 +707,7 @@ new orientation.</p>
         <span class="k">case</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
         <span class="k">case</span> <span class="s1">&#39;.&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nd</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">switch_region</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">switch_region</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
     <span class="n">nrx</span><span class="p">,</span> <span class="n">nry</span><span class="p">,</span> <span class="n">nd</span> <span class="o">=</span> <span class="n">connections</span><span class="p">[(</span><span class="n">x</span> <span class="o">//</span> <span class="n">size</span><span class="p">,</span> <span class="n">y</span> <span class="o">//</span> <span class="n">size</span><span class="p">)][</span><span class="n">d</span><span class="p">]</span>
     <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">nrx</span> <span class="o">*</span> <span class="n">size</span><span class="p">,</span> <span class="n">nry</span> <span class="o">*</span> <span class="n">size</span>
     <span class="n">rx</span><span class="p">,</span> <span class="n">ry</span> <span class="o">=</span> <span class="n">x</span> <span class="o">%</span> <span class="n">size</span><span class="p">,</span> <span class="n">y</span> <span class="o">%</span> <span class="n">size</span>
@@ -759,7 +759,7 @@ occupied at a given point in time and we know the occupancy repeats every
 <code>lcm(height, width)</code> where <code>height</code> and <code>width</code> are the height and width of the
 valley. We can compute this many generations and store the occupancy map in a
 lookup.</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">math</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
 <span class="n">blizzards</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
@@ -771,7 +771,7 @@ lookup.</p>
 <span class="n">maxx</span><span class="p">,</span> <span class="n">maxy</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
 <span class="n">move</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;&lt;&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;^&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;v&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
 
-<span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="n">blizzards</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">blizzards</span><span class="p">):</span>
     <span class="n">new</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blizzards</span><span class="p">:</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">move</span><span class="p">[</span><span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]][</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">move</span><span class="p">[</span><span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]][</span><span class="mi">1</span><span class="p">]</span>
@@ -782,7 +782,7 @@ lookup.</p>
         <span class="n">new</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
     <span class="k">return</span> <span class="n">new</span>
 
-<span class="k">def</span> <span class="nf">occupancy</span><span class="p">(</span><span class="n">blizzards</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">occupancy</span><span class="p">(</span><span class="n">blizzards</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">{(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">blizzards</span><span class="p">}</span>
 
 <span class="n">steps</span><span class="p">,</span> <span class="n">lcm</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">math</span><span class="o">.</span><span class="n">lcm</span><span class="p">(</span><span class="n">maxx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
@@ -801,7 +801,7 @@ from this position (taking into account valley bounds and blizzard occupancy)
 for the next step. As long as we ensure not to enqueue duplicates, the queue
 stays small. Since this is BFS, as soon as the position we dequeue is our
 destination, we know this is the earliest we can get there.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve</span><span class="p">():</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">():</span>
     <span class="n">queue</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -828,7 +828,7 @@ destination, we know this is the earliest we can get there.</p>
 <p>The extra trips are no problem since this is very fast. The only changes I had
 to make from part 1 to part 2 were modifying <code>solve()</code> to parameterize start,
 destination, and initial point in time, then call it 3 times for each trip:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
     <span class="n">queue</span> <span class="o">=</span> <span class="p">[(</span><span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">src</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">step</span><span class="p">)]</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -859,11 +859,11 @@ destination, and initial point in time, then call it 3 times for each trip:</p>
 
 <p>Another easy one that I won&#39;t discuss in detail, we just need to implement
 conversion from decimal to SNAFU and back:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">to_dec</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">to_dec</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
     <span class="n">digits</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;0&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">}</span>
     <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="mi">5</span> <span class="o">**</span> <span class="n">i</span> <span class="o">*</span> <span class="n">digits</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">n</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
 
-<span class="k">def</span> <span class="nf">to_snafu</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_snafu</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
     <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
     <span class="k">while</span> <span class="n">n</span><span class="p">:</span>
         <span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">][</span><span class="n">n</span> <span class="o">%</span> <span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="n">s</span>

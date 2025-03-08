@@ -165,9 +165,9 @@ parse the tokens into an S-expression.</p>
 either <code>(</code>, <code>)</code>, or a string of alphanumeric characters. We&#39;ll use a regular
 expression for this, then extract the matched values (using <code>match.group()</code>)
 into a list:</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
-<span class="k">def</span> <span class="nf">lex</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lex</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s1">&#39;\(|\)|\w+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)]</span>
 </pre></div>
 
@@ -177,7 +177,7 @@ into a list:</p>
 <p>We need to transform this list of tokens into an S-expression. First, we need a
 couple of helper functions. An atom can be either a number or a symbol. We&#39;ll
 create one from a token using an <code>atom()</code> function:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">atom</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">atom</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="k">except</span><span class="p">:</span>
@@ -187,7 +187,7 @@ create one from a token using an <code>atom()</code> function:</p>
 <p>The other helper function will yield while the head of our token list is
 different than <code>)</code>, then pop the <code>)</code> token. We&#39;ll use this while parsing to
 iterate over the tokens after a <code>(</code> and until we find the matching <code>)</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">pop_rpar</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">pop_rpar</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
     <span class="k">while</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;)&#39;</span><span class="p">:</span>
         <span class="k">yield</span>
     <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -201,7 +201,7 @@ the matching <code>)</code>.</li>
 <li>If we find a <code>)</code>, we raise an exception - this is an unmatched <code>)</code>.</li>
 <li>Otherwise we have an atom - we return the result of calling <code>atom()</code> on it.</li>
 </ul>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
     <span class="k">match</span> <span class="n">token</span> <span class="o">:=</span> <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
         <span class="k">case</span> <span class="s1">&#39;(&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">parse</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">pop_rpar</span><span class="p">(</span><span class="n">tokens</span><span class="p">)]</span>
@@ -245,7 +245,7 @@ arithmetic operations and list operations:</p>
 <p>Our evaluation function has a few special-case handling for variable
 definitions, quotations, and if-expressions, and is otherwise pretty
 straightforward:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">):</span>
     <span class="c1"># If null or number atom, return it</span>
     <span class="k">if</span> <span class="n">sexpr</span> <span class="o">==</span> <span class="p">[]</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">sexpr</span>
@@ -341,7 +341,7 @@ parameters and the fourth is the body of the function, which is going to be
 evaluated in an environment where its arguments are defined.</p>
 
 <p>We need a function factory:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_function</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">make_function</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
     <span class="k">return</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">eval</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">env</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">args</span><span class="p">)))</span>
 </pre></div>
 
@@ -352,7 +352,7 @@ arguments.</p>
 
 <p>Let&#39;s update <code>eval</code> to use a parameterized environment and support the new
 <code>deffun</code> function definition capability:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">):</span>
     <span class="c1"># If number atom, return value</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sexpr</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">sexpr</span>

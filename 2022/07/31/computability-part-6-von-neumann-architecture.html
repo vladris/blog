@@ -95,7 +95,7 @@ returns an integer. This is all our machine needs to get data.</p>
 this file into a list and expose a <code>read_one()</code> function that will
 return one integer (as returned by [ord()]{.title-ref}) for each
 character from the buffer.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">inp</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">inp</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
     <span class="n">buffer</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
     <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">ord</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
 </pre></div>
@@ -109,7 +109,7 @@ memory cell.</p>
 <p>We will implement this using <code>print()</code> and actually convert the given
 integer to a character. This is just to provide a convenient way for us
 to look at output like <q>Hello world!</q>.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">out</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">out</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
 </pre></div>
 
@@ -121,7 +121,7 @@ starting at address 0. We expect the program to consist of a series of
 integers separated by a space or a newline character. We&#39;ll use this
 encoding to make it easier for us to peek at the code targeting our von
 Neumann machine.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">memory</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">memory</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
     <span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
         <span class="n">memory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -135,8 +135,8 @@ integers in our memory, which will include both code and data.</p>
 
 <p>We&#39;ll package the control and arithmetic components into a <code>CPU</code> class.
 We&#39;ll initialize this class with memory, input, and output components.</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span>
 </pre></div>
 
@@ -149,7 +149,7 @@ passing these to the arithmetic unit for processing. The program counter
 is then incremented by 3. This repeats until <code>PC</code> goes outside the
 bounds of the memory, at which point the machine halts (alternately we
 could have provided some <code>HALT</code> instruction).</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
         <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
@@ -195,7 +195,7 @@ specified at <code>memory address 2</code> to the output (in short,
 <p>Since the instructions are also read from memory, which is a list of
 integers, we will encode them as integers: <code>AT = 0</code>, <code>SET = 1</code>, ...
 <code>OUT = 7</code>.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
     <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
         <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># AT</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]]</span>
@@ -225,38 +225,38 @@ integers, we will encode them as integers: <code>AT = 0</code>, <code>SET = 1</c
 (<code>argv[1]</code>) will represent the code input file containing the program,
 the second one (<code>argv[2]</code>) will be the file containing additional input
 to be consumed by the <code>inp()</code> function:</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="n">vn</span> <span class="o">=</span> <span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">inp</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">out</span><span class="p">)</span>
 <span class="n">vn</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 
 <p>Here is our von Neumann virtual machine in one listing:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">inp</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">inp</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
     <span class="n">buffer</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
     <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">ord</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
 
-<span class="k">def</span> <span class="nf">out</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">out</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">memory</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">memory</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
     <span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
         <span class="n">memory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">memory</span>
 
-<span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">memory</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span>
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
             <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+=</span> <span class="mi">3</span>
 
-    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
         <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
             <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># AT</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]]</span>
@@ -279,7 +279,7 @@ to be consumed by the <code>inp()</code> function:</p>
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span> 
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unknown instruction&quot;</span><span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="n">vn</span> <span class="o">=</span> <span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">inp</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">out</span><span class="p">)</span>
 <span class="n">vn</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
@@ -384,7 +384,7 @@ DATA: ORD(H) ORD(e) ORD(l) ORD(l) ORD(o) 10
 <p>First, we&#39;ll read the input file and convert it into a list of tokens.
 We will ignore lines starting with <code>#</code> (so we can add comments to our
 assembly file).</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Usage: asm.py &lt;input&gt; &lt;output&gt;&quot;</span><span class="p">)</span>
@@ -451,7 +451,7 @@ op code.</li>
 </pre></div>
 
 <p>Here is the full source code of our assembler (<code>asm.py</code>):</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Usage: asm.py &lt;input&gt; &lt;output&gt;&quot;</span><span class="p">)</span>

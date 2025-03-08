@@ -47,8 +47,8 @@ adjacent nodes of the same (new) color. The game is won if the nodes get
 merged down to a single node within the step limit.</p>
 
 <p>A Python representation of the graph would look like this:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Graph</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">edges</span><span class="o">=</span><span class="p">[]):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Graph</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">edges</span><span class="o">=</span><span class="p">[]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">edges</span>
 </pre></div>
@@ -115,7 +115,7 @@ level diagramed above would be represented as:</p>
 
 <p>We need a function that, for a given node id, enumerates all the
 connected nodes. This is a member function of the graph:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">connected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">connected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">node</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -126,7 +126,7 @@ connected nodes. This is a member function of the graph:</p>
 <p>We also need a function that colors a node and merges it with adjacent
 nodes of the same color. We can make this function return a new graph
 instance with the applied updates. Its signature would be:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
 </pre></div>
 
 <p>First it would have to determine the set of nodes that need to be merged
@@ -168,7 +168,7 @@ of the nodes is in <code>to_merge</code>, we keeep the edge:</p>
 example having both a <code>(1, 3)</code> and a <code>(3, 1)</code>). We return a graph
 consiting of <code>new_nodes</code> and <code>new_edges</code>. The full implementation of
 <code>color</code> is:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
     <span class="n">to_merge</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="p">]</span>
     <span class="n">to_merge</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">==</span> <span class="n">color</span><span class="p">]</span>
     <span class="n">new_n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">to_merge</span><span class="p">)</span>
@@ -195,7 +195,7 @@ consiting of <code>new_nodes</code> and <code>new_edges</code>. The full impleme
 <p>To solve a level we try coloring all of the nodes then recursively solve
 for the new graph. If our graph has one node, we found a solution. If we
 run out of steps, our candidate solution is not good so we backtrack:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
         <span class="n">exit</span><span class="p">()</span>
@@ -233,8 +233,8 @@ single color in 2 steps as we need to recolor 3 areas.</p>
 <p>We can implement this optimization by updating the <code>Graph</code> constructor
 to keep track of the number of unique colors and update our <code>solve</code>
 function to backtrack if we have more colors than steps + 1:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Graph</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">edges</span><span class="o">=</span><span class="p">[]):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Graph</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">edges</span><span class="o">=</span><span class="p">[]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">edges</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">colors</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
@@ -242,7 +242,7 @@ function to backtrack if we have more colors than steps + 1:</p>
 
 <p>The update is the last line, which maintains the count of unique values
 in the <code>nodes</code> dictionary. Updated <code>solve</code> looks like this:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
         <span class="n">exit</span><span class="p">()</span>

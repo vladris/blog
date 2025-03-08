@@ -134,7 +134,7 @@ the right-hand-side, and is automatically decreased whenever a reference
 goes out of scope.</p>
 
 <p>Python manages memory using reference counting:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span> <span class="k">pass</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span> <span class="k">pass</span>
 
 <span class="c1"># allocate Foo, its reference count is 1</span>
 <span class="n">foo1</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
@@ -181,7 +181,7 @@ and deallocate them, but simple reference counting would not be able to
 identify this - from that point of view, each object is being referred
 to by another object thus it should not be collected. Example of
 reference cycle in Python:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span> <span class="k">pass</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span> <span class="k">pass</span>
 
 <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(),</span> <span class="n">Foo</span><span class="p">()</span>
 <span class="n">a</span><span class="o">.</span><span class="n">other</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">other</span> <span class="o">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span>

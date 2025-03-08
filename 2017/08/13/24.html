@@ -54,8 +54,8 @@ possitions, which means \(4^3\) total.</p>
 could potentially be the same operator).</p>
 
 <p>A simple solver implementation looks like this:</p>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">product</span>
-<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">argv</span>
+<div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">product</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">argv</span>
 
 <span class="c1">## Transform arguments to numbers, replace &#39;A&#39; and &#39;a&#39; with [1, 11]</span>
 <span class="n">args</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="s1">&#39;aA&#39;</span> <span class="k">else</span>
@@ -132,8 +132,8 @@ only need the groupings</p>
 <p>\[(x_0 \odot x_1) \oplus (x_2 \otimes x_3)\]\[((x_0 \odot x_1) \oplus x_2) \otimes x_3\]\[(x_0 \odot (x_1 \oplus x_2)) \otimes x_3\]</p>
 
 <p>to find all possible solutions. Our solution becomes:</p>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">product</span>
-<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">argv</span>
+<div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">product</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">argv</span>
 
 <span class="n">args</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="s1">&#39;aA&#39;</span> <span class="k">else</span>
     <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">arg</span><span class="p">)]</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[])</span>
@@ -186,7 +186,7 @@ inputs:</p>
 
 <p>Let&#39;s generate all possible permutations of cards, combinations of
 operators, and groupings as above:</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span>
+<div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 
 <span class="n">operands</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="mi">4</span><span class="p">))</span> <span class="c1"># 24 of these</span>
 <span class="n">operators</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="s1">&#39;+-*/&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span> <span class="c1"># 64 of these</span>
@@ -206,7 +206,7 @@ games instead of 715:</p>
 
 <p>We can now write a function that, for a given game, generates all
 possible expressions which evaluate to 24:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solutions_for</span><span class="p">(</span><span class="n">inp</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solutions_for</span><span class="p">(</span><span class="n">inp</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">xs</span> <span class="ow">in</span> <span class="n">operands</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">operators</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">groupings</span><span class="p">:</span>
@@ -336,7 +336,7 @@ most 110 tests to find a solution for a game.</p>
 
 <p>We can use the above code to generate a set of expressions and dump it
 into a source file, together with the code to test input:</p>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">argv</span>
+<div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">argv</span>
 
 <span class="n">expressions</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;(x3 + x1) * (x2 - x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x3) - x0) / x1&quot;</span><span class="p">,</span>
@@ -399,7 +399,7 @@ into a source file, together with the code to test input:</p>
 <span class="c1">## Since we no longer try all permutations of cards, we</span>
 <span class="c1">## need to split inputs containing aces by replacing aces</span>
 <span class="c1">## with both 1 and 11</span>
-<span class="k">def</span> <span class="nf">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
     <span class="k">if</span> <span class="s1">&#39;A&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">args</span><span class="p">]</span>
 
@@ -444,7 +444,7 @@ expressions as expressions which solve the exact same games. So if \(E_1\)
 solves some subset \(R_{E_1}\) of \(R\), an expression \(E_2\) is equivalent
 to it if the set \(R_{E_2}\) of games it solves is equal to \(R_{E_1}\). We
 can define equivalence as:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">equivalent</span><span class="p">(</span><span class="n">exp1</span><span class="p">,</span> <span class="n">exp2</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">equivalent</span><span class="p">(</span><span class="n">exp1</span><span class="p">,</span> <span class="n">exp2</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">exp1</span> <span class="ow">in</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">exp2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>

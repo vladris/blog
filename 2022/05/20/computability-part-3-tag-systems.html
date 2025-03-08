@@ -61,7 +61,7 @@ alternative considers as halting the empty string. In this case, the tag
 system halts when the string becomes empty.</p>
 
 <p>Let&#39;s look at a Python implementation for a tag system:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">tag_system</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">tag_system</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
     <span class="c1"># Repeat until the string is empty or we see the halting symbol</span>
     <span class="k">while</span> <span class="n">string</span> <span class="ow">and</span> <span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">productions</span><span class="p">:</span>
         <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="n">m</span><span class="p">:]</span> <span class="o">+</span> <span class="n">productions</span><span class="p">[</span><span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
@@ -152,7 +152,7 @@ for the next step. Once we exhaust the list of productions, we loop
 around to the head (this inspired the <em>cyclic</em> name).</p>
 
 <p>Here is a Python implementation for a cyclic tag system:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
     <span class="c1"># Keeps track of current production</span>
     <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -321,7 +321,7 @@ the cyclic tag system encoding to the original symbols:</p>
     <span class="s1">&#39;001&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
 <span class="p">}</span>
 
-<span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">translate</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
     <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">symbols</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="mi">3</span><span class="p">)])</span>
 
 <span class="n">i</span><span class="p">,</span> <span class="n">string</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;100100&#39;</span>

@@ -63,33 +63,33 @@ program counter register to get the feel of it. We will only implement
 <code>mov</code> (move) and <code>add</code> instructions for this example. Our implementation
 will check the 16th bit of an argument to determine whether it refers to
 a register (if <code>0</code>) or to a memory location (if <code>1</code>).</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="n">memory</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">registers</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="c1"># r0, r1, r2, r3, pc</span>
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
             <span class="n">instr</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span><span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">3</span>
 
-    <span class="k">def</span> <span class="nf">get_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
         <span class="c1"># 16th bit tells us whether this refers to a register or memory</span>
         <span class="k">if</span> <span class="n">arg</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">):</span> <span class="c1"># Memory address</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span> <span class="o">^</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)]</span>
         <span class="k">else</span><span class="p">:</span> <span class="c1"># Register</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">set_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="c1"># 16th bit tells us whether this refers to a register or memory</span>
         <span class="k">if</span> <span class="n">arg</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">):</span> <span class="c1"># Memory address</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span> <span class="o">^</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">else</span><span class="p">:</span> <span class="c1"># Register</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">registers</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
-    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">):</span>
         <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
             <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># mov</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">set_at</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_at</span><span class="p">(</span><span class="n">arg2</span><span class="p">))</span>
@@ -160,18 +160,18 @@ since the stack is implied.</p>
 <p>Let&#39;s emulate a simple stack VM with only <code>push</code>, <code>add</code>, and <code>pop</code>
 instructions, plus a <code>jmp</code> (jump) instruction so we can use the same
 mechanism to terminate:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="n">memory</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span>
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
             <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+=</span> <span class="mi">2</span>
 
-    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
         <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
             <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># push</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span><span class="p">])</span>
@@ -303,18 +303,18 @@ ports.</p>
 
 <p>For example, let&#39;s extend our stack machine with an <code>out</code> instruction
 (also connecting an output to it):</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CPU</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CPU</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">memory</span><span class="p">,</span> <span class="n">out</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span>
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">):</span>
             <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">+=</span> <span class="mi">2</span>
 
-    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instr</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
         <span class="k">match</span> <span class="n">instr</span><span class="p">:</span>
             <span class="k">case</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># push</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">arg</span><span class="p">])</span>
@@ -354,7 +354,7 @@ ports.</p>
 <span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
 <span class="n">memory</span> <span class="o">=</span> <span class="n">program</span> <span class="o">+</span> <span class="n">memory</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">):]</span>
 
-<span class="k">def</span> <span class="nf">out</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">out</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
 
 <span class="n">CPU</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
@@ -371,21 +371,21 @@ might actually come from/go to an I/O device.</p>
 <p>Let&#39;s enhance our memory implementation (which so far was just an
 array) to support mapped I/O. In this case, any values written at
 address 1000 will be instead printed on screen:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MappedMemory</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MappedMemory</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
         <span class="c1"># MappedMemory wraps a list</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="n">program</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">):]</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Use underlying list&#39;s __len__</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="c1"># Index in wrapped list</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="c1"># If key is 1000, print</span>
         <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>

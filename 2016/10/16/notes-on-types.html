@@ -40,7 +40,7 @@ invalid. This is invalid C++:</p>
 any compile time checks and, if the data we get is of an unexpected
 type, we treat it as a runtime error. Below is a Python function that
 squares a number:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sqr</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">sqr</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span>
 <span class="o">...</span>
 <span class="n">sqr</span><span class="p">(</span><span class="s2">&quot;not an int&quot;</span><span class="p">)</span>
@@ -53,12 +53,12 @@ squares a number:</p>
 patching</em>. Duck typing means that accessing a member of an object works
 as long as that object has such a member, regardless of the type of the
 object. In Python:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Bar</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
 
 <span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Foo</span><span class="p">(),</span> <span class="n">Bar</span><span class="p">()]]</span> <span class="c1"># prints &quot;foo&quot; and &quot;bar&quot;</span>
@@ -71,11 +71,11 @@ the list to ensure they contain a <code>func()</code> method we can call.</p>
 <p>Monkey patching refers to the ability to change the structure of an
 object at runtime. For example we can swap the <code>func</code> method from an
 instance of <code>foo</code> with another function like this:</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">func_bar</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">func_bar</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
 
 <span class="n">obj</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>

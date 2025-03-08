@@ -40,14 +40,14 @@ the following listing:</p>
 <p>Let&#39;s now write a Python script to publish our original ML model to the
 cloud, with all the required configuration. We&#39;ll call this
 <code>pipeline.py</code>.</p>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">azureml.core</span> <span class="kn">import</span> <span class="n">Workspace</span><span class="p">,</span> <span class="n">Datastore</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Model</span>
-<span class="kn">from</span> <span class="nn">azureml.core.authentication</span> <span class="kn">import</span> <span class="n">ServicePrincipalAuthentication</span>
-<span class="kn">from</span> <span class="nn">azureml.core.compute</span> <span class="kn">import</span> <span class="n">AmlCompute</span>
-<span class="kn">from</span> <span class="nn">azureml.core.conda_dependencies</span> <span class="kn">import</span> <span class="n">CondaDependencies</span> 
-<span class="kn">from</span> <span class="nn">azureml.core.runconfig</span> <span class="kn">import</span> <span class="n">RunConfiguration</span>
-<span class="kn">from</span> <span class="nn">azureml.pipeline.core</span> <span class="kn">import</span> <span class="n">Pipeline</span>
-<span class="kn">from</span> <span class="nn">azureml.pipeline.steps.python_script_step</span> <span class="kn">import</span> <span class="n">PythonScriptStep</span>
-<span class="kn">import</span> <span class="nn">os</span>  
+<div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Workspace</span><span class="p">,</span> <span class="n">Datastore</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.authentication</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServicePrincipalAuthentication</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.compute</span><span class="w"> </span><span class="kn">import</span> <span class="n">AmlCompute</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.conda_dependencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">CondaDependencies</span> 
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.runconfig</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunConfiguration</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.pipeline.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.pipeline.steps.python_script_step</span><span class="w"> </span><span class="kn">import</span> <span class="n">PythonScriptStep</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>  
 
 <span class="n">tenant_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your tenant ID&gt;&#39;</span>
 <span class="n">subscription_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your Azure subscription GUID&gt;&#39;</span>
@@ -105,14 +105,14 @@ cloud, with all the required configuration. We&#39;ll call this
 
 <p>We&#39;ll break down this script and discuss each part. First, we have the
 required imports and the additional parameters we need.</p>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">azureml.core</span> <span class="kn">import</span> <span class="n">Workspace</span><span class="p">,</span> <span class="n">Datastore</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Model</span>
-<span class="kn">from</span> <span class="nn">azureml.core.authentication</span> <span class="kn">import</span> <span class="n">ServicePrincipalAuthentication</span>
-<span class="kn">from</span> <span class="nn">azureml.core.compute</span> <span class="kn">import</span> <span class="n">AmlCompute</span>
-<span class="kn">from</span> <span class="nn">azureml.core.conda_dependencies</span> <span class="kn">import</span> <span class="n">CondaDependencies</span> 
-<span class="kn">from</span> <span class="nn">azureml.core.runconfig</span> <span class="kn">import</span> <span class="n">RunConfiguration</span>
-<span class="kn">from</span> <span class="nn">azureml.pipeline.core</span> <span class="kn">import</span> <span class="n">Pipeline</span>
-<span class="kn">from</span> <span class="nn">azureml.pipeline.steps.python_script_step</span> <span class="kn">import</span> <span class="n">PythonScriptStep</span>
-<span class="kn">import</span> <span class="nn">os</span>  
+<div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Workspace</span><span class="p">,</span> <span class="n">Datastore</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">Model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.authentication</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServicePrincipalAuthentication</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.compute</span><span class="w"> </span><span class="kn">import</span> <span class="n">AmlCompute</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.conda_dependencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">CondaDependencies</span> 
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.runconfig</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunConfiguration</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.pipeline.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.pipeline.steps.python_script_step</span><span class="w"> </span><span class="kn">import</span> <span class="n">PythonScriptStep</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>  
 
 <span class="n">tenant_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your tenant ID&gt;&#39;</span>
 <span class="n">subscription_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your Azure subscription GUID&gt;&#39;</span>
@@ -267,8 +267,8 @@ taking the trained model and storing it in the workspace. Add the lines
 in the following listing to the <code>highspenders.py</code> model we created in
 part 1 (not to <code>pipeline.py</code>, which we just covered).</p>
 <div class="highlight"><pre><span></span><span class="c1">## Register model </span>
-<span class="kn">from</span> <span class="nn">azureml.core</span> <span class="kn">import</span> <span class="n">Model</span> 
-<span class="kn">from</span> <span class="nn">azureml.core.run</span> <span class="kn">import</span> <span class="n">Run</span>  
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span> 
+<span class="kn">from</span><span class="w"> </span><span class="nn">azureml.core.run</span><span class="w"> </span><span class="kn">import</span> <span class="n">Run</span>  
 
 <span class="n">run</span> <span class="o">=</span> <span class="n">Run</span><span class="o">.</span><span class="n">get_context</span><span class="p">()</span>
 <span class="n">workspace</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">workspace</span>

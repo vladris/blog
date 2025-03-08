@@ -72,7 +72,7 @@ pipe bends and turns back the way we came, we don&#39;t change our state. On the
 other hand, if the pipe goes <q>down</q> from <code>L</code> to <code>7</code> or <q>up</q> from <code>F</code> to <code>J</code>,
 then we toggle <q>outside</q>/<q>inside</q>. For each non-pipe tile, if we&#39;re <q>inside</q>, we
 count it. Maybe this is obvious but it took me a bit to figure it out.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">scan_line</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">scan_line</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
     <span class="n">total</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">inside</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
     <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -196,7 +196,7 @@ the direction we were moving in. This also makes the depth-first search
 complete very fast.</p>
 <div class="highlight"><pre><span></span><span class="n">best</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="p">{},</span> <span class="mi">1000000</span>
 
-<span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">end</span>
 
     <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;=</span> <span class="n">end</span><span class="p">:</span>
@@ -403,7 +403,7 @@ bounds to the list of accepted bounds.</p>
 <p>Bounds are guaranteed to never overlap, by definition.</p>
 <div class="highlight"><pre><span></span><span class="n">accepts</span> <span class="o">=</span> <span class="p">[]</span>
 
-<span class="k">def</span> <span class="nf">execute_workflow</span><span class="p">(</span><span class="n">workflow_key</span><span class="p">,</span> <span class="n">bounds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">execute_workflow</span><span class="p">(</span><span class="n">workflow_key</span><span class="p">,</span> <span class="n">bounds</span><span class="p">):</span>
     <span class="n">workflow</span> <span class="o">=</span> <span class="n">workflows</span><span class="p">[</span><span class="n">workflow_key</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">workflow</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">rule</span> <span class="o">==</span> <span class="s1">&#39;A&#39;</span><span class="p">:</span>
@@ -511,7 +511,7 @@ north, east, south, west, diagonals.</p>
 
 <p>My approach was to do a probe - simulate the first few steps and record the
 results.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">probe</span><span class="p">():</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">probe</span><span class="p">():</span>
     <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">//</span> <span class="mi">2</span>
     <span class="n">tiles</span><span class="p">,</span> <span class="n">progress</span> <span class="o">=</span> <span class="p">{(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)},</span> <span class="p">{(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
     
@@ -561,11 +561,11 @@ and a subset where tiles are on the “even&quot; state.</p>
 
 <p>I ended up with the following formula (which might still be buggy, but seemed to
 have worked for my input):</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">at</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">at</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">progress</span><span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)][</span><span class="n">step</span><span class="p">]</span> <span class="k">if</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">progress</span><span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)]</span> <span class="k">else</span> <span class="mi">0</span>
 
 
-<span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
     <span class="n">even</span><span class="p">,</span> <span class="n">odd</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">steps</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">steps</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)):</span>
@@ -617,7 +617,7 @@ this could be simpler, but I didn&#39;t bother to optimize it further.</p>
 <p>For part one, we sort bricks by <code>z</code> coordinate (ascending), then we make each
 brick <q>fall</q>. We do this by decrementing their <code>z</code> coordinate and checking
 whether they intersect with any other brick.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">intersect</span><span class="p">(</span><span class="n">brick1</span><span class="p">,</span> <span class="n">brick2</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">intersect</span><span class="p">(</span><span class="n">brick1</span><span class="p">,</span> <span class="n">brick2</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">brick1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">brick2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="ow">or</span> <span class="n">brick1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">brick2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
     
@@ -630,11 +630,11 @@ whether they intersect with any other brick.</p>
     <span class="k">return</span> <span class="kc">True</span>
 
 
-<span class="k">def</span> <span class="nf">slide_down</span><span class="p">(</span><span class="n">brick</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">slide_down</span><span class="p">(</span><span class="n">brick</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">delta</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">delta</span><span class="p">))</span>
 
 
-<span class="k">def</span> <span class="nf">fall</span><span class="p">(</span><span class="n">brick</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fall</span><span class="p">(</span><span class="n">brick</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">brick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">brick</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
 
@@ -711,7 +711,7 @@ supported by which other bricks.</p>
 <p>Then for each brick we remove, we can walk the <q>supported by</q> dependencies to
 determine which bricks would fall and would, in turn, cause other bricks to
 fall, without having to actually simulate falling.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">count_falling</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">count_falling</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
     <span class="n">sup</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">supported_by</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">supported_by</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
     <span class="n">queue</span><span class="p">,</span> <span class="n">removed</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
@@ -775,7 +775,7 @@ y_1 + dy_1 * t_1 = y_2 + dy_2 * t_2
 
 <p>We know all of \((x_1, y_1), (dx_1, dy_1), (x_2, y_2), (dx_2, dy_2)\) so we solve
 for \(t_1\) and \(t_2\).</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">intersect</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">v2</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">intersect</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">v2</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">v1</span><span class="o">.</span><span class="n">dx</span> <span class="o">/</span> <span class="n">v1</span><span class="o">.</span><span class="n">dy</span> <span class="o">==</span> <span class="n">v2</span><span class="o">.</span><span class="n">dx</span> <span class="o">/</span> <span class="n">v2</span><span class="o">.</span><span class="n">dy</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
@@ -864,7 +864,7 @@ y_{origin_{rock}}, z_{origin_{rock}})\) and \((dx_{rock}, dy_{rock}, dz_{rock})\
 for each hailstorm, there is a time \(t_i\) when they intersect.</p>
 
 <p>Here is the code:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">rng</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find</span><span class="p">(</span><span class="n">rng</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">dx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">rng</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">dy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">rng</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
             <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span> <span class="o">=</span> <span class="n">hails</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
@@ -942,7 +942,7 @@ step, we add a new node to this set by selecting the most connected node to this
 component (meaning the node that has most edges incoming from visited nodes).</p>
 
 <p><code>most_connected()</code> determines which node we want to pick next:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">most_connected</span><span class="p">(</span><span class="n">visited</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">most_connected</span><span class="p">(</span><span class="n">visited</span><span class="p">):</span>
     <span class="n">best_n</span><span class="p">,</span> <span class="n">best_d</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
@@ -957,7 +957,7 @@ component (meaning the node that has most edges incoming from visited nodes).</p
 
 <p>Then we keep going until our component has exactly 3 outgoing edges to nodes
 that haven&#39;t ben visited yet:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">find_components</span><span class="p">():</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find_components</span><span class="p">():</span>
     <span class="n">start</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">visited</span> <span class="o">=</span> <span class="p">{</span><span class="n">start</span><span class="p">}</span>
     <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">visited</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="p">):</span>

@@ -152,10 +152,10 @@ and strategically placed still lives and oscillators.</p>
 a wrap-around space, so we&#39;ll consider cells on the last column to be
 neighbors with cells on the first column and similarly cells on the last
 row to be neighbors with cells on the first row.</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_matrix</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">make_matrix</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">width</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">height</span><span class="p">)]</span>
 
-<span class="k">def</span> <span class="nf">neighbors</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">neighbors</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
     <span class="n">last_j</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="n">last_i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
 
@@ -163,7 +163,7 @@ row to be neighbors with cells on the first row.</p>
         <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">last_j</span><span class="p">]</span> <span class="o">+</span>
         <span class="n">m</span><span class="p">[</span><span class="n">last_i</span><span class="p">][</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">last_i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">last_i</span><span class="p">][</span><span class="n">last_j</span><span class="p">])</span>
 
-<span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="n">m1</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">m1</span><span class="p">):</span>
     <span class="n">m2</span> <span class="o">=</span> <span class="n">make_matrix</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">))</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">)):</span>
@@ -178,7 +178,7 @@ row to be neighbors with cells on the first row.</p>
 
 <p>To run a simulation, we also need a function to print the game state and
 some initial conditions:</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">print_matrix</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">print_matrix</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">m</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;#&#39;</span> <span class="k">if</span> <span class="n">c</span> <span class="k">else</span> <span class="s1">&#39; &#39;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">line</span><span class="p">]))</span>
 
