@@ -8,6 +8,646 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2025/04/04/devlog-2-formatting.html</link>
+      <guid>https://vladris.com/blog/2025/04/04/devlog-2-formatting.html</guid>
+      <title><![CDATA[DevLog 2: Formatting]]></title>
+      <description><![CDATA[<h1>DevLog 2: Formatting</h1>
+
+<p>One of the more interesting (and generally applicable) things I had to build for
+<a href="https://saturn9.studio/flow/">Flow</a> is the commanding infrastructure,
+especially as it pertains to formatting. This entails going from the app UI all
+the way down to the editor and vice-versa.</p>
+
+<p>What I mean by this is, the user can apply a command like <em>toggle bold on the
+current selection</em> in multiple ways: using the <code>Cmd+B</code> keyboard shortcut, or via
+the menu bar, going to <code>Format -&gt; Bold</code>, or via the context menu. I did not
+implement a toolbar for Flow to keep the UI clean, but that could also be an
+option.</p>
+
+<p>Not only that, the menu and context menu should show a checkmark next to the
+<code>Bold</code> command if the current selection covers only bold text. Similarly, a
+toolbar button would show as pressed when the current selection covers only bold
+text. This is standard behavior for a text editor.</p>
+
+<p>I call this the <em>commanding infrastructure</em>: a way for the editor to expose a
+set of commands like <em>toggle bold on the current selection</em>, including any
+additional state required (like whether <code>Bold</code> should show a checkmark/pressed
+button or not; keyboard shortcut etc.). This infrastructure needs to ensure all
+the different UI entry points are views on the same state, and all invoke the
+same editor behavior. This state needs to propagate from the editor to the UI
+layer, since only the editor <q>knows</q> whether the text the user is currently on
+is bold or not. Then the different UI entry points need a way to tell the editor
+to make some change, e.g. <em>toggle bold on the current selection</em>.</p>
+
+<p>An instruction like the above does <em>formatting</em>. Formatting includes changing
+the content by applying properties like bold, italic, underline etc., turning a
+paragraph into a header, a blockquote, a list item, and so on. There is quite a
+lot of complexity to even something simple like <em>toggle bold on the current
+selection</em>. I'll focus on this complexity in this blog post and I will cover
+commanding in the next post.</p>
+
+<h2>Bolding text</h2>
+
+<p>Since Flow uses Markdown, making some text bold means adding <code>**</code> markers around
+it. Conversely, removing bold means removing the <code>**</code> surrounding markers.</p>
+
+<p>This sounds pretty straight-forward, but there are many special cases that a
+well-behaved editor needs to handle properly:</p>
+
+<h3>No selection</h3>
+
+<p>If the user doesn't have a selection, just the cursor:</p>
+
+<ul>
+<li>If the cursor is not on a word, rather on whitespace, toggling bold should add
+<code>**</code> before and <code>**</code> after the cursor.</li>
+<li>If the cursor is on a word that is not bold, toggling bold should mark that word as bold.</li>
+<li>If the cursor is on a word that is bold, toggling bold should, depending on
+the editor, remove bold only from that word or for from the whole span. If the
+cursor is somewhere over <code>sentence</code> in <code>**This sentence is bold**</code>, depending
+on the editor you might end up with <code>**This** sentence **is bold**</code> or <code>This
+sentence is bold</code>.</li>
+</ul>
+
+<h3>Selection spanning bold/not bold</h3>
+
+<p>If all the selected text is bold, then toggling it should remove the bold
+markup. Otherwise, if at least some of the selected text is not bold, toggling
+should make it all bold.</p>
+
+<p>Selecting <code>**Some of this** text is bold</code> and applying bold to it should yield
+<code>**Some of this text is bold**</code>, extending the bold markup to cover the whole
+span.</p>
+
+<p>What about removing bold? I've seen different editors also handle this
+differently. If <code>[</code> and <code>]</code> denote the selection, what should happen when the
+user toggles bold on <code>**Some of [this text] is bold**</code>? Some editors yield <code>Some
+of this text is bold</code>, removing the whole markup, while others remove it only
+from the selection, so you end up with <code>**Some of** this text **is bold**</code>.</p>
+
+<p>Note we also need to be smart about cleaning up markup. If we toggle bold on
+<code>[**Some of** this text **is bold**]</code>, we could naively do something like
+<code>**Some of** **this text** **is bold**</code> but instead we should account for this
+and end up with a cleaner <code>**Some of this text is bold**</code>.</p>
+
+<h3>Selection spanning paragraphs</h3>
+
+<p>Markdown markup like <code>**</code> cannot span multiple paragraphs. If the user selects
+multiple paragraphs, we need to apply the same logic to each paragraph in turn.
+We can just add <code>**</code> at the beginning and end of the selection, rather we need
+to add a <code>**</code> at the end of each selected paragraph except the last one in the
+selection and add a <code>**</code> at the beginning of each selected paragraph except the
+first on in the selection.</p>
+<div class="highlight"><pre><span/>This is a [multiple
+
+paragraph text with selection
+
+spanning multiple paragraphs] too
+</pre></div>
+
+<p>Toggling bold here should yield</p>
+<div class="highlight"><pre><span/>This is a **multiple**
+
+**paragraph text with selection**
+
+**spanning multiple paragraphs** too
+</pre></div>
+
+<p>We also need to take into account whether all the text in the selection, across
+paragraphs, is bold or not, so we know whether you need to toggle it on or off.</p>
+
+<p>For example:</p>
+<div class="highlight"><pre><span/>This is a [**multiple**
+
+**paragraph** text **with selection**
+
+**spanning multiple paragraphs**] too
+</pre></div>
+
+<p>If <code>[</code> and <code>]</code> denote the selection, applying bold to this should leave the
+first and last paragraphs unchanged, since the selection in both is fully over
+bold text. The only change should happen in the middle paragraph, which should
+be fully bolded:</p>
+<div class="highlight"><pre><span/>This is a **multiple**
+
+**paragraph text with selection**
+
+**spanning multiple paragraphs** too
+</pre></div>
+
+<p>These are all various situations we need to account for when implementing
+formatting.</p>
+
+<p>In fact, formatting is an area where I have the most unit test coverage and I
+keep adding tests as I uncover various cases.</p>
+
+<h2>ProseMirror implementation</h2>
+
+<p>I'll cover how I implemented formatting. My editor is built on top of
+<a href="https://prosemirror.net/">ProseMirror</a>, and I will not go to deep into
+explaining how ProseMirror itself works. For that, refer to the
+<a href="https://prosemirror.net/docs/">documentation</a>.</p>
+
+<h3>Ranges and Decorations</h3>
+
+<p>Formatting is based on <em>Ranges</em> and <em>Decorations</em>. A <em>Range</em> simply defines a
+range within the document, with <code>from</code> a <code>to</code> locations:</p>
+<div class="highlight"><pre><span/><span class="kr">type</span><span class="w"> </span><span class="nx">Range</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">from</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">to</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><em>Decoration</em> is a ProseMirror concept<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>. A plugin<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup> can add decorations to
+the document, which are usually consumed by the view. A decoration contains
+<code>from</code> and <code>to</code> positions in the document, a <code>spec</code> of type <code>any</code> to store
+arbitrary information, and a set of <em>decoration attributes</em> which translate into
+DOM node attributes when the document gets rendered. For example, if we select a
+range in <code>"this **is a** string"</code>, say the <code>**is a**</code> part and set as attribute
+<code>class</code> as <code>"bold"</code>, it will translate this as HTML into <code>this &lt;span
+class="bold"&gt;**is a**&lt;/span&gt; string</code>.</p>
+
+<p>I won't cover how decorations are generated in Flow in this post. I have a
+Markdown plugin that parses the document and generates the appropriate
+decorations. That's a topic for another post. For formatting, we simply consume
+the produced decorations. One of the core functions fetches the decorations
+produced by the Markdown plugin:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getDecorations</span><span class="p">(</span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">DecorationSet</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">plugin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">plugins</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span>
+<span class="w">        </span><span class="p">(</span><span class="nx">plugin</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">plugin</span><span class="p">.</span><span class="nx">spec</span><span class="p">.</span><span class="nx">key</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">markdownPluginKey</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">pluginState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">plugin</span><span class="o">?</span><span class="p">.</span><span class="nx">getState</span><span class="p">(</span><span class="nx">state</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">pluginState</span><span class="o">?</span><span class="p">.</span><span class="nx">decorations</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">DecorationSet</span><span class="p">.</span><span class="nx">empty</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This is very ProseMirror-specific: we take an <code>EditorState</code> which represents the
+state of the document, retrieve the Markdown plugin, get its state, then fetch
+the decorations from the state.</p>
+
+<p>Now that we can access the full set of decorations, we need a few more helper
+functions to deal with selection ranges:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">isRangeDecorated</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">className</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">from?</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">to?</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="kr">from</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="nx">to</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kr">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">selection</span><span class="p">.</span><span class="kr">from</span><span class="p">;</span>
+<span class="w">        </span><span class="nx">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">selection</span><span class="p">.</span><span class="nx">to</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">decoration</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">getDecorations</span><span class="p">(</span><span class="nx">state</span><span class="p">).</span><span class="nx">find</span><span class="p">(</span><span class="kr">from</span><span class="p">,</span><span class="w"> </span><span class="nx">to</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="nx">decoration</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">any</span><span class="p">).</span><span class="kr">type</span><span class="o">?</span><span class="p">.</span><span class="nx">attrs</span><span class="o">?</span><span class="p">.</span><span class="kd">class</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">className</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This function helps us check whether the given range is decorated with the given
+class name. A decoration can have any attributes on it, but Flow uses class
+names to tag things as bold, italic, etc. This functions tells us whether the
+given class name appears anywhere within the selection. In other words, this
+returns <code>true</code> if any part of the range is decorated.</p>
+
+<p>It will return <code>true</code> if we query for <code>bold</code> and the selection range yields
+<code>this **is a** string</code> since <code>**is a**</code> should have the decoration.</p>
+
+<p>We also need a function that tells us whether a range is fully covered:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">isRangeCovered</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">className</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">from?</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">to?</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="kr">from</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="nx">to</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kr">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">selection</span><span class="p">.</span><span class="kr">from</span><span class="p">;</span>
+<span class="w">        </span><span class="nx">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">selection</span><span class="p">.</span><span class="nx">to</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">decoration</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">getDecorations</span><span class="p">(</span><span class="nx">state</span><span class="p">).</span><span class="nx">find</span><span class="p">(</span><span class="kr">from</span><span class="p">,</span><span class="w"> </span><span class="nx">to</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="nx">decoration</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">any</span><span class="p">).</span><span class="kr">type</span><span class="o">?</span><span class="p">.</span><span class="nx">attrs</span><span class="o">?</span><span class="p">.</span><span class="kd">class</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">className</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">decoration</span><span class="p">.</span><span class="kr">from</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">decoration</span><span class="p">.</span><span class="nx">to</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="nx">to</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This returns <code>true</code> if a decoration covers the full range. This will return
+<code>false</code> for <code>bold</code> and <code>this **is a** string</code>, since the bold decoration only
+covers <code>**is a**</code> rather than the whole range.</p>
+
+<p>Now here is where things get a bit more interesting: a selection range can span
+multiple paragraphs, but Markdown markup cannot. As we saw above, we could have
+a selection that spans the following 3 paragraphs:</p>
+<div class="highlight"><pre><span/>This is a **multiple**
+
+**paragraph text with selection**
+
+**spanning multiple paragraphs** too
+</pre></div>
+
+<p>Note that all text starting from <code>**multiple**</code> on the first paragraph all the
+way down to <code>paragraphs**</code> on the last line is bold, but we need some markup on
+each line because of how Markdown works. In other words, we need to treat each
+paragraph separately. The following function generates an array of ranges from
+the current selection:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getRangesFromSelection</span><span class="p">(</span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">from</span><span class="p">,</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">selection</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">ranges</span><span class="o">:</span><span class="w"> </span><span class="kt">Range</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+
+<span class="w">    </span><span class="nx">state</span><span class="p">.</span><span class="nx">doc</span><span class="p">.</span><span class="nx">nodesBetween</span><span class="p">(</span><span class="kr">from</span><span class="p">,</span><span class="w"> </span><span class="nx">to</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">node</span><span class="p">,</span><span class="w"> </span><span class="nx">pos</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="kr">type</span><span class="p">.</span><span class="nx">name</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"paragraph"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">paragraphStart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">;</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">paragraphEnd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">node</span><span class="p">.</span><span class="nx">nodeSize</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1</span><span class="p">;</span>
+
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">rangeFrom</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="kr">from</span><span class="p">,</span><span class="w"> </span><span class="nx">paragraphStart</span><span class="p">);</span>
+<span class="w">            </span><span class="kd">const</span><span class="w"> </span><span class="nx">rangeTo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">min</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span><span class="w"> </span><span class="nx">paragraphEnd</span><span class="p">);</span>
+
+<span class="w">            </span><span class="nx">ranges</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span>
+<span class="w">                </span><span class="nx">from</span><span class="o">:</span><span class="w"> </span><span class="kt">rangeFrom</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">to</span><span class="o">:</span><span class="w"> </span><span class="kt">rangeTo</span><span class="p">,</span>
+<span class="w">            </span><span class="p">});</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">ranges</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We first get the <code>from</code> and <code>to</code> of the selection from the editor state. We then
+iterate through each document node between <code>from</code> and <code>to</code>. For nodes of type
+<code>paragraph</code>, we get the adjusted start and end positions (ProseMirror inserts an
+additional position before and after each node, which we need to account for),
+and determine the start and end of the selection range within this paragraph.</p>
+
+<p>This function effectively turns a single <code>from</code>-<code>to</code> selection into several
+ranges, one for each paragraph.</p>
+
+<p>We already saw the <code>isRangeDecorated</code> and <code>isRangeCovered()</code> functions. I
+implemented a couple of additional helpers, <code>areAllRangesDecorate()</code> and
+<code>areAllRangesCovered()</code> which simply check whether all of the ranges returned by
+<code>getRangesFromSelection</code> are decorated or covered by the given markup. The
+implementation is trivial.</p>
+
+<p>With these pieces in place, we can look at how Flow toggles formatting for the
+current user selection.</p>
+
+<h3>Toggling Formatting</h3>
+
+<p>Let's start with the core formatting functions, <code>markRange()</code> and
+<code>unmarkRange()</code>.</p>
+
+<p><code>markRange()</code> takes a selection range and ensures it gets fully covered by the
+given markup. For example, if we take the <code>this is a string</code> range, running
+<code>markRange()</code> on it with the <code>**</code> markup will yield <code>**this is a string**</code>. But
+that's not all! If instead we run it on <code>this **is a** string</code>, it will also
+yield <code>**this is a string**</code>. Note we are effectively selecting text that is
+partially bolded, and we turn it all bold - that entails not only adding <code>**</code> at
+both ends, but also removing the inner-markup.</p>
+
+<p>More than that, we also need to handle a case like the following (where <code>[]</code>
+represents the user selection): <code>this **is [a** string]</code>. Making this selection
+bold should yield <code>this **is a string**</code>. Not only we remove the inner markup,
+we also need to be smart enough to know we already have bold markup before the
+selection starts, so we shouldn't prepend <code>**</code>.</p>
+
+<p>Here is the full implementation of <code>markRange()</code>:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">markRange</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">className</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">markup</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">range</span><span class="o">:</span><span class="w"> </span><span class="kt">Range</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">markupLocations</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">leadingMarkup</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">trailingMarkup</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">markupRange</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">getMarkupRangesForRange</span><span class="p">(</span>
+<span class="w">        </span><span class="nx">state</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">className</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">range</span>
+<span class="w">    </span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="kr">from</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">range</span><span class="p">.</span><span class="kr">from</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">leadingMarkup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">markupLocations</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="kr">from</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="nx">to</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="nx">range</span><span class="p">.</span><span class="nx">to</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">trailingMarkup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">markupLocations</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="nx">to</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nx">markup</span><span class="p">.</span><span class="nx">length</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">tr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">removeMarkupAtLocations</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">tr</span><span class="p">,</span><span class="w"> </span><span class="nx">markup</span><span class="p">,</span><span class="w"> </span><span class="nx">markupLocations</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">leadingMarkup</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">tr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">insertMarkupAtPos</span><span class="p">(</span><span class="nx">tr</span><span class="p">,</span><span class="w"> </span><span class="nx">markup</span><span class="p">,</span><span class="w"> </span><span class="nx">tr</span><span class="p">.</span><span class="nx">mapping</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">range</span><span class="p">.</span><span class="kr">from</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">trailingMarkup</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">tr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">insertMarkupAtPos</span><span class="p">(</span><span class="nx">tr</span><span class="p">,</span><span class="w"> </span><span class="nx">markup</span><span class="p">,</span><span class="w"> </span><span class="nx">tr</span><span class="p">.</span><span class="nx">mapping</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">range</span><span class="p">.</span><span class="nx">to</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">tr</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This leverages several helper functions which I won't walk through in the
+interest of time, but will explain what each does.</p>
+
+<p>The function takes the following arguments: an editor state, a <em>transaction</em>,
+the class name for the formatting as given by the decorations produced by the
+Markdown plugin (e.g. <code>bold</code> for bold), the markup itself (e.g. <code>**</code> for bold),
+and a range.</p>
+
+<p>I haven't talked about transactions yet. Transactions is how ProseMirror handles
+updates to the document state<sup id="fnref3"><a href="#fn3" rel="footnote">3</a></sup>. Any change to the document needs to come in
+the form of a transaction. A transaction can accumulate several operations
+before being applied to the document. This architecture ensures consistency of
+the editor state: if the state changes for whatever reason between the time a
+transaction was created and the time it is dispatched, it will fail. This saves
+us from dealing with issues like selection changing <em>while</em> we're trying to do
+something to it which would result in unexpected results. Since all state
+mutations come via transactions, ProseMirror will know when it needs to re-run
+plugins - for example the Markdown plugin needs to run whenever the content of
+the document changes to ensure our decorations are up to date with the text.
+That's why all our formatting functions take a transaction as argument, to which
+they add operations. To apply a transaction to the document, we need a
+<em>dispatch</em> function which ProseMirror provides.</p>
+
+<p>Back to <code>markRange()</code>, we first call <code>getMarkupRangesForRange()</code>. This is a
+helper function that returns all the <code>from</code>-<code>to</code> ranges of all decorations with
+the given class name intersecting our <code>range</code>. The <em>intersecting</em> part is
+important: if can return ranges that partially overlap the range, fully cover
+it, or are within it. I won't go over the implementation but it is
+straightforward - it simply takes this data from the decorations produced by the
+Markdown plugin.</p>
+
+<p>For reach of the returned markup ranges, if the markup range starts outside our
+range, we mark <code>leadingMarkup</code> as <code>true</code>, otherwise we keep track of the start
+location of this markup range:</p>
+<div class="highlight"><pre><span/><span class="err">â¦</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="kr">from</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">range</span><span class="p">.</span><span class="kr">from</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">leadingMarkup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">markupLocations</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="kr">from</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="err">â¦</span>
+</pre></div>
+
+<p>We do the same for the end of the markup ranges:</p>
+<div class="highlight"><pre><span/><span class="err">â¦</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="nx">to</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="nx">range</span><span class="p">.</span><span class="nx">to</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">trailingMarkup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">markupLocations</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="nx">to</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nx">markup</span><span class="p">.</span><span class="nx">length</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="err">â¦</span>
+</pre></div>
+
+<p>Now we should have the locations of all markup inside our range, for example the
+locations of all <code>**</code> inside the range we're trying to turn bold. We should also
+know whether we have <code>leadingMarkup</code> and/or <code>trailingMarkup</code>, that is whether
+there already is a leading <code>**</code> before or a trailing <code>**</code> after our range.</p>
+
+<p>The next step is to remove all markup inside the selection - as a reminder, if
+the user selects <code>this **is a** string</code> and wants to turn all of it bold, we
+need to get rid of the markup around <code>is a</code> and the end result should be <code>**this
+is a string**</code>. Since we already have all markup locations, <code>markRange()</code> calls
+another helper function, <code>removeMarkupAtLocations()</code>:</p>
+<div class="highlight"><pre><span/><span class="err">â¦</span>
+<span class="nx">tr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">removeMarkupAtLocations</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">tr</span><span class="p">,</span><span class="w"> </span><span class="nx">markup</span><span class="p">,</span><span class="w"> </span><span class="nx">markupLocations</span><span class="p">);</span>
+<span class="err">â¦</span>
+</pre></div>
+
+<p>This helper function takes the editor state, a transaction, the markup we're
+trying to remove and where it is located in the selection, then proceeds to
+remove it. I won't cover the implementation to keep things short. Finally, in
+case we don't have leading and/or trailing markup, we need to insert it:</p>
+<div class="highlight"><pre><span/><span class="err">â¦</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">leadingMarkup</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">tr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">insertMarkupAtPos</span><span class="p">(</span><span class="nx">tr</span><span class="p">,</span><span class="w"> </span><span class="nx">markup</span><span class="p">,</span><span class="w"> </span><span class="nx">tr</span><span class="p">.</span><span class="nx">mapping</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">range</span><span class="p">.</span><span class="kr">from</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">trailingMarkup</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">tr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">insertMarkupAtPos</span><span class="p">(</span><span class="nx">tr</span><span class="p">,</span><span class="w"> </span><span class="nx">markup</span><span class="p">,</span><span class="w"> </span><span class="nx">tr</span><span class="p">.</span><span class="nx">mapping</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">range</span><span class="p">.</span><span class="nx">to</span><span class="p">));</span>
+<span class="p">}</span>
+<span class="err">â¦</span>
+</pre></div>
+
+<p>And that's it. The transaction we end up with contains all required edits to
+properly mark the given range.</p>
+
+<p>The inverse of this is <code>unmarkRange()</code>:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">unmarkRange</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">className</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">markup</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">range</span><span class="o">:</span><span class="w"> </span><span class="kt">Range</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">markupLocations</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">markupRange</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">getMarkupRangesForRange</span><span class="p">(</span>
+<span class="w">        </span><span class="nx">state</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">className</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">range</span>
+<span class="w">    </span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">markupLocations</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="kr">from</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">markupLocations</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">markupRange</span><span class="p">.</span><span class="nx">to</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nx">markup</span><span class="p">.</span><span class="nx">length</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">removeMarkupAtLocations</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">tr</span><span class="p">,</span><span class="w"> </span><span class="nx">markup</span><span class="p">,</span><span class="w"> </span><span class="nx">markupLocations</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This function is simpler than mark range. It also relies on
+<code>getMarkupRangesForRange()</code> and stores all markup locations. As a reminder,
+<code>getMarkupRangesForRange()</code> will include markups that intersect the range, so
+even if the selection is inside a bolded range, like <code>**This [is a] string**</code>,
+we would still get the locations of the two <code>**</code> markups.</p>
+
+<p>Once we have these, we simply remove all markup by calling
+<code>removeMarkupAtLocations()</code>. It turns out that removing markup is easier that
+adding it.</p>
+
+<p>The user issues the same command, <em>toggle bold</em>, and we need to figure out
+whether we should add or remove the markup. We do this by relying on
+<code>areAllRangesCovered()</code> which we described above. The <code>toggleDecoration()</code>
+function takes an editor state, a dispatch function, a class name (like <code>bold</code>)
+and a markup (like <code>**</code>). The function begins with:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">toggleDecoration</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">className</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">markup</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">ranges</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">getRangesFromSelection</span><span class="p">(</span><span class="nx">state</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">shouldToggleOn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">!</span><span class="nx">areAllRangesCovered</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">ranges</span><span class="p">,</span><span class="w"> </span><span class="nx">className</span><span class="p">);</span>
+<span class="err">â¦</span>
+</pre></div>
+
+<p>We first get the user selection from the state and map it to one or more ranges
+(to account for selections that span paragraphs). Next, if at least one of the
+selected ranges is not fully covered by the relevant decoration (e.g. <code>bold</code>),
+then we know we should toggle bold <em>on</em> across all ranges. Otherwise, if all
+ranges are fully covered, we need to toggle bold <em>off</em>.</p>
+
+<p>There's a bit more logic in this function which I won't cover that handles the
+special case of not having a selection. If we only have a cursor, the expected
+behavior is as follows: if the cursor is inside a marked range, e.g. inside a
+bold range, toggling bold should remove the bold markup of that range. Note this
+could be a word, a sentence, or even a whole paragraph. On the other hand, if
+the cursor is not inside a marked range, the expected behavior is to apply the
+markup just on the word the cursor is on. Try it out in your favorite editor, it
+should behave like this!</p>
+
+<p>One more special case: if the cursor is not on a word, rather on whitespace, the
+expectation is to add markup around it, so for bold, we would add a <code>**</code> right
+before the cursor and a <code>**</code> right after.</p>
+
+<p>I will skip over the logic of identifying word boundaries and such, but that's
+the bulk of the extra code in <code>toggleDecoration()</code>. Once we we know all the
+ranges we need to toggle formatting for, and we know whether we need to toggle
+it <em>on</em> or <em>off</em>, we simply call <code>markRange()</code> or <code>unmarkRange()</code> for each of
+these ranges.</p>
+
+<p>I used bold as an example throughout this post, but as you can see, the
+functions are generic enough to apply to any type of inline formatting: bold,
+italic, underline, etc. In fact, I have a bunch of functions wrapping these:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleBold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">toggleDecoration</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">,</span><span class="w"> </span><span class="s2">"strong"</span><span class="p">,</span><span class="w"> </span><span class="s2">"**"</span><span class="p">);</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleItalic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">toggleDecoration</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">,</span><span class="w"> </span><span class="s2">"em"</span><span class="p">,</span><span class="w"> </span><span class="s2">"*"</span><span class="p">);</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleUnderline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">toggleDecoration</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">,</span><span class="w"> </span><span class="s2">"underline"</span><span class="p">,</span><span class="w"> </span><span class="s2">"~"</span><span class="p">);</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleStrikethrough</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">toggleDecoration</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">,</span><span class="w"> </span><span class="s2">"strikethrough"</span><span class="p">,</span><span class="w"> </span><span class="s2">"~~"</span><span class="p">);</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleHighlight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">toggleDecoration</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">,</span><span class="w"> </span><span class="s2">"highlight"</span><span class="p">,</span><span class="w"> </span><span class="s2">"=="</span><span class="p">);</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorState</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">toggleDecoration</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">,</span><span class="w"> </span><span class="s2">"code"</span><span class="p">,</span><span class="w"> </span><span class="s2">"`"</span><span class="p">);</span>
+</pre></div>
+
+<p>The app can invoke a command like <em>toggle bold</em> by calling the corresponding
+<code>toggleBold()</code> function. Note everything is neatly wrapped in this function,
+the caller just needs to pass in an editor state and a way to apply,
+transactions, both being easy to get from an editor view.</p>
+
+<p>Conversely, if we need to know whether the Bold button in a hypothetical toolbar
+(at the time of writing, Flow doesn't have a toolbar) should render as pressed
+or not, or whether the app menu or context menu should show a checkmark next to
+the Bold menu item, we need to call <code>isRangeCovered()</code> and check whether the
+range is fully bolded or not.</p>
+
+<p>In a future post, I will focus on the commanding part, and how the editor makes
+these functions available to the app.</p>
+
+<h2>Block Formatting</h2>
+
+<p>There's more to formatting than what I covered in this post. Especially with
+Markdown, but also generalizes quite well to other editors: there's <em>inline</em>
+formatting which we just covered, and <em>block</em> formatting.</p>
+
+<p>Inline formatting deals with marking up parts of text in a paragraph.</p>
+
+<p>Block formatting deals with formatting a whole paragraph. Some Markdown examples
+of this are:</p>
+
+<ul>
+<li>Headings - <code>#</code>, <code>##</code>, etc. at the beginning of a paragraph will make the
+whole paragraph be a heading.</li>
+<li>Block quotes - <code>&gt;</code> at the beginning of a paragraph will make the whole
+paragraph be a block quote.</li>
+<li>Code blocks.</li>
+<li>Ordered and unordered lists - list handling brings a bunch more complexity,
+again a potential topic for its own blog post.</li>
+</ul>
+
+<p>I will not cover block formatting since in most cases it is simpler than inline
+formatting - the markers are always at the beginning of the paragraph and the
+logic to determine whether toggling means toggling <em>on</em> or <em>off</em> is also
+simpler.</p>
+
+<p>List handling is in general more complex, especially if we need to support
+things like nested lists and be smart about, for example, automatically
+incrementing the numbering on a numbered list. That said, this has less to do
+with formatting and more with how lists work.</p>
+
+<h2>Summary</h2>
+
+<p>In this post, I covered some interesting aspects of how formatting works in an
+editor (and what users would expect from a well-behaved editor):</p>
+
+<ul>
+<li>Toggling formatting <em>on</em> or <em>off</em> depending on the selection.</li>
+<li>Handling selection overlapping a mix of marked and unmarked text.</li>
+<li>Handling selection spanning multiple paragraphs by handling each paragraph
+separately.</li>
+</ul>
+
+<p>I went over some of my implementation of this for Flow on top of ProseMirror
+and introduced a few ProseMirror concepts like editor <em>state</em>, <em>decorations</em>,
+and <em>transactions</em>.</p>
+
+<p>Finally, I briefly touched on another, simpler flavor of formatting: <em>block</em>
+formatting, which applies to whole paragraphs.</p>
+
+<p>In the next post, I am planning to cover <em>commanding</em>, and how these lower-level
+formatting functions can be packaged into a commanding system an app can present
+to the user.</p>
+
+<div class="footnotes">
+<hr/>
+<ol>
+
+<li id="fn1">
+<p>See <a href="https://prosemirror.net/docs/ref/#view.Decorations">https://prosemirror.net/docs/ref/#view.Decorations</a>. <a href="#fnref1" rev="footnote">↩</a></p>
+</li>
+
+<li id="fn2">
+<p>See <a href="https://prosemirror.net/docs/ref/#state.Plugin_System">https://prosemirror.net/docs/ref/#state.Plugin_System</a>. <a href="#fnref2" rev="footnote">↩</a></p>
+</li>
+
+<li id="fn3">
+<p>See <a href="https://prosemirror.net/docs/ref/#state.Transaction">https://prosemirror.net/docs/ref/#state.Transaction</a>. <a href="#fnref3" rev="footnote">↩</a></p>
+</li>
+
+</ol>
+</div>
+]]></description>
+      <pubDate>Fri, 04 Apr 2025 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2025/03/08/devlog-1-flow.html</link>
       <guid>https://vladris.com/blog/2025/03/08/devlog-1-flow.html</guid>
       <title><![CDATA[DevLog 1: Flow]]></title>
