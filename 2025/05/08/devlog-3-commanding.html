@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>DevLog 3: Commanding &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/theme.css" type="text/css">
+<link rel="stylesheet" href="../../../static/tokyo.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<header><span>May 08, 2025</span></header>
+<article>
+<h1>DevLog 3: Commanding</h1>
+
+<p>This article is going to be the part 2 of the <em>formatting and commanding</em> I
+built for <a href="https://saturn9.studio/flow/">Flow</a>. In the <a href="https://vladris.com/blog/2025/04/04/devlog-2-formatting.html">previous
+post</a> I covered
+formatting and the various corner cases we need to keep in mind when
+implementing something as simple as <em>toggle bold on the current selection</em>. Last
+post dealt with what we need to do to update the document when such a command
+comes in. Now that that’s taken care of, let’s see how we can expose of these
+formatting commands (and more) to an app hosting our editor.</p>
+
+<p>Let’s go over what a well-behaved editor needs to do. Commands like “toggle
+bold” can be shown to the user in multiple places: app menu bar, toolbar,
+context menu etc. We need to make sure invoking a command for any of these
+places does the same thing. More so, a command like “toggle bold” is stateful.
+If the selected text is already bold, we should show a checkmark next to the
+Bold menu item and show the Bold button in the toolbar depressed. If the editor
+is, for whatever reason, in read-only mode, the command should be disabled and
+the corresponding UI element should be grayed out.</p>
+
+<p>Of course, we need to be consistent - if a command is disabled, it should be
+disabled everywhere, not show up as enabled in the menu bar but disabled in the
+toolbar or vice-versa. Also, invoking it from anywhere should yield the exact
+same results.</p>
+
+<p>Even before diving into the technical details, given the requirements it’s quite
+obvious we need some form of object representation for a command, including some
+state, like whether the command is active (e.g. current selection is Bold) and
+enabled, and an action we can invoke when we want to apply the command.</p>
+
+<p>This will be the focus of this post, with some extra complications: while
+formatting is neatly contained within the editor, commands allow the hosting app
+to change editor state. More so, I built Flow as an Electron app. An Electron
+app runs a <em>main process</em>, running the Node code and communicating with the OS,
+and a <em>render process</em>, running a browser. The editor is, of course, hosted on
+the render process, but the menu bar and context menu are handled by the main
+process as they are relying on OS-native features. The commanding infrastructure
+needs to keep command state in sync across processes!</p>
+
+<p>Another complication is that we might have commands that aren’t related to
+formatting. In fact, they might not involve the editor at all. A few examples:
+in Flow, you can switch from Focus Mode to Edit Mode to Read Mode to Source
+Mode. These reconfigure the view but don’t mutate the document. We also have
+commands like <em>show the settings window</em> which has nothing to do with the
+editor. And while these could, of course, be implemented through a completely
+different architecture, it makes sense to weave them into the general commanding
+infrastructure. </p>
+
+<p>Here’s what I did for Flow:</p>
+
+<h2>Commands</h2>
+
+<p>The basic building block is the <code>Command</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">interface</span><span class="w"> </span><span class="nx">Command</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">accelerator?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">active</span><span class="o">?:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">execute</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">...args</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">[])</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">unknown</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>In Flow, a <code>Command</code> has:</p>
+
+<ul>
+<li>A unique id.</li>
+<li>A label (what’s going to be shown in the menu for example).</li>
+<li>An optional keyboard shortcut (<code>accelerator</code>).</li>
+<li>A function that should tell us whether the command is enabled or not.</li>
+<li>An optional function that should tell us whether we should show a checkmark
+next to its menu entry (or show its button depressed) - note this is optional
+as not all commands are “toggle” commands.</li>
+<li>A way to invoke the command passing some arguments to it.</li>
+</ul>
+
+<p>This is pretty straight-forward, but things get a bit more complicated: since we
+need to show command state across the main and render processes, we need a way
+to pass command data between them. Functions are not serializable, so we also
+need a <code>CommandData</code> way to pass information:</p>
+<div class="highlight"><pre><span></span><span class="kd">interface</span><span class="w"> </span><span class="nx">CommandData</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">accelerator?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">active?</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">?:</span><span class="w"> </span><span class="s2">&quot;normal&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;checkbox&quot;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Thinks of <code>CommandData</code> as an instance in time of a <code>Command</code>. It captures a
+command’s state and can pass it from the render process where the editor lives
+to the app process. You might have noticed an extra property: <code>type</code> tells the
+UI whether this command should show up as a “normal” command, or as a command
+that can have a checkmark next to it. A “normal” command without a checkbox is
+something like <em>insert a horizontal rule</em>. A command with a checkbox is
+something like <em>toggle bold</em>.</p>
+
+<p>We also have a straight-forward way of serializing a <code>Command</code> into its
+<code>CommandData</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">commandDataFromCommand</span><span class="p">(</span><span class="nx">command</span><span class="o">:</span><span class="w"> </span><span class="kt">Command</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">CommandData</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">command.id</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="kt">command.label</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">accelerator</span><span class="o">:</span><span class="w"> </span><span class="kt">command.accelerator</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="kt">command.enabled</span><span class="p">(),</span>
+<span class="w">        </span><span class="nx">active</span><span class="o">:</span><span class="w"> </span><span class="kt">command.active</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">command</span><span class="p">.</span><span class="nx">active</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kc">undefined</span><span class="p">,</span>
+<span class="w">        </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">command</span><span class="p">.</span><span class="nx">active</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;checkbox&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;normal&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This way, we can pass the current command state from the render process to the
+main process whenever the editor state changes in any way.</p>
+
+<h2>The command registry</h2>
+
+<p>Of course, we will have many commands so need a way to keep them together. Enter
+the <code>CommandRegistry</code>:</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span><span class="w"> </span><span class="nx">CommandRegistry</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">commands</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">Command</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="nx">listeners</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Set</span><span class="o">&lt;</span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="o">&gt;</span><span class="p">();</span>
+
+<span class="w">    </span><span class="nx">register</span><span class="p">(</span><span class="nx">command</span><span class="o">:</span><span class="w"> </span><span class="kt">Command</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">commands</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">command</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">command</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">getCommand</span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Command</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">commands</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">id</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">getAllCommands</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">Command</span><span class="p">[]</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">Array</span><span class="p">.</span><span class="kr">from</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">commands</span><span class="p">.</span><span class="nx">values</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">getCommandData</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">SerializedCommandRegistry</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">commands</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">CommandData</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">commands</span><span class="p">.</span><span class="nx">forEach</span><span class="p">((</span><span class="nx">command</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">commands</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">command</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">commandDataFromCommand</span><span class="p">(</span><span class="nx">command</span><span class="p">));</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">commands</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">onUpdate</span><span class="p">(</span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">listeners</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">listener</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">offUpdate</span><span class="p">(</span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">listeners</span><span class="p">.</span><span class="ow">delete</span><span class="p">(</span><span class="nx">listener</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nx">emitUpdate</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">listeners</span><span class="p">.</span><span class="nx">forEach</span><span class="p">((</span><span class="nx">listener</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">listener</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>CommandRegistry</code> wraps a set of commands and allows consumers to subscribe
+to notifications for when the state changes.</p>
+
+<p>The <code>register()</code>, <code>getCommand()</code>,  <code>getAllCommands()</code> are trivial.
+<code>getCommandData()</code> serializes the whole registry. It’s return type,
+<code>SerializedCommandRegistry</code>, is:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">SerializedCommandRegistry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Map</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">CommandData</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+
+<p>The remaining functions, <code>onUpdate()</code>, <code>offUpdate()</code>, and <code>emitUpdate()</code> handle
+notifications. Subscribers can start listening to command state change updates
+via <code>onUpdate()</code> and unsubscribe via <code>offUpdate()</code>. Finally, <code>emitUpdate()</code> is
+called by whoever changes command state such that subscribers are notified of
+the change.</p>
+
+<p>Let’s look at a concrete example. Here is how the <em>toggle bold</em> command is
+implemented:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">boldCommand</span><span class="o">:</span><span class="w"> </span><span class="kt">Command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;bold&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Bold&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">accelerator</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;CmdOrCtrl+B&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">view</span><span class="p">.</span><span class="nx">editable</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">active</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">isRangeAllBold</span><span class="p">(</span><span class="nx">view</span><span class="p">.</span><span class="nx">state</span><span class="p">),</span>
+<span class="w">    </span><span class="nx">execute</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">toggleBold</span><span class="p">(</span><span class="nx">view</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">view</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">),</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>We covered <code>isRangeAllBold()</code> and <code>toggleBold()</code> in the <a href="https://vladris.com/blog/2025/04/04/devlog-2-formatting.html">previous
+post</a>. Note that
+they both need references to the ProseMirror document state and <code>toggleBold()</code>
+also needs a way to dispatch transactions, so this <code>Command</code> is defined inside
+the editor code.</p>
+
+<p>An editor instance will have an associated command registry. Flow initializes
+the editor with a <code>boot()</code> function:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">boot</span><span class="p">(</span><span class="nx">element</span><span class="o">:</span><span class="w"> </span><span class="kt">HTMLElement</span><span class="p">,</span><span class="w"> </span><span class="nx">options?</span><span class="o">:</span><span class="w"> </span><span class="kt">EditorOptions</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">EditorState</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+<span class="w">        </span><span class="cm">/* ... */</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">view</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">EditorView</span><span class="p">(</span><span class="nx">element</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">state</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">attributes</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="cm">/* ... */</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">commandRegistry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CommandRegistry</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">initializeEditorCommands</span><span class="p">(</span><span class="nx">view</span><span class="p">,</span><span class="w"> </span><span class="nx">commandRegistry</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">view</span><span class="p">.</span><span class="nx">commandRegistry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">commandRegistry</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* ... */</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">editorContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">view</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">commandRegistry</span><span class="p">,</span>
+
+<span class="w">        </span><span class="cm">/* ... */</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">editorContext</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>When we boot an editor instance, we first create a <code>state</code> and a <code>view</code> - this
+is standard in ProseMirror. Next, we instantiate a <code>CommandRegistry</code>, initialize
+it, and tack it on to the view. This snipped omits some extra stuff that happens
+during boot as it’s not the focus of this post. We create an <code>editorContext</code>
+which we return to whoever initialized our editor, including the <code>view</code> and the
+<code>commandRegistry</code>.</p>
+
+<p>The <code>initializeEditorCommands()</code> function is straight-forward: it consists of a
+bunch of command definitions like the <code>boldCommand</code> we saw above and calls to
+<code>commandRegistry.register()</code>. This popoulates the registry with all the editor
+commands.</p>
+
+<h2>Inter-process communication</h2>
+
+<p>We also need to ensure <code>emitUpdate()</code> is called whenever the editor state
+changes. For example, if the selection moves from normal text to bolded text,
+the <code>boldCommand</code>&#39;s <code>active()</code> will return <code>true</code>, so the menu bar entry for
+<code>Bold</code> should show a checkmark next to it. But because the MacOS menu lives on
+the main process, we can&#39;t evaluate <code>active()</code> there, rather we need to
+serialize all commands into <code>CommandData</code> and pass them from the render process
+to the main process. We evaulate <code>active()</code> during serialization. <code>emitUpdate()</code>
+lets the app know state changed so it should update the main process.</p>
+
+<p>To ensure we always call <code>emitUpdate()</code> on editor state changes, we can replace
+the ProseMirror view&#39;s <code>dispatch</code> with an updated version:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">originalDispatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">view</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">view</span><span class="p">);</span>
+<span class="nx">view</span><span class="p">.</span><span class="nx">dispatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">tr</span><span class="o">:</span><span class="w"> </span><span class="kt">Transaction</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">originalDispatch</span><span class="p">(</span><span class="nx">tr</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">commandRegistry</span><span class="p">.</span><span class="nx">emitUpdate</span><span class="p">();</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>The view&#39;s <code>dispatch()</code> function is how all transactions are applied to the
+document state, so this is a good choke point to catch all state changes.</p>
+
+<p>Then we can use the Electron API to send the serialized menu to the main
+process:</p>
+<div class="highlight"><pre><span></span><span class="nx">commandRegistry</span><span class="p">.</span><span class="nx">onUpdate</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nb">window</span><span class="p">.</span><span class="nx">electronAPI</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">UPDATE_MENU</span><span class="p">,</span><span class="w"> </span><span class="nx">commandRegistry</span><span class="p">.</span><span class="nx">getCommandData</span><span class="p">());</span>
+<span class="p">});</span>
+</pre></div>
+
+<p><code>window.electronAPI</code> is a standard way to set up inter-process communication
+in an Electron app. the <code>electronAPI</code> object is made available on the browser
+window. It looks like this:</p>
+<div class="highlight"><pre><span></span><span class="kr">declare</span><span class="w"> </span><span class="nb">global</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">interface</span><span class="w"> </span><span class="nx">Window</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">electronAPI</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">send</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">channel</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">            </span><span class="nx">on</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">channel</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">...args</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">[])</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">            </span><span class="cm">/* ... */</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><code>send()</code> passes data to the main process while <code>on()</code> is called when the main
+process wants to talk to the render process. In our case, we call <code>send()</code> with
+<code>UPDATE_MENU</code> and the serialized command registry. <code>UPDATE_MENU</code> is just a
+constant agreed upon by both processes.</p>
+
+<p>End-to-end, the system works like this:</p>
+
+<ul>
+<li>The user moves the cursor on bold text.</li>
+<li>Moving the cursor is a transaction in ProseMirror, so the view&#39;s <code>dispatch()</code>
+function ends up being invoked. Our updated version of <code>dispatch()</code> calls
+<code>commandRegistry.emitUpdate()</code> internally.</li>
+<li>The event handler will get called, and it will <code>send()</code> an <code>UPDATE_MENU</code> to
+the main process, passing it a serialized command registry.</li>
+<li>When serializing the command registry, <code>active()</code> is evaluated for each
+command and serialized to a boolean. For <code>boldCommand</code>, this will now change
+from <code>false</code> to <code>true</code>.</li>
+<li>The menu bar will be updated on the main process to show a checkmark next to
+the <code>Bold</code> menu item.</li>
+</ul>
+
+<p>And the other way around, on the render process we listen for <code>EXECUTE_COMMAND</code>:</p>
+<div class="highlight"><pre><span></span><span class="nb">window</span><span class="p">.</span><span class="nx">electronAPI</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">EXECUTE_COMMAND</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">commandId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">commandRegistry</span><span class="p">.</span><span class="nx">getCommand</span><span class="p">(</span><span class="nx">commandId</span><span class="p">)</span><span class="o">!</span><span class="p">.</span><span class="nx">execute</span><span class="p">();</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>When the user selects <code>Bold</code> from the menu bar, the main process will send an
+<code>EXECUTE_COMMAND</code> to the render thread, with the <code>boldCommand</code> as <code>commandId</code>.
+The render process will call the command&#39;s <code>execute()</code> function, which, in this
+case, will call <code>toggleBold()</code>.</p>
+
+<p>As of now, we serialize and transfer the whole command registry on each state
+change. There are probably more efficient ways of doing this, but the current
+implementation is simple and the frequency of updates is low enough (on editor
+state changes, meaning on user input) that I&#39;m not concerned about the
+performance impact of this approach.</p>
+
+<h2>Additional commands</h2>
+
+<p>The editor&#39;s host can add its own commands to this registry. For example, Flow
+hooks up the mode change commands. Here&#39;s <code>focusMode</code>:</p>
+<div class="highlight"><pre><span></span><span class="nx">commandRegistry</span><span class="p">.</span><span class="nx">register</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;focusMode&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Focus Mode&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">active</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">modeRef</span><span class="p">.</span><span class="nx">current</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;FocusMode&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">execute</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setMode</span><span class="p">(</span><span class="s2">&quot;FocusMode&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>Where <code>modeRef</code> here is a React ref to the curent mode. </p>
+
+<p>The distinction here is that the editor commands (like <code>boldCommand</code>) are
+registered by the editor itself on boot via <code>initializeEditorCommands()</code>. Then
+the host adds more commands to the registry, like <code>foucsMode</code>, which don&#39;t
+directly impact the editor state.</p>
+
+<h2>Commanding surfaces</h2>
+
+<p>We have a <code>commandRegistry</code> which we keep up to date with the editor&#39;s state
+and synchronized with the main process. Why do we need a centralized registry?
+Because the same commands can appear in different places. So far we only talked
+about the app menu bar, but that is not the only commanding surface.</p>
+
+<p>Flow also has a context menu. Right-clicking inside the editor will pop over
+a context menu with a subset of the commands. <code>Bold</code> is one of them too. One
+advantage of the centralized <code>commandRegistry</code> is that both the app menu bar
+and the context menu get their data from the same source. So if <code>Bold</code> should
+have a checkmark next to it (selection is on bold text), then the checkmark
+will show up consistently across the app menu bar and the context menu.</p>
+
+<p>Not yet implemented in Flow, but coming soon: a toolbar. A toolbar would also
+source it&#39;s state from the <code>commandRegistry</code>. The same way we determine whether
+to show a checkmark next to the <code>Bold</code> menu entry based on the <code>active</code>
+property, we would determine whether to show the <code>Bold</code> toolbar button
+depressed.</p>
+
+<p>The shared <code>commandRegistry</code> will ensure the commands look and behave the same
+regardless of where they are surfaced.</p>
+
+<h2>Summary</h2>
+
+<p>In this post I covered commanding and how Flow implements it.</p>
+
+<ul>
+<li><code>Command</code> objects represent commands.</li>
+<li>The <code>CommandRegistry</code> collects these into a catalog that can be serialized (to
+be sent between processes) and that can notify listeners of changes.</li>
+<li>We automated emitting updates by modifying the ProseMirror view&#39;s
+<code>dispatch()</code> method.</li>
+<li>We looked at how Electron handles inter-process communication (via <code>send()</code>
+and <code>on()</code>) and how we&#39;re using these with the commands.</li>
+<li>We talked about commanding surfaces and how the common registry can be used
+across different UI controls like app menu bar, context menu, and toolbars.</li>
+</ul>
+
+<p>This was the second part of the <em>formatting and commanding</em>. In the <a href="https://vladris.com/blog/2025/04/04/devlog-2-formatting.html">previous
+post</a> I covered
+how formatting is implemented inside the editor, while in this post we went over
+the layer on top of that - how formatting actions are represented as commands,
+kept in sync with the editor state, and surfaced in the UI.</p>
+
+<p>Flow is now available on the <a href="https://apps.apple.com/us/app/flow-by-saturn9/id6744873955?mt=12">Mac App
+Store</a>.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2025/04/04/devlog-2-formatting.html">DevLog 2: Formatting</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+</body>
+</html>
