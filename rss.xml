@@ -167,8 +167,7 @@ range in <code>"this **is a** string"</code>, say the <code>**is a**</code> part
 <code>class</code> as <code>"bold"</code>, it will translate this as HTML into <code>this &lt;span
 class="bold"&gt;**is a**&lt;/span&gt; string</code>.</p>
 
-<p>I won't cover how decorations are generated in Flow in this post. I have a
-Markdown plugin that parses the document and generates the appropriate
+<p>I have a Markdown plugin that parses the document and generates the appropriate
 decorations. That's a topic for another post. For formatting, we simply consume
 the produced decorations. One of the core functions fetches the decorations
 produced by the Markdown plugin:</p>
@@ -434,8 +433,8 @@ another helper function, <code>removeMarkupAtLocations()</code>:</p>
 
 <p>This helper function takes the editor state, a transaction, the markup we're
 trying to remove and where it is located in the selection, then proceeds to
-remove it. I won't cover the implementation to keep things short. Finally, in
-case we don't have leading and/or trailing markup, we need to insert it:</p>
+remove it. Finally, in case we don't have leading and/or trailing markup, we
+need to insert it:</p>
 <div class="highlight"><pre><span/><span class="err">â¦</span>
 <span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">leadingMarkup</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nx">tr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">insertMarkupAtPos</span><span class="p">(</span><span class="nx">tr</span><span class="p">,</span><span class="w"> </span><span class="nx">markup</span><span class="p">,</span><span class="w"> </span><span class="nx">tr</span><span class="p">.</span><span class="nx">mapping</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">range</span><span class="p">.</span><span class="kr">from</span><span class="p">));</span>
@@ -504,7 +503,7 @@ selected ranges is not fully covered by the relevant decoration (e.g. <code>bold
 then we know we should toggle bold <em>on</em> across all ranges. Otherwise, if all
 ranges are fully covered, we need to toggle bold <em>off</em>.</p>
 
-<p>There's a bit more logic in this function which I won't cover that handles the
+<p>There's a bit more logic in this function which I won't go over that handles the
 special case of not having a selection. If we only have a cursor, the expected
 behavior is as follows: if the cursor is inside a marked range, e.g. inside a
 bold range, toggling bold should remove the bold markup of that range. Note this
@@ -592,10 +591,9 @@ paragraph be a block quote.</li>
 again a potential topic for its own blog post.</li>
 </ul>
 
-<p>I will not cover block formatting since in most cases it is simpler than inline
-formatting - the markers are always at the beginning of the paragraph and the
-logic to determine whether toggling means toggling <em>on</em> or <em>off</em> is also
-simpler.</p>
+<p>Block formatting is actually simpler in most cases than inline formatting - the
+markers are always at the beginning of the paragraph and the logic to determine
+whether toggling means toggling <em>on</em> or <em>off</em> is also simpler.</p>
 
 <p>List handling is in general more complex, especially if we need to support
 things like nested lists and be smart about, for example, automatically
