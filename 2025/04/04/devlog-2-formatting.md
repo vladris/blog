@@ -162,8 +162,7 @@ range in `"this **is a** string"`, say the `**is a**` part and set as attribute
 `class` as `"bold"`, it will translate this as HTML into `this <span
 class="bold">**is a**</span> string`.
 
-I won't cover how decorations are generated in Flow in this post. I have a
-Markdown plugin that parses the document and generates the appropriate
+I have a Markdown plugin that parses the document and generates the appropriate
 decorations. That's a topic for another post. For formatting, we simply consume
 the produced decorations. One of the core functions fetches the decorations
 produced by the Markdown plugin:
@@ -447,8 +446,8 @@ tr = removeMarkupAtLocations(state, tr, markup, markupLocations);
 
 This helper function takes the editor state, a transaction, the markup we're
 trying to remove and where it is located in the selection, then proceeds to
-remove it. I won't cover the implementation to keep things short. Finally, in
-case we don't have leading and/or trailing markup, we need to insert it:
+remove it. Finally, in case we don't have leading and/or trailing markup, we
+need to insert it:
 
 ```typescript
 …
@@ -523,7 +522,7 @@ selected ranges is not fully covered by the relevant decoration (e.g. `bold`),
 then we know we should toggle bold *on* across all ranges. Otherwise, if all
 ranges are fully covered, we need to toggle bold *off*.
 
-There's a bit more logic in this function which I won't cover that handles the
+There's a bit more logic in this function which I won't go over that handles the
 special case of not having a selection. If we only have a cursor, the expected
 behavior is as follows: if the cursor is inside a marked range, e.g. inside a
 bold range, toggling bold should remove the bold markup of that range. Note this
@@ -611,10 +610,9 @@ of this are:
 * Ordered and unordered lists - list handling brings a bunch more complexity,
   again a potential topic for its own blog post.
 
-I will not cover block formatting since in most cases it is simpler than inline
-formatting - the markers are always at the beginning of the paragraph and the
-logic to determine whether toggling means toggling *on* or *off* is also
-simpler.
+Block formatting is actually simpler in most cases than inline formatting - the
+markers are always at the beginning of the paragraph and the logic to determine
+whether toggling means toggling *on* or *off* is also simpler.
 
 List handling is in general more complex, especially if we need to support
 things like nested lists and be smart about, for example, automatically
