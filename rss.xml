@@ -418,10 +418,10 @@ transform with 3 keyframes:</p>
 <span class="p">}</span>
 </pre></div>
 
-<p>Similarly, having the hands point to the right time is just another <code>rotate</code>.</p>
+<p>Similarly, having the hands point to the right time is just another <code>rotate</code>.
+Quite nice!</p>
 
-<p>The full implementation we went over is here:
-<a href="https://github.com/vladris/vladris.github.io/blob/master/clock/index.html">https://github.com/vladris/vladris.github.io/blob/master/clock/index.html</a>.</p>
+<p>The full implementation we went over is <a href="https://github.com/vladris/vladris.github.io/blob/master/clock/index.html">here</a>.</p>
 
 <style>
 .container {
