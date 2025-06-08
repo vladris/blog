@@ -8,6 +8,553 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2025/06/08/digital-horology.html</link>
+      <guid>https://vladris.com/blog/2025/06/08/digital-horology.html</guid>
+      <title><![CDATA[Digital Horology]]></title>
+      <description><![CDATA[<h1>Digital Horology</h1>
+
+<p>I started getting ads for <a href="https://www.klydoclock.com/">Klydoclock</a> on
+Instagram. The product looks really neat:</p>
+
+<div style="width: 90%; position: relative; aspect-ratio: 16 / 9; margin: 0 auto;">
+<iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%" src="https://www.youtube-nocookie.com/embed/gmyS-SMnW0U?si=CBJds1yeQxd-s9nO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""/>
+</div>
+
+<p>I love the idea of a digital pendulum clock. I figured it would make for a cool
+DIY project: implement the clock display, then run it on a cheap tablet I can
+stick in a box. Of course, the Klydo folks build a cool product, working with
+multiple artists for the various clock faces, and, from what I can tell based on
+the videos, it's a polished product. I'm not trying to dunk on their hard work.
+I was simply intrigued by how one would go about implementing a pendulum clock.</p>
+
+<p>I spent a couple of days playing with how I would implement something like this.
+Here's what I have so far:</p>
+
+<div class="container">
+    <div class="circle top-circle">
+        <div class="clock">
+            <div class="hand hour-hand"/>
+            <div class="hand minute-hand"/>
+            <div class="pin"/>
+        </div>
+    </div>
+    <div class="circle bottom-circle">
+        <div class="pendulum">
+            <div class="pendulum-line"/>
+            <div class="pendulum-circle"/>
+        </div>
+    </div>
+</div>
+
+<p>This was built with a little bit of HTML, some CSS, and a dash of JavaScript. I
+have a love-hate relationship with CSS. From centering a div, to debugging
+obscure layout issues, I always think of this GIF:</p>
+
+<p><img src="./css.gif" alt="CSS"/></p>
+
+<p>That said, it's incredible how much one can achieve with CSS. In this blog post,
+I'll go over the clock implementation. I'll show some inline renderings of the
+clock, tweaked to be embedded inside this post. The original, unmodified source
+code is at <a href="https://github.com/vladris/vladris.github.io/tree/master/clock">https://github.com/vladris/vladris.github.io/tree/master/clock</a>, and
+live at <a href="https://github.com/vladris/clock/">https://github.com/vladris/clock/</a>. For example, a notable difference
+in the original implementation is sizes are specified in <code>vh</code> units, as I built
+it for full-screen rendering, but for the clocks embedded in this post the CSS
+uses <code>px</code> units. The code snippets are taken from the original implementation,
+so <em>view source</em> won't be as helpful. Now let's build a clock!</p>
+
+<h2>Pendulum</h2>
+
+<p>The most notable feature of the clock is the pendulum. I implemented this as 4
+divs:</p>
+<div class="highlight"><pre><span/><span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">"bottom-circle"</span> <span class="na">class</span><span class="o">=</span><span class="s">"circle"</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"pendulum"</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"pendulum-line"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"pendulum-circle"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+</pre></div>
+
+<p>The <code>circle</code> class is just to make the div render as a circle, which we can do
+with CSS like this:</p>
+<div class="highlight"><pre><span/><span class="p">.</span><span class="nc">circle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>bottom-circle</code> further configures this:</p>
+<div class="highlight"><pre><span/><span class="p">#</span><span class="nn">bottom-circle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">relative</span><span class="p">;</span>
+<span class="w">    </span><span class="k">overflow</span><span class="p">:</span><span class="w"> </span><span class="kc">hidden</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>We want a set height and width for it, and we want anything that ends up outside
+of the circle to be hidden.</p>
+
+<p>Now here comes the fun part: the pendulum itself. The pendulum consists of a line
+and a circle, wrapped inside a container div:</p>
+<div class="highlight"><pre><span/><span class="p">.</span><span class="nc">pendulum</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">absolute</span><span class="p">;</span>
+<span class="w">    </span><span class="k">top</span><span class="p">:</span><span class="w"> </span><span class="mi">-21</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">left</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mf">44.5</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">translateX</span><span class="p">(</span><span class="mi">-50</span><span class="kt">%</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">pendulum-circle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">box-shadow</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">10</span><span class="kt">px</span><span class="w"> </span><span class="mi">20</span><span class="kt">px</span><span class="w"> </span><span class="nb">rgba</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">);</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">absolute</span><span class="p">;</span>
+<span class="w">    </span><span class="k">bottom</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">left</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">translateX</span><span class="p">(</span><span class="mi">-50</span><span class="kt">%</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">pendulum-line</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">35</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">top</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">left</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">absolute</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">translateX</span><span class="p">(</span><span class="mi">-50</span><span class="kt">%</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The divs have <code>left: 50%</code> and <code>transform: translateX(-50%)</code>. This centers them
+inside their container. The <code>box-shadow</code> adds a nice shadow effect. Here's what
+we have so far:</p>
+
+<div class="container">
+    <div class="circle top-circle" style="background: black">
+    </div>
+    <div class="circle bottom-circle">
+        <div class="pendulum" style="animation: none">
+            <div class="pendulum-line"/>
+            <div class="pendulum-circle"/>
+        </div>
+    </div>
+</div>
+
+<p>And here comes the swing animation:</p>
+<div class="highlight"><pre><span/><span class="p">.</span><span class="nc">pendulum</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="err">...</span>
+
+<span class="w">    </span><span class="k">animation</span><span class="p">:</span><span class="w"> </span><span class="n">swing</span><span class="w"> </span><span class="mi">2</span><span class="kt">s</span><span class="w"> </span><span class="kc">infinite</span><span class="w"> </span><span class="kc">ease-in-out</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">translateX</span><span class="p">(</span><span class="mi">-50</span><span class="kt">%</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">@</span><span class="k">keyframes</span><span class="w"> </span><span class="nt">swing</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">0</span><span class="o">%</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">rotate</span><span class="p">(</span><span class="mi">-5</span><span class="kt">deg</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nt">50</span><span class="o">%</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">rotate</span><span class="p">(</span><span class="mi">5</span><span class="kt">deg</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nt">100</span><span class="o">%</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">rotate</span><span class="p">(</span><span class="mi">-5</span><span class="kt">deg</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This applies a <code>swing</code> animation to the pendulum, which rotates the whole
+thing by 5 degrees on each side:</p>
+
+<div class="container">
+    <div class="circle top-circle" style="background: black">
+    </div>
+    <div class="circle bottom-circle">
+        <div class="pendulum">
+            <div class="pendulum-line"/>
+            <div class="pendulum-circle"/>
+        </div>
+    </div>
+</div>
+
+<p>The <q>trick</q> to it is the pendulum top is high outside the circle. The animation
+is anchored there (<code>transform-origin: top</code>) and the motion itself is only 5
+degrees each way.</p>
+
+<h2>Clock face</h2>
+
+<p>The top part of the clock looks like this:</p>
+<div class="highlight"><pre><span/><span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">"top-circle"</span> <span class="na">class</span><span class="o">=</span><span class="s">"circle"</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"clock"</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"hand"</span> <span class="na">id</span><span class="o">=</span><span class="s">"hour-hand"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"hand"</span> <span class="na">id</span><span class="o">=</span><span class="s">"minute-hand"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"pin"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+</pre></div>
+
+<p>The classic typeface is called <em>Breguet</em>, named after the luxury watch company
+that introduced it. Luckily, I found a free SVG with a Breguet dial:</p>
+
+<p><img src="https://vladris.com/blog/2025/06/08/https://vladris.com/clock/breguet/breguet.svg" alt="Breguet"/></p>
+
+<p>We can use this as the background of the top circle:</p>
+<div class="highlight"><pre><span/><span class="p">#</span><span class="nn">top-circle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">background-size</span><span class="p">:</span><span class="w"> </span><span class="kc">cover</span><span class="p">;</span>
+<span class="w">    </span><span class="k">background-image</span><span class="p">:</span><span class="w"> </span><span class="nb">url</span><span class="p">(</span><span class="s2">"breguet.svg"</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The nice thing about SVGs is they scale very smoothly.</p>
+
+<div class="container">
+    <div class="circle top-circle">
+    </div>
+    <div class="circle bottom-circle">
+        <div class="pendulum">
+            <div class="pendulum-line"/>
+            <div class="pendulum-circle"/>
+        </div>
+    </div>
+</div>
+
+<p>We need hour and minute hands, and also a <q>pin</q> in the middle. We already
+saw these in the clock top HTML:</p>
+<div class="highlight"><pre><span/><span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">"top-circle"</span> <span class="na">class</span><span class="o">=</span><span class="s">"circle"</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"clock"</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"hand"</span> <span class="na">id</span><span class="o">=</span><span class="s">"hour-hand"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"hand"</span> <span class="na">id</span><span class="o">=</span><span class="s">"minute-hand"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"pin"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+</pre></div>
+
+<p>The styling for the clock face:</p>
+<div class="highlight"><pre><span/><span class="p">#</span><span class="nn">top-circle</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">margin-bottom</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">relative</span><span class="p">;</span>
+<span class="w">    </span><span class="k">background-size</span><span class="p">:</span><span class="w"> </span><span class="kc">cover</span><span class="p">;</span>
+<span class="w">    </span><span class="k">background-image</span><span class="p">:</span><span class="w"> </span><span class="nb">url</span><span class="p">(</span><span class="s2">"breguet.svg"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">clock</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">absolute</span><span class="p">;</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">top</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">left</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">translate</span><span class="p">(</span><span class="mi">-50</span><span class="kt">%</span><span class="p">,</span><span class="w"> </span><span class="mi">-50</span><span class="kt">%</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">pin</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">absolute</span><span class="p">;</span>
+<span class="w">    </span><span class="k">top</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">left</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">translate</span><span class="p">(</span><span class="mi">-50</span><span class="kt">%</span><span class="p">,</span><span class="w"> </span><span class="mi">-50</span><span class="kt">%</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">hand</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">absolute</span><span class="p">;</span>
+<span class="w">    </span><span class="k">box-shadow</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">10</span><span class="kt">px</span><span class="w"> </span><span class="nb">rgba</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">);</span>
+<span class="w">    </span><span class="k">stroke-width</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">;</span>
+<span class="w">    </span><span class="k">top</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">left</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">translate</span><span class="p">(</span><span class="mi">-50</span><span class="kt">%</span><span class="p">,</span><span class="w"> </span><span class="mi">-15</span><span class="kt">%</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">#</span><span class="nn">hour-hand</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">17</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mf">1.8</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform-origin</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="w"> </span><span class="mi">15</span><span class="kt">%</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">#</span><span class="nn">minute-hand</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mf">1.2</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="k">transform-origin</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="w"> </span><span class="mi">15</span><span class="kt">%</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This looks like a lot but it really isn't: we center the clock with
+<code>left: 50%; top: 50%; transform: translate(-50%, -50%)</code>. We do the same
+with the pin, this is just a small circle at the very center of the clock.</p>
+
+<p>The hour and minute hands are similarly centered, with a slightly different
+<code>translate</code>: <code>translate(-50%, -15%)</code> - we want them to look like the pin
+goes through them at 15% of their length. We also add shadows to the hands.</p>
+
+<div class="container">
+    <div class="circle top-circle">
+        <div class="clock">
+            <div class="hand" style="height: 100px; width: 10px; transform-origin: 50% 15%"/>
+            <div class="hand" style="height: 120px; width: 6px; transform-origin: 50% 15%"/>
+            <div class="pin"/>
+        </div>
+    </div>
+    <div class="circle bottom-circle">
+        <div class="pendulum">
+            <div class="pendulum-line"/>
+            <div class="pendulum-circle"/>
+        </div>
+    </div>
+</div>
+
+<p>Almost done! The only thing we need to do is show the time. This is where the
+bit of JavaScript comes in:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">updateClock</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">now</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">minutes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">now</span><span class="p">.</span><span class="nx">getMinutes</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">hours</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">now</span><span class="p">.</span><span class="nx">getHours</span><span class="p">();</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">minuteDegree</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">minutes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">360</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="nx">seconds</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">6</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">180</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">hourDegree</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">hours</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">12</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">360</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="nx">minutes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">30</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">180</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span>
+<span class="w">        </span><span class="s2">"minute-hand"</span>
+<span class="w">    </span><span class="p">).</span><span class="nx">style</span><span class="p">.</span><span class="nx">transform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`translate(-50%, -15%) rotate(</span><span class="si">${</span><span class="nx">minuteDegree</span><span class="si">}</span><span class="sb">deg)`</span><span class="p">;</span>
+<span class="w">    </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span>
+<span class="w">        </span><span class="s2">"hour-hand"</span>
+<span class="w">    </span><span class="p">).</span><span class="nx">style</span><span class="p">.</span><span class="nx">transform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`translate(-50%, -15%) rotate(</span><span class="si">${</span><span class="nx">hourDegree</span><span class="si">}</span><span class="sb">deg)`</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nx">setInterval</span><span class="p">(</span><span class="nx">updateClock</span><span class="p">,</span><span class="w"> </span><span class="mf">1000</span><span class="p">);</span>
+<span class="nx">updateClock</span><span class="p">();</span>
+</pre></div>
+
+<p>We implement an <code>updateClock()</code> function that gets the current time and rotates
+the hands. We compute how many degrees we want the minute hand and the hour hand
+to be rotated by:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">minuteDegree</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">minutes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">360</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="nx">seconds</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">6</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">180</span><span class="p">;</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">hourDegree</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">hours</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">12</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">360</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="nx">minutes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">30</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">180</span><span class="p">;</span>
+</pre></div>
+
+<p>Note the minute hand also takes into account the seconds while the hour hand
+takes into account the minutes, to ensure smooth movement.</p>
+
+<p>We then get the <code>minute-hand</code> and <code>hour-hand</code> elements and update their
+<code>transform</code> to include a <code>rotate</code> by the determined number of degrees.</p>
+
+<p>We use <code>setInterval()</code> to run <code>updateClock</code> every second. And that's it!</p>
+
+<div class="container">
+    <div class="circle top-circle">
+        <div class="clock">
+            <div class="hand hour-hand"/>
+            <div class="hand minute-hand"/>
+            <div class="pin"/>
+        </div>
+    </div>
+    <div class="circle bottom-circle">
+        <div class="pendulum">
+            <div class="pendulum-line"/>
+            <div class="pendulum-circle"/>
+        </div>
+    </div>
+</div>
+
+<h2>Skins</h2>
+
+<p>Since all the styling is done with CSS, it's very easy to provide multiple
+skins for it, much like Klydo does. Here's a Mickey Mouse version:</p>
+
+<div class="container">
+    <div class="circle top-circle" style="background-image: url(https://vladris.com/clock/mickey/mickey.gif); width: 240px; height: 240px; margin: 20px 0 30px 0">
+        <div class="clock">
+            <div class="hand hour-hand" style="background-color: #f4c81d"/>
+            <div class="hand minute-hand" style="background-color: #f4c81d"/>
+            <div class="pin"/>
+        </div>
+    </div>
+    <div class="circle bottom-circle" style="background-color: #b49a7d">
+        <div class="pendulum">
+            <div class="pendulum-line" style="background-color: #040204"/>
+            <div class="pendulum-circle" style="background-color: #c13941"/>
+        </div>
+    </div>
+</div>
+
+<p>In fact, in my original implementation I have several clock faces, each coming
+with a set of color customizations and a background image for the clock. The
+following JavaScript looks for a <code>style</code> query parameter and loads the specified
+CSS file:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">loadCSSFromQueryParam</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">urlParams</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">URLSearchParams</span><span class="p">(</span><span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">search</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">urlParams</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"style"</span><span class="p">)</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="s2">"breguet"</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">styleParam</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">style</span><span class="si">}</span><span class="sb">/style.css`</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">styleParam</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">createElement</span><span class="p">(</span><span class="s2">"link"</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">link</span><span class="p">.</span><span class="nx">rel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"stylesheet"</span><span class="p">;</span>
+<span class="w">        </span><span class="nx">link</span><span class="p">.</span><span class="nx">href</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">styleParam</span><span class="p">;</span>
+<span class="w">        </span><span class="nb">document</span><span class="p">.</span><span class="nx">head</span><span class="p">.</span><span class="nx">appendChild</span><span class="p">(</span><span class="nx">link</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nx">loadCSSFromQueryParam</span><span class="p">();</span>
+</pre></div>
+
+<p>The default is <code>breguet</code>, loading the Breguet dial, but using <code>style=mickey</code> in
+<a href="https://vladris.com/clock/?style=mickey">https://vladris.com/clock/?style=mickey</a> loads the Mickey Mouse face.</p>
+
+<h2>Conclusions</h2>
+
+<p>CSS is still very cumbersome, but it's impressive how easy it is to achieve
+quite complex effects with it. Adding a subtle shadow can be done with a
+<code>box-shadow</code> one-liner. The pendulum animation is a simple <code>rotate</code>
+transform with 3 keyframes:</p>
+<div class="highlight"><pre><span/><span class="p">@</span><span class="k">keyframes</span><span class="w"> </span><span class="nt">swing</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">0</span><span class="o">%</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">rotate</span><span class="p">(</span><span class="mi">-5</span><span class="kt">deg</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nt">50</span><span class="o">%</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">rotate</span><span class="p">(</span><span class="mi">5</span><span class="kt">deg</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nt">100</span><span class="o">%</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">rotate</span><span class="p">(</span><span class="mi">-5</span><span class="kt">deg</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Similarly, having the hands point to the right time is just another <code>rotate</code>.</p>
+
+<p>The full implementation we went over is here:
+<a href="https://github.com/vladris/vladris.github.io/blob/master/clock/index.html">https://github.com/vladris/vladris.github.io/blob/master/clock/index.html</a>.</p>
+
+<style>
+.container {
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 480px;
+    background-color: black;
+    border-radius: 20px;
+    width: 300px;
+}
+.circle {
+    border-radius: 50%;
+}
+.top-circle {
+    width: 280px;
+    height: 280px;
+    margin-bottom: 10px;
+    position: relative;
+    background-size: cover;
+    background-image: url(https://vladris.com/clock/breguet/breguet.svg);
+}
+.bottom-circle {
+    width: 140px;
+    height: 140px;
+    position: relative;
+    overflow: hidden;
+    background-color: #f7ebd3;
+}
+.clock {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.pin {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background-color: #905923;
+    transform: translate(-50%, -50%);
+}
+.hand {
+    position: absolute;
+    box-shadow: 0 0 10px rgba(0 0 0 / 50%);
+    stroke-width: 100;
+    top: 50%;
+    left: 50%;
+    border-radius: 6px;
+    background-color: #cd7f23;
+    transform: translate(-50%, -15%);
+}
+.hour-hand {
+    height: 100px;
+    width: 10px;
+    transform-origin: 50% 15%;
+}
+.minute-hand {
+    height: 120px;
+    width: 6px;
+    transform-origin: 50% 15%;
+}
+.pendulum {
+    position: absolute;
+    top: -120px;
+    left: 50%;
+    height: 250px;
+    transform-origin: top;
+    animation: swing 2s infinite ease-in-out;
+    transform: translateX(-50%);
+}
+.pendulum-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    box-shadow: 0 10px 20px rgba(0 0 0 / 50%);
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    background-color: #cd7f32;
+    transform: translateX(-50%);
+}
+.pendulum-line {
+    width: 12px;
+    height: 240px;
+    top: 0;
+    left: 50%;
+    position: absolute;
+    background-color: #905923;
+    transform: translateX(-50%);
+}
+@keyframes swing {
+    0% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    100% { transform: rotate(-5deg); }
+}
+</style>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        const seconds = now.getSeconds();
+        const minutes = now.getMinutes();
+        const hours = now.getHours();
+
+        const minuteDegree = ((minutes / 60) * 360) + ((seconds / 60) * 6) + 180;
+        const hourDegree = ((hours / 12) * 360) + ((minutes / 60) * 30) + 180;
+
+        for (const elem of document.getElementsByClassName("minute-hand")) {
+            elem.style.transform = `translate(-50%, -15%) rotate(${minuteDegree}deg)`;
+        }
+
+        for (const elem of document.getElementsByClassName("hour-hand")) {
+            elem.style.transform = `translate(-50%, -15%) rotate(${hourDegree}deg)`;
+        }
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+]]></description>
+      <pubDate>Sun, 08 Jun 2025 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2025/05/08/devlog-3-commanding.html</link>
       <guid>https://vladris.com/blog/2025/05/08/devlog-3-commanding.html</guid>
       <title><![CDATA[DevLog 3: Commanding]]></title>
