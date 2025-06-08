@@ -432,9 +432,9 @@ transform with 3 keyframes:
 ```
 
 Similarly, having the hands point to the right time is just another `rotate`.
+Quite nice!
 
-The full implementation we went over is here:
-<https://github.com/vladris/vladris.github.io/blob/master/clock/index.html>.
+The full implementation we went over is [here](https://github.com/vladris/vladris.github.io/blob/master/clock/index.html).
 
 <style>
 .container {
