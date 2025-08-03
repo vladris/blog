@@ -236,7 +236,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ title, className, current, onClic
             <div className="theme-card-content">
                 <h2 className="theme-card-title">{title}</h2>
                 <p>"The universe is made of stories, not atoms."</p>
-                <p><span className="accent">•</span> <em><span className="secondary">*</span>Muriel Rukeyser<span className="secondary">*</span></em></p>
+                <p><span className="accent">o</span> <em><span className="secondary">*</span>Muriel Rukeyser<span className="secondary">*</span></em></p>
             </div>
         </div>
     );
