@@ -8,6 +8,287 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2025/08/03/devlog-4-theming-and-footguns.html</link>
+      <guid>https://vladris.com/blog/2025/08/03/devlog-4-theming-and-footguns.html</guid>
+      <title><![CDATA[DevLog 4: Theming and Footguns]]></title>
+      <description><![CDATA[<h1>DevLog 4: Theming and Footguns</h1>
+
+<p>This is going to be a fun post! First, I want to show how I implemented theming
+for Flow. With its focus on providing an inspiring environment, theming was
+min-bar for the app. Fortunately, implementing theming is fairly
+straight-foward. Until it isn't. In the first part I'll go over how I gave the
+Electron app its unique look and feel. In the second part, I'll cover the
+strange snag I hit.</p>
+
+<h2>Theming</h2>
+
+<p>Making something themeable in the web world is easy with CSS variables:</p>
+<div class="highlight"><pre><span/><span class="p">:</span><span class="nd">root</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nv">--color-bg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-bg-secondary</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-bg-tertiary</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nv">--color-fg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-fg-secondary</span><span class="p">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-fg-accent</span><span class="p">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c">/* ... */</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">latte-theme</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nv">--color-bg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#f9f5f0</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-bg-secondary</span><span class="p">:</span><span class="w"> </span><span class="mh">#e6dfd3</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-bg-tertiary</span><span class="p">:</span><span class="w"> </span><span class="mh">#f0ebe0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nv">--color-fg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#5a4534</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-fg-secondary</span><span class="p">:</span><span class="w"> </span><span class="mh">#7a6b4f</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-fg-accent</span><span class="p">:</span><span class="w"> </span><span class="mh">#c74343</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c">/* ... */</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>:root</code> style will provide the defaults while subsequent classes can
+override it. In the above example, <code>.latte-theme</code> is a fragment of the app's
+Latte theme.</p>
+
+<p>On first boot, before the user can configure the theme, I want the app to
+respect the operating system's dark mode. We can do this with the
+<code>prefers-color-scheme: dark</code> media query:</p>
+<div class="highlight"><pre><span/><span class="p">:</span><span class="nd">root</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nv">--color-bg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-bg-secondary</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-bg-tertiary</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nv">--color-fg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-fg-secondary</span><span class="p">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+<span class="w">    </span><span class="nv">--color-fg-accent</span><span class="p">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c">/* ... */</span>
+
+<span class="w">    </span><span class="err">@media</span><span class="w"> </span><span class="err">(</span><span class="n">prefers-color-scheme</span><span class="p">:</span><span class="w"> </span><span class="n">dark</span><span class="p">)</span><span class="w"> </span><span class="err">{</span>
+<span class="w">        </span><span class="o">--</span><span class="kc">color</span><span class="o">-</span><span class="n">bg-primary</span><span class="o">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+<span class="w">        </span><span class="nv">--color-bg-secondary</span><span class="p">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+<span class="w">        </span><span class="nv">--color-bg-tertiary</span><span class="p">:</span><span class="w"> </span><span class="mh">#000</span><span class="p">;</span>
+
+<span class="w">        </span><span class="nv">--color-fg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+<span class="w">        </span><span class="nv">--color-fg-secondary</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+<span class="w">        </span><span class="nv">--color-fg-accent</span><span class="p">:</span><span class="w"> </span><span class="mh">#fff</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c">/* ... */</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="err">}</span>
+</pre></div>
+
+<p>With this, on first boot the app should use the <q>dark mode</q> colors if the OS is set to dark mode.</p>
+
+<p>Now all this happens on the render thread. Electron boots up fairly fast, but
+users might still see a blank window for an instant between the time the main
+process has started but the render processes hasn't finished booting. For that
+case, I wanted the blank window to still respect the OS setting, otherwise when
+in dark mode, users might see a flashing white window. That's because Electron's
+default background color is white.</p>
+
+<p>The following code sets up the main window:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">mainWindow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">BrowserWindow</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">1200</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="kt">800</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">minWidth</span><span class="o">:</span><span class="w"> </span><span class="kt">300</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">minHeight</span><span class="o">:</span><span class="w"> </span><span class="kt">400</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">titleBarStyle</span><span class="o">:</span><span class="w"> </span><span class="s2">"hiddenInset"</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">backgroundColor</span><span class="o">:</span><span class="w"> </span><span class="kt">nativeTheme.shouldUseDarkColors</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">"#000"</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">"#fff"</span><span class="p">,</span>
+<span class="w">  </span><span class="cm">/* ... */</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>The relevant part is the <code>backgroundColor</code>. The
+<code>nativeTheme.shouldUseDarkColors</code> API is the way to check whether the OS is in
+dark more inside the main process (as opposed to the render process where we can
+use media queries).</p>
+
+<h3>Settings</h3>
+
+<p>The app's theme is one of its many settings. The way settings work in general is
+also an interesting topic. I've been using <code>electron-store</code> to store the app
+settings. This package abstracts a native store which supports typed schemas and
+version migrations of settings:
+<a href="https://github.com/sindresorhus/electron-store">https://github.com/sindresorhus/electron-store</a>.</p>
+
+<p>The store works on the main process, which means I had to implement IPC to
+get/set settings on the render process. This type of IPC is common for Electron
+apps and follows the same pattern as I describe in the <a href="https://vladris.com/blog/2025/05/08/devlog-3-commanding.html">Commanding
+post</a>. As a quick
+recap, the render process talks to the main process via
+<code>window.electronAPI.invoke</code> and the main process receives and handles these
+events. Here's how the render process asks for a setting item:</p>
+<div class="highlight"><pre><span/><span class="kd">function</span><span class="w"> </span><span class="nx">getStoreItem</span><span class="o">&lt;</span><span class="nx">K</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">keyof</span><span class="w"> </span><span class="nx">StoreType</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">K</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">StoreType</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">window</span><span class="p">.</span><span class="nx">electronAPI</span><span class="p">.</span><span class="nx">invoke</span><span class="p">(</span><span class="nx">GET_STORE_ITEM</span><span class="p">,</span><span class="w"> </span><span class="nx">key</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Here <code>StoreType</code> is the strongly typed store schema and <code>GET_STORE_ITEM</code> is just
+a string to identify the event type.</p>
+
+<p>On the main process side, this is handled via:</p>
+<div class="highlight"><pre><span/><span class="nx">ipcMain</span><span class="p">.</span><span class="nx">handle</span><span class="p">(</span><span class="nx">GET_STORE_ITEM</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">StoreType</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>With IPC taken care of, I implemented a React provider that wraps the IPC code
+and exposes the settings via a <code>SettingsContext</code>. Theming becomes super-easy
+with this. For example, inside the React component implementing the main view:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">EditorContent</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">theme</span><span class="p">,</span><span class="w"> </span><span class="nx">font</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="p">,</span><span class="w"> </span><span class="nx">autoIndent</span><span class="p">,</span><span class="w"> </span><span class="nx">lineHeight</span><span class="p">,</span><span class="w"> </span><span class="nx">paragraphSpacing</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">useSettings</span><span class="p">();</span>
+
+<span class="w">    </span><span class="cm">/* ... */</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">className</span><span class="o">=</span><span class="p">{</span><span class="sb">`app-container </span><span class="si">${</span><span class="nx">theme</span><span class="si">}</span><span class="sb">`</span><span class="p">}</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">TitleBar</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">SideBar</span><span class="w"> </span><span class="o">/&gt;</span>
+
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">Editor</span><span class="w"> </span><span class="p">{...</span><span class="nx">editorProps</span><span class="p">}</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">StatusBar</span><span class="w"> </span><span class="o">/&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="err">/div&gt;);</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Note any component can easily get the settings from the provider and, in the
+case of theming, we simply use it as a <code>className</code> prop inside the JSX.</p>
+
+<p>The provider also allows consumers to update the various settings. For example,
+for theming, it exposes an <code>updateTheme()</code> API that allows components to update
+the setting.</p>
+
+<h3>Multiple windows</h3>
+
+<p>When working with theming though, a reasonable expectation would be to have the
+theme change across the all open app windows. So as soon as I select the <code>Latte</code>
+theme from the theme picker in the Settings window, the main window should
+change colors.</p>
+
+<p>The existing IPC mechanism I described so far isn't sufficient for that: the
+render process can get and set settings, but a key missing piece is that, as
+soon as a setting changes, the main process needs to broadcast this to all
+window instances.</p>
+
+<p>Previously I shared the implementation of the main process's <code>GET_ITEM</code> handler:</p>
+<div class="highlight"><pre><span/><span class="nx">ipcMain</span><span class="p">.</span><span class="nx">handle</span><span class="p">(</span><span class="nx">GET_STORE_ITEM</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">StoreType</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">value</span><span class="p">;</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>The <code>SET_ITEM</code> handler does a bit more work:</p>
+<div class="highlight"><pre><span/><span class="nx">ipcMain</span><span class="p">.</span><span class="nx">handle</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">SET_STORE_ITEM</span><span class="p">,</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="nx">K</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">keyof</span><span class="w"> </span><span class="nx">StoreType</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">_</span><span class="o">:</span><span class="w"> </span><span class="kt">unknown</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">K</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">value?</span><span class="o">:</span><span class="w"> </span><span class="kt">StoreType</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span>
+<span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">store</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nx">BrowserWindow</span><span class="p">.</span><span class="nx">getAllWindows</span><span class="p">().</span><span class="nx">forEach</span><span class="p">((</span><span class="nx">win</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">win</span><span class="p">.</span><span class="nx">webContents</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">SETTING_CHANGED</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">key</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The function takes a key of type <code>K</code> which needs to be part of the store schema
+and an optional value of that type. This is the standard to call the <code>store</code>
+API, which happens on the first lie (<code>store.set(key, value);</code>). Then, once the
+value is stored, I use the Electron API to sent a <code>SETTING_CHANGED</code> event to all
+windows and pass them the <code>key</code> that changed and the new <code>value</code>.</p>
+
+<p>On the render process side, we listen to the event on the window, and update the
+corresponding setting in the provider:</p>
+<div class="highlight"><pre><span/><span class="nb">window</span><span class="p">.</span><span class="nx">electronAPI</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">SETTING_CHANGED</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">key</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">data</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* Update setting */</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>This way, changes reflect instantly across the app.</p>
+
+<h3>Additional considerations</h3>
+
+<p>A benefit of using CSS variables for themes is that it's super easy to implement
+the different theme cards in the Settings window. A theme card is a React
+component to which we apply the theme we want it to display, and since we have a
+CSS class for each theme, we can put together the gallery with very little code:</p>
+<div class="highlight"><pre><span/><span class="kd">const</span><span class="w"> </span><span class="nx">ThemeCard</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FC</span><span class="o">&lt;</span><span class="nx">ThemeCardProps</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">title</span><span class="p">,</span><span class="w"> </span><span class="nx">className</span><span class="p">,</span><span class="w"> </span><span class="nx">current</span><span class="p">,</span><span class="w"> </span><span class="nx">onClick</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">className</span><span class="o">=</span><span class="p">{</span><span class="sb">`theme-card </span><span class="si">${</span><span class="nx">className</span><span class="si">}</span><span class="sb">`</span><span class="p">}</span><span class="w"> </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onClick</span><span class="p">}</span><span class="w"> </span><span class="nx">data</span><span class="o">-</span><span class="nx">current</span><span class="o">=</span><span class="p">{</span><span class="nx">current</span><span class="p">}</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="nx">div</span><span class="w"> </span><span class="nx">className</span><span class="o">=</span><span class="s2">"theme-card-content"</span><span class="o">&gt;</span>
+<span class="w">                </span><span class="o">&lt;</span><span class="nx">h2</span><span class="w"> </span><span class="nx">className</span><span class="o">=</span><span class="s2">"theme-card-title"</span><span class="o">&gt;</span><span class="p">{</span><span class="nx">title</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/h2&gt;</span>
+<span class="w">                </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="s2">"The universe is made of stories, not atoms."</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">                </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;&lt;</span><span class="nx">span</span><span class="w"> </span><span class="nx">className</span><span class="o">=</span><span class="s2">"accent"</span><span class="o">&gt;</span><span class="err">â¢</span><span class="o">&lt;</span><span class="err">/span&gt; &lt;em&gt;&lt;span className="secondary"&gt;*&lt;/span&gt;Muriel Rukeyser&lt;span className="secondary"&gt;*&lt;/span&gt;&lt;/em&gt;&lt;/p&gt;</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">        </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>The gallery becomes just a sequence of <code>ThemeCard</code>s with different props.</p>
+
+<h2>On footguns</h2>
+
+<p>This brings me to the funny part of the journey. I started building Flow as a
+macOS app but based it on Electron on the idea that it will be easy to bring it
+to Windows. As I started looking into a Windows version, I hit a strange snag I
+didn't consider when I was focused on macOS: the menu.</p>
+
+<p>On macOS, the menu bar shows at the top of the screen. I described in the
+<a href="https://vladris.com/blog/2025/05/08/devlog-3-commanding.html">Commanding post</a>
+how the commands end up in a registry which I serialize and send to the main
+process to set up the native menu.</p>
+
+<p>On Windows on the other hand, the menu bar appears on the window itself. And, of
+course, the native menu is not themeable. Worse, because I'm theming the whole
+app, I use a custom title bar since it would otherwise get the default system
+colors. The menu bar is part of the browser window on Windows, so there is no
+way to put anything before it.</p>
+
+<p>The only reasonable conclusion, which I guess all Electron apps that support
+theming do, is that I need a custom menu bar implementation for Windows. That
+is, a full React menu system that binds to the commanding infrastructure.</p>
+
+<p>The reason I find this extremely funny is that I picked Electron to write once
+and run everywhere, and it seems I'll end up with a ton of platform-specific
+code: on macOS, set up the native menu on the main process; on Windows, set up a
+custom menu on the render process.</p>
+
+<h2>Summary</h2>
+
+<p>In this post I talked about how I implemented theming in Flow, and settings more
+generally:</p>
+
+<ul>
+<li>Themes are implemented as CSS classes overriding CSS variables.</li>
+<li>Some boot considerations: being aware of dark mode before user picked a
+specific theme.</li>
+<li>I use <code>electron-store</code> to store the settings.</li>
+<li>A <code>SettingsProvider</code> on the render process handles IPC.</li>
+<li>The main process broadcasts all setting changes to all active windows so any
+change is reflected instantly across the whole app.</li>
+<li>The interesting issue I ran into where on Mac the menu is handled by the main</li>
+<li>process but on Windows, as long as I want custom theming throughout the app,
+the menu must be custom-built thus run in the render process.</li>
+</ul>
+
+<p><em>This post was written with Flow. Try it out <a href="https://saturn9.studio/flow/">here</a>.</em></p>
+]]></description>
+      <pubDate>Sun, 03 Aug 2025 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2025/06/08/digital-horology.html</link>
       <guid>https://vladris.com/blog/2025/06/08/digital-horology.html</guid>
       <title><![CDATA[Digital Horology]]></title>
