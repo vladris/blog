@@ -8,6 +8,267 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2025/09/08/devlog-5-markdown-and-wysiwyg.html</link>
+      <guid>https://vladris.com/blog/2025/09/08/devlog-5-markdown-and-wysiwyg.html</guid>
+      <title><![CDATA[DevLog 5: Markdown and WYSIWYG]]></title>
+      <description><![CDATA[<h1>DevLog 5: Markdown and WYSIWYG</h1>
+
+<p>In this post I want to cover one of the foundational features of
+<a href="https://saturn9.studio/flow/">Flow</a>: its Markdown handling. I will not show a
+lot of code, because most of it is boring parsing code and special-case
+handling.</p>
+
+<p>Different editors tackle Markdown in different ways. Some support a subset of
+Markdown formatting on insertion, but don't preserve any markup. For example,
+typing a <code>*</code> would toggle Italics on then, once the user types the closing <code>*</code>,
+not only are Italics toggled off, but both <code>*</code> markups are removed from the
+document. This is the behavior of editors that don't natively support Markdown.</p>
+
+<p>Other editors support Markdown natively, like some of the apps that inspired
+Flow - <a href="https://obsidian.md/">Obsidian</a> and <a href="https://bear.app">Bear</a>. The
+problem with these apps is that Markdown has its own quirks which impact the
+overall authoring experience. One simple example is handling of paragraphs: in
+Markdown, a new paragraph starts after two newline characters. A single newline
+doesn't affect the rendered document.</p>
+
+<p>For Flow, I wanted to fully support Markdown, but also hide some of its quirks
+from the user. If the user is not familiar with it at all, they should still be
+able to intuitively use the app and have the best possible experience.</p>
+
+<h2>Pre- and post- processing</h2>
+
+<p>Flow uses pure Markdown and can load and save <code>.md</code> files. To smoothen things
+out, the first thing it does when loading a document is convert it into a series
+of paragraphs by handling some of the whitespace particularities of Markdown.</p>
+
+<p>It converts a piece of text like the following</p>
+<div class="highlight"><pre><span/>This is considered a single
+paragraph in Markdown even though each
+line ends with a newline character.
+
+* This is a list item
+* This is another list item
+</pre></div>
+
+<p>into something like</p>
+<div class="highlight"><pre><span/>&lt;p&gt;This is considered a single paragraph in Markdown even though each line ends with a newline character.&lt;/p&gt;
+&lt;p&gt;* This is a list item&lt;/p&gt;
+&lt;p&gt;* This is another list item&lt;/p&gt;
+</pre></div>
+
+<p>The above is just to illustrate the type of transformation, we don't go straight
+to <code>&lt;p&gt;</code> HTML elements, rather these are ProseMirror paragraphs.</p>
+
+<p>The preprocessor is fairly simple, stripping single newlines where appropriate,
+handling whitespace at the end of lines etc. It is also aware of lists,
+codeblocks and block quotes, which have different rules. For example, a
+codeblock is a single entity regardless of how many consecutive newlines appear
+in its content.</p>
+
+<p>The preprocessor runs when opening a new file. Conversely, the postprocessor
+runs on save and converts the ProseMirror document back to Markdown by doubling
+newlines where appropriate.</p>
+
+<p>These are implemented by two functions:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">markdownToDoc</span><span class="p">(</span><span class="nx">markdown</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">ProseMirrorNode</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* ... */</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">docToMarkdown</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">doc</span><span class="o">:</span><span class="w"> </span><span class="kt">ProseMirrorNode</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">MarkdownSerializationResult</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* ... */</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>MarkdownSerializationResult</code> is defined as:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">MarkdownSerializationResult</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">markdownText</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">positionMap</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">processedPos</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The first function takes a Markdown string as input and creates the ProseMirror document (returning the root node).</p>
+
+<p>The serialization function takes the document and returns the Markdown as a
+string. In addition, it also returns a mapping from position in the Markdown
+string back into the document. That is used by the parser, which we'll look at
+below. First, let's look at the internal document representation.</p>
+
+<h2>Internal representation</h2>
+
+<p>ProseMirror allows for rich document schemas. In fact, the <a href="https://github.com/ProseMirror/prosemirror-markdown">ProseMirror Markdown
+plugin</a> can translate a
+Markdown document into its HTML representation and vice-versa, where a paragraph
+of text becomes a <code>&lt;p&gt;</code> element, a list becomes an <code>&lt;ol&gt;</code> or <code>&lt;ul&gt;</code> consisting
+of multiple <code>&lt;li&gt;</code> elements, and so on.</p>
+
+<p>I did not use this plugin because it strips the markup during conversion. I
+wanted to leave all the markdown in the document. To achieve this, Flow uses a
+very simple document schema consisting exclusively of paragraphs which translate
+to <code>&lt;p&gt;</code> elements. All styling is done via decorations. I talked about
+ProseMirror <a href="https://prosemirror.net/docs/ref/#view.Decorations">decorations</a> in
+previous posts, but to recap, at a high level, decorations add attributes to a
+range of text. If my paragraph is <code>There are *italics* in this sentence</code>, we can
+add a decoration from the starting <code>*</code> to the closing <code>*</code>. The rendered HTML
+will look something like this <code>&lt;p&gt;There are &lt;span&gt;*italics*&lt;/span&gt; in this
+sentence</code>. The <code>&lt;span&gt;</code> will have whatever attributes we want to attach to it.</p>
+
+<p>The document schema is just:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">docSchema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Schema</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">nodes</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">doc</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="s2">"block+"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nx">paragraph</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">group</span><span class="o">:</span><span class="w"> </span><span class="s2">"block"</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="s2">"inline*"</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">attrs</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">default</span><span class="o">:</span><span class="w"> </span><span class="s2">"paragraph"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">                </span><span class="nx">widgetId</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">default</span><span class="o">:</span><span class="w"> </span><span class="kt">null</span><span class="w"> </span><span class="p">},</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="nx">toDOM</span><span class="p">(</span><span class="nx">node</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                    </span><span class="s2">"p"</span><span class="p">,</span>
+<span class="w">                    </span><span class="p">{</span>
+<span class="w">                        </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">node</span><span class="p">.</span><span class="nx">attrs</span><span class="p">.</span><span class="kr">type</span><span class="p">,</span>
+<span class="w">                        </span><span class="nx">widgetId</span><span class="o">:</span><span class="w"> </span><span class="kt">node.attrs.widgetId</span><span class="p">,</span>
+<span class="w">                    </span><span class="p">},</span>
+<span class="w">                    </span><span class="mf">0</span><span class="p">,</span>
+<span class="w">                </span><span class="p">];</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">group</span><span class="o">:</span><span class="w"> </span><span class="s2">"inline"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>While the schema of Flow documents is simple, consisting of just paragraph
+nodes, a lot happens at runtime to properly decorate the document.</p>
+
+<h2>Markdown processing</h2>
+
+<p>Flow uses <code>markdown-it</code> internally to parse the Markdown document and decorate
+it for rendering. There's quite a lot of parsing logic, and since this is one of
+the core capabilities of the app, I have a lot of tests around it. Properly
+parsing Markdown is not easy!</p>
+
+<p>I mentioned above that <code>There are *istalics* in this sentence</code> roughly
+translated to <code>&lt;p&gt;There are &lt;span&gt;*italics*&lt;/span&gt; in this sentences&lt;/p&gt;</code>. To be
+more precise, this translates into <code>&lt;p&gt;There are &lt;span class="em markup
+hide-markup"&gt;*&lt;/span&gt;&lt;span class="em"&gt;italics&lt;/span&gt;&lt;span class="em markup
+hide-markup"&gt;*&lt;/span&gt; in this sentences&lt;/p&gt;</code>.</p>
+
+<p>The parser adds the <code>markup</code> and <code>hide-markup</code> decorations around the <code>*</code>s and
+the <code>em</code> around the whole thing. ProseMirror maps these to the right spans on
+render. We're also aware of the cursor position: if the cursor is within the
+range of the decoration, we tag the markup with <code>show-markup</code> instead of
+<code>hide-markup</code>.</p>
+
+<p>Then everything is CSS: we simply get the <code>em</code> class to be italicized, <code>markup</code>
+to be muted, <code>hide-markup</code> to be hidden etc. That's for the standard editor
+mode. When we switch Flow to Source mode, both <code>hide-markup</code> and <code>show-markup</code>
+are visible.</p>
+
+<p>Here is where the <code>positionMap</code> comes in handy. Our ProseMirror-to-Markdown
+conversion returns a <code>string</code> and a mapping. We briefly looked at this above:</p>
+<div class="highlight"><pre><span/><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">MarkdownSerializationResult</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">markdownText</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">positionMap</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">processedPos</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">docToMarkdown</span><span class="p">(</span><span class="nx">doc</span><span class="o">:</span><span class="w"> </span><span class="kt">ProseMirrorNode</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* ... */</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The reason we need this mapping is we don't only convert the document from a
+ProseMirror schema to a Markdown string on save, but also to parse it and add
+decorations. When we parse the Markdown and find positions where we need to add
+decorations, we need to map these back to positions in the ProseMirror
+document. These aren't exactly identical.</p>
+
+<h3>Positions</h3>
+
+<p>A quick side-note on positions: in ProseMirror, when indexing by position, we
+need to account for non-text nodes (paragraphs in our case). A ProseMirrorNode
+that is not a leaf text node has a <q>before</q> position and an <q>after</q> position.
+This offsets things, so without maintaining a <code>positionMap</code> we end up indexing
+the wrong document fragments. During serialization via <code>docToMarkdown()</code>, we not
+only produce the Markdown string, but also track offsets to account for this.</p>
+
+<h3>Lists</h3>
+
+<p>The story is simple for basic markup. It gets a bit more complex for things like
+lists. Because I wanted to Flow to have a WYSIWYG experience, I'm using
+single-line lists. That is, each list item gets converted to a separate
+paragraph inside the document schema. We also want to preserve the markup, so
+for an unordered list, if the cursor is on it, we want to show the <code>*</code> markup.
+If the cursor is on a different line, then we want to hide the <code>*</code> markup but
+show the usual â¢ symbol.</p>
+
+<p>For numbered lists, we also need to extract the number and make it available an
+attribute for rendering, since ultimately lists don't translate to <code>&lt;ol&gt;</code>,
+<code>&lt;ul&gt;</code>, and <code>&lt;li&gt;</code> elements, rather to <code>&lt;p&gt;</code> elements.</p>
+
+<h3>Plugins</h3>
+
+<p>The Markdown parsing library Flow is using, <code>markdown-it</code>, has its own plugin
+system, which allows us to extend the parser with custom syntax. For example,
+underlying with <code>~</code> is done with a plugin.</p>
+
+<h3>Widgets</h3>
+
+<p>Some elements, like code blocks and images, are represented as UI widgets in the
+editor (unless in Source mode). The parser adds special decorations for these
+such that, if widgets are available, we can completely hide the content and
+instead inject a UI widget in the canvas.</p>
+
+<p>I will cover widgets in detail in a future post, as they are not as interesting
+from the Markdown parsing perspective, but do have a lot of code behind.</p>
+
+<h3>Tables</h3>
+
+<p>Flow does not support tables yet. The <a href="https://commonmark.org/">CommonMark</a> spec
+does <em>not</em> include tables. Tables are an extension introduced by the <a href="https://github.github.com/gfm/">GitHub
+Flavored Markdown</a> spec. I will probably end up
+implementing support as specified by GitHub.</p>
+
+<p>The reason I didn't make this part of the MVP is that tables are not critical
+for creative writing. That said, as I'm using Flow to author blog posts like the
+one you are reading now, I will need support for both tables and equations.</p>
+
+<h3>Conclusion</h3>
+
+<p>I would've very much preferred not to get into the business of parsing Markdown,
+as Markdown nowadays is quite complex, which makes custom parsing logic
+error-prone. That said, I couldn't find a better solution for my requirements,
+namely:</p>
+
+<ul>
+<li>Load and save Markdown.</li>
+<li>Provide a WYSIWYG authoring experience, which includes hiding/showing the
+markup as needed.</li>
+</ul>
+
+<h2>Summary</h2>
+
+<p>In this post I covered how Flow implements a Markdown WYSIWYG authoring
+experience:</p>
+
+<ul>
+<li>Pre- and post- processing the Markdown document into a simple ProseMirror
+schema.</li>
+<li>The document schema, which consists of paragraphs and decorations.</li>
+<li>A custom Markdown-parser based on <code>markdown-it</code> that parses the document and
+adds decorations.</li>
+<li>Lists, widgets etc. require special handling.</li>
+</ul>
+
+<p>This post was written with Flow. Try it out <a href="https://saturn9.studio/flow/">here</a>.</p>
+]]></description>
+      <pubDate>Mon, 08 Sep 2025 00:00:00 -0700</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2025/08/03/devlog-4-theming-and-footguns.html</link>
       <guid>https://vladris.com/blog/2025/08/03/devlog-4-theming-and-footguns.html</guid>
       <title><![CDATA[DevLog 4: Theming and Footguns]]></title>
