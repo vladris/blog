@@ -23,7 +23,7 @@ some things down. Or we go singularity, in which case who cares, AI will figure
 everything out for us.
 
 With the caveat that things might still change dramatically, let's look at how
-agents are build today and how the field advanced since I wrote [Large Language
+agents are built today and how the field advanced since I wrote [Large Language
 Models at Work](https://vladris.com/llm-book/).
 
 ## LLMs @ Work Teardown
@@ -90,11 +90,11 @@ ago but today in underpins all agentic workflows.
 
 *Safety and Security* (Chapter 8) remains a concerns. The attack surface only
 grew. Two years ago, one of the biggest concerns was prompt leaking - an
-attacker stealing your carefully crafter prompt. Today, with multi-turn
+attacker stealing your carefully crafted prompt. Today, with multi-turn
 execution and MCP tools, the attack surface and opportunities for data exfil is
 significantly larger.
 
-As for *Frameworks* (Chapter 9), they kind of failed out of favor lately. As the
+As for *Frameworks* (Chapter 9), they kind of fell out of favor lately. As the
 major players are pulling more capabilities within their APIs and models are
 becoming smarter, generic frameworks are becoming maybe less popular.
 
@@ -204,12 +204,12 @@ Anthropic just announced Claude Code supports "subagents", one specializing in
 code review, on specializing in debugging etc.
 
 I'm positive we're entering the era of horizontal scaling where a solution will
-involved a set of specialized agents rather than a "know it all".
+involved a set of specialized agents rather than a "know-it-all".
 
 ### Model-Forward
 
 This is a very interesting concept which means *How can we write software that
-doesn't incur a tax when the new model comes out, rather it gets better as mode
+doesn't incur a tax when the new model comes out, rather it gets better as model
 capabilities improve?*
 
 The hard-learned lesson here was that, after building frameworks, scaffolding,
