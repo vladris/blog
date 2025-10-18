@@ -38,7 +38,7 @@ some things down. Or we go singularity, in which case who cares, AI will figure
 everything out for us.</p>
 
 <p>With the caveat that things might still change dramatically, let&#39;s look at how
-agents are build today and how the field advanced since I wrote <a href="https://vladris.com/llm-book/">Large Language
+agents are built today and how the field advanced since I wrote <a href="https://vladris.com/llm-book/">Large Language
 Models at Work</a>.</p>
 
 <h2>LLMs @ Work Teardown</h2>
@@ -96,7 +96,7 @@ relevant, retrieving it, and putting it into the context.</p>
 <p><em>Interacting with External Systems</em> (Chapter 6), is the fastest moving. This is no
 surprise, as model interactions with side effects produce the most value. When I
 started writing the book, there was no standardized function calling in the
-OpenAI API. You had to ~~prompt~~ context engineer the model into telling it
+OpenAI API. You had to <del>prompt</del> context engineer the model into telling it
 what it can do and give it some examples of JSON functions calls. Before I got
 to Chapter 6, OpenAI introduced functions as part of the API. Nowadays MCP is
 the standard, providing complex capabilities to models. I will talk more at
@@ -107,11 +107,11 @@ ago but today in underpins all agentic workflows.</p>
 
 <p><em>Safety and Security</em> (Chapter 8) remains a concerns. The attack surface only
 grew. Two years ago, one of the biggest concerns was prompt leaking - an
-attacker stealing your carefully crafter prompt. Today, with multi-turn
+attacker stealing your carefully crafted prompt. Today, with multi-turn
 execution and MCP tools, the attack surface and opportunities for data exfil is
 significantly larger.</p>
 
-<p>As for <em>Frameworks</em> (Chapter 9), they kind of failed out of favor lately. As the
+<p>As for <em>Frameworks</em> (Chapter 9), they kind of fell out of favor lately. As the
 major players are pulling more capabilities within their APIs and models are
 becoming smarter, generic frameworks are becoming maybe less popular.</p>
 
@@ -223,12 +223,12 @@ Anthropic just announced Claude Code supports <q>subagents</q>, one specializing
 code review, on specializing in debugging etc.</p>
 
 <p>I&#39;m positive we&#39;re entering the era of horizontal scaling where a solution will
-involved a set of specialized agents rather than a <q>know it all</q>.</p>
+involved a set of specialized agents rather than a <q>know-it-all</q>.</p>
 
 <h3>Model-Forward</h3>
 
 <p>This is a very interesting concept which means <em>How can we write software that
-doesn&#39;t incur a tax when the new model comes out, rather it gets better as mode
+doesn&#39;t incur a tax when the new model comes out, rather it gets better as model
 capabilities improve?</em></p>
 
 <p>The hard-learned lesson here was that, after building frameworks, scaffolding,

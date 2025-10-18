@@ -36,7 +36,7 @@ some things down. Or we go singularity, in which case who cares, AI will figure
 everything out for us.</p>
 
 <p>With the caveat that things might still change dramatically, let's look at how
-agents are build today and how the field advanced since I wrote <a href="https://vladris.com/llm-book/">Large Language
+agents are built today and how the field advanced since I wrote <a href="https://vladris.com/llm-book/">Large Language
 Models at Work</a>.</p>
 
 <h2>LLMs @ Work Teardown</h2>
@@ -94,7 +94,7 @@ relevant, retrieving it, and putting it into the context.</p>
 <p><em>Interacting with External Systems</em> (Chapter 6), is the fastest moving. This is no
 surprise, as model interactions with side effects produce the most value. When I
 started writing the book, there was no standardized function calling in the
-OpenAI API. You had to ~~prompt~~ context engineer the model into telling it
+OpenAI API. You had to <del>prompt</del> context engineer the model into telling it
 what it can do and give it some examples of JSON functions calls. Before I got
 to Chapter 6, OpenAI introduced functions as part of the API. Nowadays MCP is
 the standard, providing complex capabilities to models. I will talk more at
@@ -105,11 +105,11 @@ ago but today in underpins all agentic workflows.</p>
 
 <p><em>Safety and Security</em> (Chapter 8) remains a concerns. The attack surface only
 grew. Two years ago, one of the biggest concerns was prompt leaking - an
-attacker stealing your carefully crafter prompt. Today, with multi-turn
+attacker stealing your carefully crafted prompt. Today, with multi-turn
 execution and MCP tools, the attack surface and opportunities for data exfil is
 significantly larger.</p>
 
-<p>As for <em>Frameworks</em> (Chapter 9), they kind of failed out of favor lately. As the
+<p>As for <em>Frameworks</em> (Chapter 9), they kind of fell out of favor lately. As the
 major players are pulling more capabilities within their APIs and models are
 becoming smarter, generic frameworks are becoming maybe less popular.</p>
 
@@ -221,12 +221,12 @@ Anthropic just announced Claude Code supports <q>subagents</q>, one specializing
 code review, on specializing in debugging etc.</p>
 
 <p>I'm positive we're entering the era of horizontal scaling where a solution will
-involved a set of specialized agents rather than a <q>know it all</q>.</p>
+involved a set of specialized agents rather than a <q>know-it-all</q>.</p>
 
 <h3>Model-Forward</h3>
 
 <p>This is a very interesting concept which means <em>How can we write software that
-doesn't incur a tax when the new model comes out, rather it gets better as mode
+doesn't incur a tax when the new model comes out, rather it gets better as model
 capabilities improve?</em></p>
 
 <p>The hard-learned lesson here was that, after building frameworks, scaffolding,
@@ -494,7 +494,7 @@ from the Markdown parsing perspective, but do have a lot of code behind.</p>
 <h3>Tables</h3>
 
 <p>Flow does not support tables yet. The <a href="https://commonmark.org/">CommonMark</a> spec
-does <em>not</em> include tables. Tables are an extension introduced by the <a href="https://github.github.com/gfm/">GitHub
+does <u>not</u> include tables. Tables are an extension introduced by the <a href="https://github.github.com/gfm/">GitHub
 Flavored Markdown</a> spec. I will probably end up
 implementing support as specified by GitHub.</p>
 
@@ -868,7 +868,7 @@ live at <a href="https://github.com/vladris/clock/">https://github.com/vladris/c
 in the original implementation is sizes are specified in <code>vh</code> units, as I built
 it for full-screen rendering, but for the clocks embedded in this post the CSS
 uses <code>px</code> units. The code snippets are taken from the original implementation,
-so <em>view source</em> won't be as helpful. Now let's build a clock!</p>
+so <u>view source</u> won't be as helpful. Now let's build a clock!</p>
 
 <h2>Pendulum</h2>
 
@@ -998,7 +998,7 @@ degrees each way.</p>
 <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
 </pre></div>
 
-<p>The classic typeface is called <em>Breguet</em>, named after the luxury watch company
+<p>The classic typeface is called <u>Breguet</u>, named after the luxury watch company
 that introduced it. Luckily, I found a free SVG with a Breguet dial:</p>
 
 <p><img src="https://vladris.com/blog/2025/06/08/https://vladris.com/clock/breguet/breguet.svg" alt="Breguet"/></p>
@@ -11711,7 +11711,7 @@ evaluation function, and a REPL.</li>
 <ol>
 
 <li id="fn1">
-<p>Original paper: http://www-formal.stanford.edu/jmc/recursive.pdf. <a href="#fnref1" rev="footnote">↩</a></p>
+<p>Original paper: <a href="http://www-formal.stanford.edu/jmc/recursive.pdf">http://www-formal.stanford.edu/jmc/recursive.pdf</a>. <a href="#fnref1" rev="footnote">↩</a></p>
 </li>
 
 </ol>
