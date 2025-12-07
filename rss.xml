@@ -8,6 +8,213 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2025/12/07/10-years.html</link>
+      <guid>https://vladris.com/blog/2025/12/07/10-years.html</guid>
+      <title><![CDATA[10 Years]]></title>
+      <description><![CDATA[<h1>10 Years</h1>
+
+<p>This post marks the tenth year of my technical blog. I started in 2016, ended up
+writing exactly 9 posts during that year, and made it a point to consistently
+stick to that number. You are reading post #90. This will be a self-indulgent
+look back at the past decade.</p>
+
+<p>Why 9 posts per year? While sometimes I have plenty of things to write about,
+other times I get busy and donât have the time. Maybe something like a post per
+month wouldâve been nicer, but harder to achieve. Iâm still happy I was able to
+stick to this for so long.</p>
+
+<p>I started self-hosting the blog on my own engine, Tinkerer, which is now
+archived <a href="https://github.com/vladris/tinkerer">here</a>. Tinkerer relied heavily on
+<a href="https://www.sphinx-doc.org/en/master/">Sphinx</a> and
+<a href="https://jinja.palletsprojects.com/en/stable/">Jinja</a>, relying on the Sphinx
+plugin system to turn it into a blog. Extensions provided post metadata,
+ordering and pagination, RSS-feed generation and so on. That worked well until
+it didnât. Updates to Sphinx irrevocably broke things, plus Markdown was gaining
+momentum - who even remembers the cumbersome ReStrctured Text syntax? I
+implemented Baku, the spiritual successor to Tinkerer, and used PanDoc to
+migrate my old posts from RST to Markdown.</p>
+
+<p>Baku, which Iâm using to this day, is <a href="https://github.com/vladris/baku">here</a>.
+It completely drops the Sphinx dependency and replaces Jinja with a 100 LoC
+templating engine which Iâm still very proud of - my
+<a href="https://github.com/vladris/baku/blob/main/baku/templating.py">VerySimpleTemplate</a>.
+Lesson learned: the fewer dependencies the better.</p>
+
+<p>Throughout the years I covered various topics I was digging into at the time.
+When I started the blog in 2016, I was working on the Office C++ clients. The
+very first two posts are based on a Clean Code talk I used to do (see <a href="https://vladris.com/blog/2016/01/04/clean-code-part-1.html">Clean
+Code Part - 1</a> and
+<a href="https://vladris.com/blog/2016/01/07/clean-code-part-2.html">Clean Code Part -
+2</a>).</p>
+
+<p>I was digging deep into modern C++ at the time. Some posts, like <a href="https://vladris.com/blog/2016/03/11/arguments-and-smart-pointers.html">Arguments and
+Smart
+Pointers</a>
+and <a href="https://vladris.com/blog/2016/10/16/notes-on-types.html">Notes on Types</a>
+provide best practices. Others covered some of my own R&amp;D. A version of the
+efficient stack-allocated data structure I describe in <a href="https://vladris.com/blog/2016/04/24/abusing-maps.html">(Ab)using
+Maps</a> made its way into
+the Office core libraries and became a standard for applicable scenarios. The
+<a href="https://vladris.com/blog/2016/10/09/composable-generators.html">Composable
+Generators</a> post
+became this small library that enables generator chaining in C++:
+<a href="https://github.com/vladris/pipe">https://github.com/vladris/pipe</a>. This was back when generators were still an
+experimental language feature.</p>
+
+<p>Around that time, I was starting to dig into types and type systems. I wrote an
+initial <a href="https://vladris.com/blog/2016/10/16/notes-on-types.html">Notes on
+Types</a> post, and a
+while later one covering the Idris programming language - <a href="https://vladris.com/blog/2017/07/20/idris-totality-dependent-types-proofs.html">Idris: Totality,
+Dependent Types,
+Proofs</a>.
+Then <a href="https://vladris.com/blog/2018/01/27/notes-on-oop.html">Notes on OOP</a> and
+<a href="https://vladris.com/blog/2018/09/09/clean-code-types.html">Clean Code: Types</a>,
+all around the topic of types. This became my first published book, <a href="https://www.manning.com/books/programming-with-types">Programming
+with Types</a> in 2019.</p>
+
+<p>Several posts from around that time were topics that I was researching and which
+made their way in the book, like <a href="https://vladris.com/blog/2018/10/13/arithmetic-overflow-and-underflow.html">Arithmetic Overflow and
+Underflow</a>
+and <a href="https://vladris.com/blog/2018/11/18/notes-on-encoding-text.html">Notes on Encoding
+Text</a>, or
+excerpts from the book once it was ready:</p>
+
+<ul>
+<li><a href="https://vladris.com/blog/2019/07/16/a-switchless-state-machine.html">A Switchless State Machine</a></li>
+<li><a href="https://vladris.com/blog/2019/08/10/common-algorithms.html">Common Algorithms</a></li>
+<li><a href="https://vladris.com/blog/2019/09/06/higher-kinded-types-functors.html">Higher Kinded Types: Functors</a></li>
+<li><a href="https://vladris.com/blog/2019/09/07/higher-kinded-types-monads.html">Higher Kinded Types: Monads</a></li>
+<li><a href="https://vladris.com/blog/2019/12/27/variance.html">Variance</a></li>
+</ul>
+
+<p>I switched jobs in 2019, going from Office to Azure and trading in C++ for data
+platform architecture. My first post on the subject was <a href="https://vladris.com/blog/2019/12/08/notes-on-data-engineering.html">Notes on Data
+Engineering</a>.
+It was a new space for me, with plenty to learn, and during 2020 I wrote a bunch
+about it:</p>
+
+<ul>
+<li><a href="https://vladris.com/blog/2020/02/01/self-serve-analytics.html">Self-Serve Analytics</a></li>
+<li><a href="https://vladris.com/blog/2020/03/01/azure-data-explorer.html">Azure Data Explorer</a></li>
+<li><a href="https://vladris.com/blog/2020/04/27/machine-learning-at-scale.html">Machine Learning at Scale</a></li>
+<li><a href="https://vladris.com/blog/2020/11/13/data-quality-testing-patterns.html">Data Quality Testing Patterns</a></li>
+<li><a href="https://vladris.com/blog/2020/11/27/changing-data-classification-through-processing.html">Changing Data Classification Through Processing</a></li>
+<li><a href="https://vladris.com/blog/2021/03/12/ingesting-data.html">Ingesting Data</a>
+<a href="https://vladris.com/blog/2021/09/10/machine-learning-on-azure-part-1.html">Machine Learning on Azure Part
+1</a>,
+<a href="https://vladris.com/blog/2021/09/17/machine-learning-on-azure-part-2.html">Part
+2</a>,
+and <a href="https://vladris.com/blog/2021/09/24/machine-learning-on-azure-part-3.html">Part
+3</a></li>
+</ul>
+
+<p>Like the previous type rabbit hole, I ended up publishing <a href="https://www.manning.com/books/data-engineering-on-azure">Data Engineering on
+Azure</a> in 2021.</p>
+
+<p>At the same time, I switched teams again, moving from Azure back to Office to
+work on <a href="https://fluidframework.com/">Fluid Framework</a> and then
+<a href="https://aka.ms/loop/">Loop</a>. I wrote the first <a href="https://vladris.com/blog/2021/12/11/mental-poker.html">Mental
+Poker</a> post in December
+2021, while thinking through how one could implement a game over Fluid
+Framework. This became an on-and-off side project which resulted into the Mental
+Poker series of posts:</p>
+
+<ul>
+<li><a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">Mental Poker Part 0: An Overview</a></li>
+<li><a href="https://vladris.com/blog/2023/03/14/mental-poker-part-1-cryptography.html">Mental Poker Part 1: Cryptography</a></li>
+<li><a href="https://vladris.com/blog/2023/06/04/mental-poker-part-2-fluid-ledger.html">Mental Poker Part 2: Fluid Ledger</a></li>
+<li><a href="https://vladris.com/blog/2023/11/28/mental-poker-part-3-transport.html">Mental Poker Part 3: Transport</a></li>
+<li><a href="https://vladris.com/blog/2024/03/16/mental-poker-part-4-actions-and-async-queue.html">Mental Poker Part 4: Actions and Async Queue</a></li>
+<li><a href="https://vladris.com/blog/2024/03/22/mental-poker-part-5-state-machine.html">Mental Poker Part 5: State Machine</a></li>
+<li><a href="https://vladris.com/blog/2024/04/07/mental-poker-part-6-shuffling-implementation.html">Mental Poker Part 6: Shuffling Implementation</a></li>
+<li><a href="https://vladris.com/blog/2024/06/12/mental-poker-part-7-primitives.html">Mental Poker Part 7: Primitives</a></li>
+<li><a href="https://vladris.com/blog/2024/06/24/mental-poker-part-8-rock-paper-scissors.html">Mental Poker Part 8: Rock-Paper-Scissors</a></li>
+<li><a href="https://vladris.com/blog/2024/07/18/mental-poker-part-9-discard-game.html">Mental Poker Part 9: Discard Game</a></li>
+<li><a href="https://vladris.com/blog/2024/10/28/mental-poker-part-10-conclusions.html">Mental Poker Part 10: Conclusions</a></li>
+</ul>
+
+<p>I wrote these over the span of two years, from early 2023 to late 2024, while
+creating this open source library:
+<a href="https://github.com/vladris/mental-poker-toolkit">https://github.com/vladris/mental-poker-toolkit</a>.</p>
+
+<p>Before Mental Poker, I spent 2022 digging into computability. I always found the subject fascinating:</p>
+
+<ul>
+<li><a href="https://vladris.com/blog/2022/02/12/computability-part-1-a-short-history.html">Computability Part 1: A Short History</a></li>
+<li><a href="https://vladris.com/blog/2022/04/03/computability-part-2-turing-machines.html">Computability Part 2: Turing Machines</a></li>
+<li><a href="https://vladris.com/blog/2022/05/20/computability-part-3-tag-systems.html">Computability Part 3: Tag Systems</a></li>
+<li><a href="https://vladris.com/blog/2022/06/11/computability-part-4-conway-s-game-of-life.html">Computability Part 4: Conwayâs Game of Live</a></li>
+<li><a href="https://vladris.com/blog/2022/07/06/computability-part-5-elementary-cellular-automata.html">Computability Part 5: Elementary Cellular Automata</a></li>
+<li><a href="https://vladris.com/blog/2022/07/31/computability-part-6-von-neumann-architecture.html">Computability Part 6: Von Neumann Architecture</a></li>
+<li><a href="https://vladris.com/blog/2022/09/02/computability-part-7-machine-implementation-practicalities.html">Computability Part 7: Machine Implementation Details</a></li>
+<li><a href="https://vladris.com/blog/2022/10/14/computability-part-8-lambda-calculus.html">Computability Part 8: Lambda Calculus</a></li>
+<li><a href="https://vladris.com/blog/2022/12/01/computability-part-9-lisp.html">Computability Part 9: LISP</a></li>
+</ul>
+
+<p>After wrapping up the Mental Poker toolkit, I spent 2025 implementing a text
+editor and wrote several DevLog posts about it -
+<a href="https://vladris.com/blog/2025/03/08/devlog-1-flow.html">Flow</a>,
+<a href="https://vladris.com/blog/2025/04/04/devlog-2-formatting.html">Formatting</a>,
+<a href="https://vladris.com/blog/2025/05/08/devlog-3-commanding.html">Commanding</a>,
+<a href="https://vladris.com/blog/2025/08/03/devlog-4-theming-and-footguns.html">Theming and
+Footguns</a>,
+<a href="https://vladris.com/blog/2025/09/08/devlog-5-markdown-and-wysiwyg.html">Markdown and
+WYSIWYG</a>.</p>
+
+<p>Sometime in 2023, when GPT3 took the world by storm, I wrote another book,
+<a href="https://www.amazon.com/dp/B0CLSSM8RL">Large Language Models at Work</a>. I didnât
+publish excerpts on my blog as I made it freely available at
+<a href="https://vladris.com/llm-book">https://vladris.com/llm-book</a>. Fun fact, the book website is also built using
+Baku, just like this blog.</p>
+
+<p>The industry moved fast, and what was state of the art in 2023 became mostly
+obsolete by 2025. I reflect on that in <a href="https://vladris.com/blog/2025/09/29/agent-integration-patterns.html">Agent Integration
+Patterns</a>.</p>
+
+<p>With the holiday season coming, Iâm excited about <a href="https://adventofcode.com/">Advent of
+Code</a>. Iâve been solving puzzles since its inception
+and since 2023, I made it a tradition to start the year with a post covering the
+past Decemberâs Advent of Code, focusing on the problems I found most
+interesting.</p>
+
+<p>Not everything requires series of posts, sometimes I write a self-contained
+just-for-fun thing. Like how I implemented a <a href="https://vladris.com/blog/2025/06/08/digital-horology.html">digital pendulum
+clock</a>, a solver for
+an iPhone game called <a href="https://vladris.com/blog/2018/04/15/kami-2.html">Kami 2</a>,
+or a solver for the game <a href="https://vladris.com/blog/2017/08/13/24.html">24</a>. Or
+that time I implemented
+<a href="https://vladris.com/blog/2021/12/30/timsort.html">Timsort</a> to get a better
+sense of how it works.</p>
+
+<p>The above is not a complete list of what I wrote here over the past 10 years,
+rather a recap of some of the major themes. Itâs been a fun ride so far. As for
+the next 10 years - who knows? I know my next post will cover Advent of Code
+2025. The sky is the limit beyond that.</p>
+
+<p>I have plenty of things I still want to cover:</p>
+
+<ul>
+<li>More on Flow - Turns out you learn a lot when you implement a text editor.
+Also on Flowâs successor. Electron is too much of a hog so I started
+experimenting with an editor based on Tauri, geared towards long-form writing.</li>
+<li>More on AI - Weâre still evolving the ways we integrate AI into software and
+thereâs plenty of learning to cover there.</li>
+<li>Webdev - For the past 5 years or so, my day job had me using TypeScript,
+React, and the wonderful JS ecosystem. I have many thoughts here.</li>
+<li>Building product - I scratched the surface of this with <a href="https://vladris.com/blog/2021/08/12/shipping-a-feature.html">Shipping a
+Feature</a>. Thereâs
+a lot more to cover. I learned a lot shipping software to millions of users
+while working in Office.</li>
+<li>Other areas of interest, like programming languages, compilers and runtimes,
+pragmatic functional programming etc.</li>
+</ul>
+
+<p>Happy holidays and see you in 2026! Thank you for reading!</p>
+]]></description>
+      <pubDate>Sun, 07 Dec 2025 00:00:00 -0800</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2025/09/29/agent-integration-patterns.html</link>
       <guid>https://vladris.com/blog/2025/09/29/agent-integration-patterns.html</guid>
       <title><![CDATA[Agent Integration Patterns]]></title>
