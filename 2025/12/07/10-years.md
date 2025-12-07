@@ -182,7 +182,7 @@ I have plenty of things I still want to cover:
 * Building product - I scratched the surface of this with [Shipping a
   Feature](https://vladris.com/blog/2021/08/12/shipping-a-feature.html). There’s
   a lot more to cover. I learned a lot shipping software to millions of users
-  while working in Office.
+  while working on Office.
 * Other areas of interest, like programming languages, compilers and runtimes,
   pragmatic functional programming etc.
 
