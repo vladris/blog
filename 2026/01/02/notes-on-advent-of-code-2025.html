@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Notes on Advent of Code 2025 &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/theme.css" type="text/css">
+<link rel="stylesheet" href="../../../static/tokyo.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<header><span>January 02, 2026</span></header>
+<article>
+<h1>Notes on Advent of Code 2025</h1>
+
+<p>These are my notes on the 2025 <a href="https://adventofcode.com/">Advent of Code</a>.</p>
+
+<p>All my solutions are on my GitHub <a href="https://github.com/vladris/aoc">here</a>. And
+here is the disclaimer I&#39;ve been using with each post:</p>
+
+<blockquote>
+<p><strong>Disclaimer on my solutions</strong></p>
+
+<p>I use Python because I find it easiest for this type of coding. I treat
+solving these as a write-only exercise. I do it for the problem-solving bit, so
+I don&#39;t comment the code &amp; once I find the solution I consider it done - I don’t
+revisit and try to optimize even though sometimes I strongly feel like there is
+a better solution. I don&#39;t even share code between part 1 and part 2 - once part
+1 is solved, I copy/paste the solution and change it to solve part 2, so each
+can be run independently. I also rarely use libraries, and when I do it&#39;s some
+standard ones like <code>re</code>, <code>itertools</code>, or <code>math</code>. The code has no comments and is
+littered with magic numbers and strange variable names. This is not how I
+usually code, rather my decadent holiday indulgence. I wasn&#39;t thinking I will
+end up writing a blog post discussing my solutions so I would like to apologize
+for the code being hard to read.</p>
+</blockquote>
+
+<p>Some thoughts first: this year&#39;s Advent of Code was shorter - only 12 days
+instead of the usual 25 days. I also have mixed feelings about a couple of the
+problems. Day 10 made me break my rule of not using external libraries. Day 12
+was more of a prank. I&#39;ll get into details below.</p>
+
+<h2>Day 1: Secret Entrance</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/1">here</a>.</p>
+
+<p>This was a very easy problem, not worth covering.</p>
+
+<h2>Day 2: Gift Shop</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/2">here</a>.</p>
+
+<p>This one had potential, I was disappointed you can just count through each
+number in a range and check if it&#39;s invalid.</p>
+
+<p>I&#39;m pretty sure there&#39;s a very efficient way to do it even for very large
+ranges. E.g. between 12340000 and 12349999 there&#39;s a single invalid 12341234.
+There must be a formula that yields the count of invalid numbers for an
+arbitrary range just by doing the math on the range bounds + account for corner
+cases. But I didn&#39;t spend the time on it since I could just check every single
+number in the range.</p>
+
+<h2>Day 3: Lobby</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/3">here</a>.</p>
+
+<p>Another easy one - for part 1, I simply checked all combinations of 2 digits
+and picked the maximum.</p>
+
+<p>For part 2, looking at all combinations doesn&#39;t work as we need to pick 12
+digits out of each number. Luckily, a greedy approach works. I split the number
+into a head (initially empty), and tail (all digits) and we repeat the following
+algorithm 12 times: pick the largest digits from the tail that still leaves
+enough digits in the tail for us to pick 12 digits total, add it to the head,
+and cut the tail at the selected digit.</p>
+
+<p>In other words, we are guaranteed to form the largest number if we keep picking
+the largest available highest-order digit.</p>
+
+<h2>Day 4: Printing Department</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/4">here</a>.</p>
+
+<p>Part 1 is trivial.</p>
+
+<p>Part 2 is pretty easy too - the only <q>trick</q> is to not update the grid in-place
+when removing rolls. Like a game of life simulation.</p>
+
+<h2>Day 5: Cafeteria</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/5">here</a>.</p>
+
+<p>Part 1 is again trivial.</p>
+
+<p>For part 2, we want to merge overlapping ranges first, then just count the
+length of each range to arrive at the solution.</p>
+
+<h2>Day 6: Trash Compactor</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/6">here</a>.</p>
+
+<p>In part 1, based on whether the operation is addition or multiplication, we
+start with <code>0</code> or <code>1</code> then simply apply the operation (<code>+</code> or <code>*</code>) to all the
+numbers in a column.</p>
+
+<p>In part 2, we also go column by column, but we do it by digit rather than by
+number. The right-to-left arrangement is a red herring - both addition and
+multiplication are commutative so it doesn&#39;t matter whether we start from the
+left or from the right.</p>
+
+<h2>Day 7: Laboratories</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/7">here</a>.</p>
+
+<p>Part 1 - we just go down row by row from the top, counting hits and splitting
+the beam when we encounter a <code>^</code>:</p>
+<div class="highlight"><pre><span></span><span class="n">hits</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+    <span class="n">new_beams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">beam</span> <span class="ow">in</span> <span class="n">beams</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;^&quot;</span><span class="p">:</span>
+            <span class="n">hits</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">new_beams</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">beam</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">new_beams</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">beam</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_beams</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">beam</span><span class="p">)</span>
+    <span class="n">beams</span> <span class="o">=</span> <span class="n">new_beams</span>
+</pre></div>
+
+<p>Part 2 is similar, the only addition being we need to keep a running tally of
+how many beams (from different timelines) are at a given position.</p>
+<div class="highlight"><pre><span></span><span class="n">beams</span> <span class="o">=</span> <span class="p">{</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span> 
+    <span class="n">new_beams</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">beam</span> <span class="ow">in</span> <span class="n">beams</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;^&quot;</span><span class="p">:</span>
+            <span class="n">new_beams</span><span class="p">[</span><span class="n">beam</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">beams</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span>
+            <span class="n">new_beams</span><span class="p">[</span><span class="n">beam</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">beams</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_beams</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span> <span class="o">+=</span> <span class="n">beams</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span>
+    <span class="n">beams</span> <span class="o">=</span> <span class="n">new_beams</span>
+</pre></div>
+
+<h2>Day 8: Playground</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/8">here</a>.</p>
+
+<p>This was a nice graph problem. For part 1, we can compute the distance
+between each pair of nodes (junction boxes), sort by distance, pick the smallest
+1000 pairs and add edges between them. Now we have our final graph. The next
+step is to identify all the connected components of the graph and pick the three
+with the largest number of nodes.</p>
+
+<p>For part 2, note we can&#39;t just add edges to all except the last pair of nodes in
+the solution for part 1, as those two nodes might already be part of the same
+component. My solution here was to also precompute the distances between nodes
+then, as I add edges between them, keep track of how many connected components
+we have. Instead of adding 1000 edges, we keep connecting pairs of nodes until
+we are left with two connected components.</p>
+
+<h2>Day 9: Movie Theater</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/9">here</a>.</p>
+
+<p>Part 1 was easy, as we can just compute the area for every pair of points and
+pick the largest one.</p>
+
+<p>I found Part 2 very nice. I&#39;m not sure I have the optimal solution, but here&#39;s
+how I solved it: My initial idea was to <q>draw</q> lines between the points, then
+<q>flood fill</q> the area they describe. Then we can check whether a pair of points
+describes an area that is fully within the filled surface or not, in which case
+it is invalid. If we do this, we can pick the largest valid area (fully within)
+the filled surface.</p>
+
+<p>The only problem with this approach is that the distances between points are
+very large, so going point by point to connect the surface and fill it gets too
+expensive. My solution was to scale down the grid.</p>
+
+<p>Here&#39;s an example based on the smaller-sized sample input. The sample input is:</p>
+<div class="highlight"><pre><span></span>..............
+.......#...#..
+..............
+..#....#......
+..............
+..#......#....
+..............
+.........#.#..
+..............
+</pre></div>
+
+<p>We can scale this down to:</p>
+<div class="highlight"><pre><span></span>..#...#
+.......
+#.#....
+.......
+#...#..
+.......
+....#.#
+</pre></div>
+
+<p>Here&#39;s how we do it: we take the set of <code>X</code> coordinates of all points, sort it
+then map \(x_0 \rightarrow 0\), \(x_1 \rightarrow 2\), \(x_2 \rightarrow 4\) etc. We
+do the same for the <code>Y</code> coordinates.</p>
+
+<p>Now connecting the points and filling the surface becomes much more tractable.
+We can simply update the grid with <code>#</code>s to connect a pair of points and we can
+similarly flood-fill with <code>#</code> since the surface area is significantly scaled
+down. We&#39;re no longer dealing with tens of thousands of points on the grid
+between two points we have to connect.</p>
+
+<p>Once we have this, we can again iterate over each pair of points and see if the
+area they describe contains any <code>.</code> (which would make the area invalid), or not.
+To determine which of the valid areas is the largest, we simply need to map back
+the \((x_i, y_i)\) and \((x_j, y_j)\) from our scaled down grid to the actual
+coordinate values. This will give us the <q>real</q> area size and by this point we
+are guaranteed the area is valid (no <code>.</code> within its bounds).</p>
+
+<h2>Day 10: Factory</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/10">here</a>.</p>
+
+<p>For part 1, note that pushing a button toggles a set of lights. With lights
+being either <q>on</q> or <q>off</q>, the toggle is an <code>XOR</code> applied to these lights.
+For each available button, we either press it or we don&#39;t. Applying <code>XOR</code>
+twice simply undoes its effect. The order in which we press buttons also doesn&#39;t
+matter, since <code>XOR</code> is commutative. Solving part 1, for each button, we try
+pressing it and not pressing it. We keep track of the number minimum number of
+presses when we reach the desired end state, which is our solution.</p>
+
+<p>I represented the lights as a bitmask, so <code>[.##.]</code> becomes <code>0b0110</code>. Similarly,
+a button that toggles <code>(0, 2, 3)</code> becomes <code>0b1101</code>.</p>
+
+<p>Here&#39;s the full solution:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">tail</span><span class="p">,</span> <span class="n">presses</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">best</span>
+
+    <span class="k">if</span> <span class="n">goal</span> <span class="o">==</span> <span class="n">state</span><span class="p">:</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">best</span><span class="p">,</span> <span class="n">presses</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tail</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">h</span> <span class="o">=</span> <span class="n">tail</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">solve</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="n">state</span> <span class="o">^</span> <span class="n">h</span><span class="p">,</span> <span class="n">tail</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">presses</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">solve</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">tail</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">presses</span><span class="p">)</span>
+</pre></div>
+
+<p><code>goal</code> is the end state we want to reach, <code>state</code> is the current state,
+initially 0. <code>tail</code> are the buttons we haven&#39;t tried pressing yet (initially
+this contains all the buttons), and <code>presses</code> is the number of buttons we
+pressed so far.</p>
+
+<p>Part 2 was a lot more difficult. This is a linear optimization problem. Our
+target is expressed by the joltages \({j_0, j_1, ... j_m}\). We have \(n\) buttons.
+A button press increments some joltages. Let&#39;s define a matrix \(options\) such
+that \(options_(button, joltage)\) is \(0\) if pressing the button \(button\) doesn&#39;t
+increase the joltage \(joltage\) and \(1\) if it does.</p>
+
+<p>Then our problem becomes:</p>
+
+<p>Given the system of equations</p>
+
+<p>\[\begin{bmatrix}\mathrm{options}_{0,0}&amp;\mathrm{options}_{1,0}&amp;\cdots&amp;\mathrm{options}_{n-1,0}\\\mathrm{options}_{0,1}&amp;\mathrm{options}_{1,1}&amp;\cdots&amp;\mathrm{options}_{n-1,1}\\\vdots&amp;\vdots&amp;\ddots&amp;\vdots\\\mathrm{options}_{0,m-1}&amp;\mathrm{options}_{1,m-1}&amp;\cdots&amp;\mathrm{options}_{n-1,m-1}\end{bmatrix}\begin{bmatrix}x_0\\x_1\\\vdots\\x_{n-1}\end{bmatrix}=\begin{bmatrix}j_0\\j_1\\\vdots\\j_{m-1}\end{bmatrix}\]</p>
+
+<p>find the smallest sum \(x_0 + x_1 + ... x_{n-1}\) where all of the \(x\)s are
+positive integers.</p>
+
+<p>This is where I broke my rule of not taking dependencies on external libraries
+and reached out for scipy. I used <code>milp</code> (Mixed-Integer Linear Programming):</p>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">joltage</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="p">[[</span><span class="n">options</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">joltage</span><span class="p">))]</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">milp</span><span class="p">(</span>
+        <span class="n">c</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span>
+        <span class="n">constraints</span><span class="o">=</span><span class="n">LinearConstraint</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">joltage</span><span class="p">,</span> <span class="n">joltage</span><span class="p">),</span>
+        <span class="n">bounds</span><span class="o">=</span><span class="n">Bounds</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">joltage</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n</span><span class="p">),</span>
+        <span class="n">integrality</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">])</span>
+</pre></div>
+
+<p><code>options</code> here is our matrix of which button increments which joltages and
+<code>joltage</code> is the target state.</p>
+
+<p>We invoke <code>milp</code> with coefficients 1 (<code>c</code>), specifying the linear constraint
+<code>joltage &lt;= matrix.dot(x) &lt;= joltage</code> - we want the solution to be exactly
+<code>joltage</code>. The <code>bounds</code> are between 0 and maximum joltage - we can press a
+button at least 0 times and as most the target joltage times. The <code>integrality</code>
+parameter enforces all \(x\)s are integers.</p>
+
+<p>This produces the optimal vector.</p>
+
+<h2>Day 11: Reactor</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/11">here</a>.</p>
+
+<p>The first part is easy. I implemented a <code>traverse</code> that starts from <code>you</code>
+and recursively traverses all connected nodes. Whenever we hit the <code>out</code>
+node we increment a running total:</p>
+<div class="highlight"><pre><span></span><span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">traverse</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">total</span>
+
+    <span class="k">if</span> <span class="n">node</span> <span class="o">==</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
+        <span class="n">traverse</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+<span class="n">traverse</span><span class="p">(</span><span class="s2">&quot;you&quot;</span><span class="p">)</span>
+</pre></div>
+
+<p>The graph we need to traverse is much larger in part 2. Here, I used a 2-step
+approach. First, I sorted the nodes topologically:</p>
+<div class="highlight"><pre><span></span><span class="n">topological_order</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">dfs</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">neighbor</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="n">dfs</span><span class="p">(</span><span class="n">neighbor</span><span class="p">)</span>
+    <span class="n">topological_order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">:</span>
+    <span class="n">dfs</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</pre></div>
+
+<p>From these, I generated the reverse of the graph:</p>
+<div class="highlight"><pre><span></span><span class="n">topological_order</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+<span class="n">reverse_graph</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">neighbors</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">neighbor</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="p">:</span>
+        <span class="n">reverse_graph</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">neighbor</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</pre></div>
+
+<p>With these, we can compute the number of paths between a <code>start</code> and <code>end</code>
+node with:</p>
+<div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">paths</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">}</span>
+    <span class="n">paths</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">topological_order</span><span class="p">[</span><span class="n">topological_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">topological_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">paths</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">paths</span><span class="p">[</span><span class="n">prev</span><span class="p">]</span> <span class="k">for</span> <span class="n">prev</span> <span class="ow">in</span> <span class="n">reverse_graph</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">[]))</span>
+    <span class="k">return</span> <span class="n">paths</span><span class="p">[</span><span class="n">end</span><span class="p">]</span>
+</pre></div>
+
+<p>The solution is:</p>
+<div class="highlight"><pre><span></span><span class="n">paths</span><span class="p">(</span><span class="s2">&quot;svr&quot;</span><span class="p">,</span> <span class="s2">&quot;fft&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">paths</span><span class="p">(</span><span class="s2">&quot;fft&quot;</span><span class="p">,</span> <span class="s2">&quot;dac&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">paths</span><span class="p">(</span><span class="s2">&quot;dac&quot;</span><span class="p">,</span> <span class="s2">&quot;out&quot;</span><span class="p">)</span>
+</pre></div>
+
+<h2>Day 12: Christmas Tree Farm</h2>
+
+<p>Problem statement is <a href="https://adventofcode.com/2025/day/12">here</a>.</p>
+
+<p>This last one was more of a prank in my opinion. Reading the problem statement,
+it&#39;s obvious the problem explodes combinatorially: we can rotate and flip
+shapes, try to fit them together in various ways, the number of each type of
+shape is different for each region. We obviously can&#39;t use backtracking for
+this.</p>
+
+<p>I first started looking at the inputs to see if there is maybe some optimal
+combination of shapes that simplifies things, but the fact that we get different
+numbers of each shape would make this not work.</p>
+
+<p>Is there a case in which the shapes are guaranteed to fit without us having to
+do any flipping/combining? Yes, there is - each shape is in a 3x3 grid, even if
+it doesn&#39;t fully cover it. For a given region, if we can fit the pieces one
+after another, making each take a 3x3 spot, then we can safely ignore any
+rotations or packing. In other words, if the region is large enough, we have a
+trivial solution.</p>
+
+<p>Well, it turns out a large portion of the input is trivially solved like this.
+As for the rest, let&#39;s look at the reverse - is there a case in which the shapes
+are guaranteed <em>not</em> to fit regardless of how we combine them? Yes, there is -
+for this case, we count the exact number of points a shape takes. So</p>
+<div class="highlight"><pre><span></span>..#
+.##
+##.
+</pre></div>
+
+<p>takes 5 points, the 5 <code>#</code>. If the total number of points the shapes we want to
+fit is larger than the number of points in the region, it means that regardless
+of how we try to rotate and arrange our shapes, they will not fit. Well, it
+turns out the rest of the input cases fall in this bucket.</p>
+
+<p>So even though the general case explodes combinatorially and to my knowledge
+there is no practical solution for it, the input cases given are all trivially
+solvable as they are either way too small or large enough for us to compute the
+fit without doing any work.</p>
+
+<p>All in all, it was a fun set of problems. I am a bit bummed that this year
+Advent of Code ran shorter than previous years. Problem 10 was strange, it was
+the first one where I reached for scipy. Most problems I can solve without
+external libraries but there was no way I was going to roll my own <code>milp</code>. And
+problem 12 was straight up annoying - I spent an embarrassing amount of time to
+arrive at the trivial solution. Eleven more months till the next Advent of Code!</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2025/12/07/10-years.html">10 Years</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+</body>
+</html>
