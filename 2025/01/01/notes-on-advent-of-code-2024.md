@@ -4,7 +4,7 @@ I'm making this a tradition, as I wrote about [Advent of
 Code](https://adventofcode.com/) during the past couple of years. This is the
 10th year of Advent of Code!
 
-All my solutions are on my GitHub [here](https://github.com/vladris/aoc). Any
+All my solutions are on my GitHub [here](https://github.com/vladris/aoc). And
 the standard disclaimer:
 
 > **Disclaimer on my solutions**
