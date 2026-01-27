@@ -8,6 +8,304 @@
 
 
     <item>
+      <link>https://vladris.com/blog/2026/01/27/jazz-an-exploration.html</link>
+      <guid>https://vladris.com/blog/2026/01/27/jazz-an-exploration.html</guid>
+      <title><![CDATA[Jazz: An Exploration]]></title>
+      <description><![CDATA[<h1>Jazz: An Exploration</h1>
+
+<script src="./jazz-components.min.js"/>
+
+<p>For the past few years, I've been interested in jazz. I want to learn more about
+the genre. I don't have a good ear, and I have zero musical training, which
+makes this difficult.</p>
+
+<p>I finally got around to reading Ted Gioia's <a href="https://www.goodreads.com/book/show/177539.The_History_of_Jazz">The History of
+Jazz</a>.
+This is an incredibly well-researched book by someone who obviously loves the
+genre. I've been enjoying it, though I'm not making the most out of it myself.
+The text casually mentions songs everywhere, which I need to search and listen
+to. I sometimes do this, sometimes, especially if my phone isn't handy, I don't.
+Many of the passages refer to music theoretical terms that I do not grasp. I
+realized I need a slightly different medium to improve my study.</p>
+
+<p>I ended up building <a href="https://vladris.com/jazz-book/">Jazz: An Exploration</a>.</p>
+
+<h2>Something between a book and a wiki</h2>
+
+<p>A book seems to be too linear for a topic like jazz. I don't want to break the
+flow to find a song. I want a way to quickly reference a term like <em>chord</em> if
+I don't understand it.</p>
+
+<p>A wiki doesn't have a narrative thread. I can jump from article to article
+though it's hard to distinguish between progress and going down some side rabbit
+hole.</p>
+
+<p>To counter my own limitations, I came up with something that sits between a book
+and a wiki. The two main elements I've been exploring are <em>threads</em> and
+<em>interactive elements</em>.</p>
+
+<h3>Threads</h3>
+
+<p>I view jazz as best explored through multiple lines. The backbone is the
+history: where it originated, how it evolved. The story of the genre. A parallel
+thread is the key players and innovators. For example, Miles Davis was a key
+figure in cool jazz, modal jazz, fusion etc. His biography runs parallel to the
+different historical eras. I call these parallel lines <em>threads</em>.</p>
+
+<p>My exploration of jazz has a <em>history</em> thread, and a parallel <em>players</em> thread.
+When the history mentions a key figure, you can switch threads to read about
+the player. Or, vice versa, reading about the players in chronological order,
+you can hop threads to read about the history of that era.</p>
+
+<p>All in all I included five threads in the exploration:</p>
+
+<ul>
+<li>History: From origin until after fusion.</li>
+<li>Players: Key players that influenced the genre.</li>
+<li>Recordings: Genre-defining recordings, including listening guides.</li>
+<li>Standards: A selection of jazz standards, with recordings by different artists
+and listening guides.</li>
+<li>Theory: Some music theory basics to help decode jazz.</li>
+</ul>
+
+<h3>Interactive elements</h3>
+
+<p>The interactive elements idea is nothing new, but I personally find it very
+useful. The text doesn't just mention a song, there's an embedded Apple Music
+player so listening to it is one click away:</p>
+
+<div id="player"/>
+
+<script>JazzComponents.renderAppleMusic(document.getElementById('player'), {
+    id: "1249030790?i=1249031216",
+    title: "Black Lace Freudian Slip",
+    artist: "RenÃ© Marie",
+    country: "us"
+});</script>
+
+<p>For the music theory part, I included several interactive components.</p>
+
+<p>Here's musical notation that can be played:</p>
+
+<div id="notation"/>
+
+<script>JazzComponents.renderNotation(document.getElementById('notation'), {
+    notes: "C4/8 C#4/8 D4/8 D#4/8 E4/8 F4/8 F#4/8 G4/8",
+    clef: "treble",
+    time: "4/4",
+    tempo: 140
+});</script>
+
+<p>Here's an interactive piano (multi-touch supported) for playing scales:</p>
+
+<div id="piano"/>
+
+<script>JazzComponents.renderPiano(document.getElementById('piano'), {
+    root: "C",
+    mode: "major",
+    octaves: 2,
+    startOctave: 4,
+    interactive: true
+});</script>
+
+<p>Here's a chord player:</p>
+
+<div id="progression"/>
+
+<script>JazzComponents.renderProgression(document.getElementById('progression'), {
+    chords: "Dm7|G7|Cmaj7",
+    tempo: 100,
+    beats: 4,
+    loop: false,
+    label: "ii-V-I in C Major"
+});</script>
+
+<p>And a drum pattern to explain rhythm:</p>
+
+<div id="drums"/>
+
+<script>JazzComponents.renderDrums(document.getElementById('drums'), {
+    pattern: "swing",
+    tempo: 120
+});</script>
+
+<p>The main theme here is to seamlessly transition between reading and listening.</p>
+
+<h2>Implementation</h2>
+
+<p>I used AI both to implement this and to generate the content. As a writer, I am
+very much opposed to AI generating content. I would never use it and claim
+authorship. I firmly believe a writer needs to use their own voice. Disclaimer
+aside, in this particular case is something I'm doing for my own learning. I
+know so little about jazz that it would be impossible for me to produce the
+content. I'm leveraging AI as a learning tool.</p>
+
+<p>I have two interesting anecdotes from putting together this project: embedding
+the music player for the various songs, and generating content.</p>
+
+<h3>Music player</h3>
+
+<p>I originally tried to embed the Spotify player. Both Spotify and Apple Music
+embeds rely on a track ID which uniquely identifies the song. Claude happily
+hallucinated IDs for all songs mentioned. 5 of them worked out of around 250
+songs referenced.</p>
+
+<p>I tried a couple of approaches to fix this, since looking up 250 songs by hand
+would take quite a while. First, I let Claude access Spotify which promptly got
+us rate-limited. After a cooldown period, once I was able to access Spotify
+again, I tried getting an API key to access their endpoint programmatically.
+Unfortunately it seems like at the moment, Spotify wasn't allowing the creation
+of new apps.</p>
+
+<p>I decided to switch to Apple Music. This went a lot smoother, the public
+endpoint Apple exposes is not as restrictive as Spotify's. Claude was able to
+search for each individual song by artist and title and get the correct IDs
+without getting rate-limited.</p>
+
+<p>One issue I am aware of is it didn't do a good job when we needed a particular
+recording. Jazz artists might record the same song many times. For example, a
+landmark recording is Benny Goodman's Carnegie Hall recording in 1938. The
+songs found on Apple Music are by the same artist and have the same title, but
+they're not the ones recorded live at Carnegie Hall.</p>
+
+<p>This issue is something that I could address in probably several ways: just
+manually find the right song since the list of songs where the specific
+recording matters is quite small; alternately guide Claude to better navigate
+Apple Music. For now, I can live with it - I suspect my ear is not trained
+enough to pick up on differences between recordings.</p>
+
+<h3>Content generation</h3>
+
+<p>The other interesting challenge was generating content. This was a multi-step
+process. First, I started with the very high-level: What is the list of key
+players we should cover? Next, for each one, generate a high-level summary,
+the bullet points we need to cover. Finally, flesh out the chapter.</p>
+
+<p>This isn't enough though! What prevents the model from hallucinating facts? I
+ended up building a validation pipeline. For reach article, I had Claude extract
+<em>claims</em> in the following format:</p>
+<div class="highlight"><pre><span/><span class="p">{</span>
+<span class="w">  </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"sourceFile"</span><span class="p">:</span><span class="w"> </span><span class="s2">"content/players/21-miles-davis.md"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"extractedAt"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-01-24T12:00:00Z"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"claims"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"players-21-miles-davis-L15-1"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"biographical"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"subtype"</span><span class="p">:</span><span class="w"> </span><span class="s2">"birth"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Miles Dewey Davis III was born on May 26, 1926, in Alton, Illinois"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"line"</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"entities"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"names"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"Miles Dewey Davis III"</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">"dates"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"1926-05-26"</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">"locations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"Alton, Illinois"</span><span class="p">]</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">"verificationHint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Miles Davis birth date birthplace"</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"players-21-miles-davis-L42-2"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"recording"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"subtype"</span><span class="p">:</span><span class="w"> </span><span class="s2">"session"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Kind of Blue was recorded on March 2 and April 22, 1959, at Columbia's 30th Street Studio"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"line"</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"entities"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"names"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"Miles Davis"</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">"dates"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"1959-03-02"</span><span class="p">,</span><span class="w"> </span><span class="s2">"1959-04-22"</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">"locations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"Columbia's 30th Street Studio"</span><span class="p">,</span><span class="w"> </span><span class="s2">"New York"</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">"works"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"Kind of Blue"</span><span class="p">]</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">"verificationHint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Kind of Blue recording dates studio"</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>I doubt the format itself matters much, this is what Claude itself suggested.
+The key point being to extract this information.</p>
+
+<p>Next, I had it cross-check this with Wikipedia and other web sources. In this
+iteration, it read a claims file and, claim by claim, made sure there is
+information to back it on the web. The prompt specifically insisted on not
+relying on internal knowledge for the validation. Here's a snippet:</p>
+<div class="highlight"><pre><span/>You are validating factual claims extracted from educational content about jazz
+history. For each claim, you must verify it against external authoritative
+sources and attach the reference. **Do NOT rely on your training dataâall
+validation must come from fetched external sources.**
+
+<span class="gu">### Why External Sources Only?</span>
+
+This validation process exists specifically to catch hallucinations and errors.
+If we allowed the model to validate claims from its own knowledge, we'd be
+validating potentially hallucinated content against potentially hallucinated
+knowledge. Every claim must have a fetched, citable source.
+
+<span class="gu">### Authoritative Sources (in priority order)</span>
+
+| Source | Best For | How to Access |
+|--------|----------|---------------|
+| <span class="gs">**MusicBrainz**</span> | Recording dates, personnel, releases, labels | <span class="sb">`fetch_webpage`</span> on musicbrainz.org URLs |
+| <span class="gs">**Wikidata**</span> | Structured data: birth/death dates, places, identifiers | <span class="sb">`fetch_webpage`</span> on wikidata.org URLs |
+| <span class="gs">**Wikipedia**</span> | Biographical details, historical context, career facts | <span class="sb">`fetch_webpage`</span> on wikipedia.org URLs |
+| <span class="gs">**AllMusic**</span> | Album details, session info, personnel | <span class="sb">`fetch_webpage`</span> on allmusic.com URLs |
+| <span class="gs">**Discogs**</span> | Release dates, pressings, personnel | <span class="sb">`fetch_webpage`</span> on discogs.com URLs |
+| <span class="gs">**Web Search**</span> | Fallback for claims not found in above sources | Use search to find authoritative sources |
+</pre></div>
+
+<p>Running validation over the extracted claims identified several inaccurate
+<q>facts.</q> Somewhere between 20-30% of claims were false. Most of these were not
+egregious though - mostly dates mixed up, off by a year etc. A much small number
+ended up being unverifiable.</p>
+
+<p>Is this a foolproof method? I doubt it. I expect the model to have missed
+some claims during extraction and I noticed the quality of research to vary
+a lot. In some cases, it simply checked Wikipedia and if it couldn't find
+something it said it is unverifiable. In other instances it did a lot more
+digging, searching the web, and so on.</p>
+
+<p>I expect accuracy to increase with multiple iterations of this: rather than a
+single claim extraction pass, repeat claim extraction several times to get
+better coverage. Similarly, during claim validation, attempting to validate the
+same claim multiple times should yield better accuracy.</p>
+
+<h2>Thoughts</h2>
+
+<p>Coding models are pretty great these days. I stood up the whole project over
+a single weekend. Building an interactive study guide from scratch in two days
+(including the content!) is quite amazing.</p>
+
+<p>I wonder what this means for learning. It's going to be extremely easy to have
+personalized study material generated on-demand.</p>
+
+<p>I've been enjoying the multi-threaded reading experience. Claude named it
+<q>aspect-oriented learning,</q> which fits very well.</p>
+
+<p>A good next step when I have some free time is to cleanup the code I vibed and
+open-source it. It's pretty messy at the moment, but I envision something like:</p>
+
+<ul>
+<li>A compiler that takes Markdown sources.</li>
+<li>A plugin system for components - The musical components I used for my Jazz
+exploration being an instance of this. I can imagine many other possible
+component bundles like charts and graphs, math, code etc.</li>
+<li>A configurable app that can serve the compiled threads. By this I don't mean
+necessarily a service, the Jazz exploration is currently served from GitHub
+Pages. Rather this would be the shell that can load the compiled content and
+render it. Styling, keeping track of what was read, etc. would be handled
+here.</li>
+</ul>
+
+<p>Of course, the current implementation is coupled with the Jazz theme.
+Generalizing will take some effort.</p>
+
+<p>Orthogonal to this, the claim checker is also interesting and might be useful.
+That can be applied to any LLM (or human) generated document.</p>
+
+<p>All in all, this has been a very fun weekend project.</p>
+]]></description>
+      <pubDate>Tue, 27 Jan 2026 00:00:00 -0800</pubDate>
+    </item>
+
+    <item>
       <link>https://vladris.com/blog/2026/01/02/notes-on-advent-of-code-2025.html</link>
       <guid>https://vladris.com/blog/2026/01/02/notes-on-advent-of-code-2025.html</guid>
       <title><![CDATA[Notes on Advent of Code 2025]]></title>
