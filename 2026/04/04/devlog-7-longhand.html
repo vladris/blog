@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>DevLog 7: Longhand &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/theme.css" type="text/css">
+<link rel="stylesheet" href="../../../static/tokyo.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<header><span>April 04, 2026</span></header>
+<article>
+<h1>DevLog 7: Longhand</h1>
+
+<p>I talked a bunch about Flow, the focused text editor I built during the past
+couple of years. I released Flow on the MacOS App Store and on the Windows Store
+and I&#39;m pretty happy with the editing experience.</p>
+
+<p>One thing I was still missing was a solution for long form writing. I used
+Obsidian to organize my last novel, but Obsidian is a note taking/PKB tool, not
+a manuscript management tool. I mentioned this when I started working on
+<a href="https://vladris.com/blog/2025/03/08/devlog-1-flow.html">Flow</a>. Since then, I
+learned about several other applications in the space, like
+<a href="https://ulysses.app/">Ulysses</a> and <a href="https://www.dabblewriter.com/">Dabble</a>,
+which are closer to what I&#39;m imagining but still lacking in UX and
+cross-platform support.</p>
+
+<p>Now that I have a solid core editor, my next project is an editor for long form
+writers. Introducing: <em>Longhand</em>.</p>
+
+<p><img src="./screenshot.jpg" alt="Longhand screenshot"></p>
+
+<p>I absolutely plan to write my next book with it.</p>
+
+<h2>Information Architecture</h2>
+
+<p>The app uses the same side rail as Flow for modes, settings etc.</p>
+
+<p>Unlike Flow, which is a single-file editor, Longhand works across multiple
+files. I&#39;m following the Obsidian model, where a project is simply a folder on
+disk. These are split into two main categories: <em>Manuscript</em> and <em>Notes.</em> Should
+be self-explanatory. Longhand allows hierarchical groupings - for example
+multiple <em>chapters</em> belong to a <em>part</em>. Notes can similarly be parented. Here,
+unlike Obsidian, I am not using sub-folders. That&#39;s because in a book, hierarchy
+parents might contain content themselves. The novel&#39;s <em>Part 1</em> page has a title,
+maybe a quote, so just sticking chapters under a <code>Part 1</code> subfolder isn&#39;t
+enough. The app has a collapsible left pane to manage manuscript chapters and
+notes.</p>
+
+<p>Reading mode pulls together the whole manuscript into one view.</p>
+
+<p>The other concept I introduced is that of <em>Tools</em>. Tools appear on the right side pane and offer various useful functionality. So far I have:</p>
+
+<ul>
+<li>Minimap - Not sure how useful this is but I really like how minimaps look so I
+built one.</li>
+<li>ToC - Table of Contents inferred based on hierarchy and headings, with
+one-click navigation.</li>
+<li>Search - Search tool with filters to scope search to manuscript or notes
+only.</li>
+<li>Grammar checker - Non-intrusive, revise grammar only when needed.</li>
+<li>Export - I have big plans here but starting small, with basic PDF and Word
+export.</li>
+<li>Version history - This is a useful one. Whenever the user first edits a file
+in a session, Longhand automatically saves a copy. Unhappy with the latest
+revision? You can easily go back in time to an older version.</li>
+</ul>
+
+<p>I have a long list of tools to add on the backlog. For example, a tool to pin notes relevant to the chapter on the side for easy reference etc.</p>
+
+<p>This should give you more insight on my previous <a href="https://vladris.com/blog/2026/03/22/notes-on-markdown.html">rant on
+Markdown</a>. I want
+to add support for comments and revisions. This is where Markdown is no longer
+a great fit and I&#39;ll need to figure out how to implement these.</p>
+
+<h2>Platform</h2>
+
+<p>One of the biggest decisions I ended up regretting with Flow is choosing
+Electron. I quickly learned Electron is a hog, the bundled browser taking up
+hundreds of megabytes, way more than my modes app code. I was also disappointed
+to learn Electron doesn&#39;t run on iPad. I like writing on my iPad with a Magic
+Keyboard.</p>
+
+<p>For Longhand I&#39;m using <a href="https://v2.tauri.app/">Tauri</a>. Tauri uses the OS native
+web view, for better or worse. It&#39;s a lot slimmer because of this, but I expect
+cross-platform becomes more difficult targeting different web platforms. At this
+point I&#39;m willing to accept the tradeoff. Tauri is tiny! It uses Rust on the
+native side and works on all platforms. More or less, iOS support is still
+<q>experimental.</q> That said, I was able to get Longhand running on an iPad
+simulator.</p>
+
+<p>I&#39;m currently focusing on the MacOS version to get a solid initial experience
+out. Then Windows, like I did with Flow. Then iPad and iPhone.</p>
+
+<h2>A Note on Coding Agents</h2>
+
+<p>I&#39;ve been more and more impressed with the capability of coding agents. When I
+first started working on Flow, it was a lot of co-authoring with Copilot in VS
+Code. Most of Longhand implementation was Claude CLI. Ever since Opus 4.5,
+coding agents work great autonomously.</p>
+
+<p>It also helps that I&#39;m using the same core editor as Flow, which didn&#39;t require
+a lot of changes. I did have to touch it for a couple of new features, like
+multiple highlight colors. The agent did a solid job, don&#39;t get me wrong, but
+those are the PRs I spend most time on since the core editor is the engine
+behind all of this.</p>
+
+<p>The full app experience includes a lot of chrome and tools which are fairly
+self-contained. I believe I got the app architecture right, so tacking on tools
+with Claude is very easy.</p>
+
+<p>I wanted to implement subscriptions for Longhand. I have no experience setting
+this up and was able to stand up an end-to-end sign in and subscription flow
+with Supabase, Resend, and Stripe in a few hours. As I said, I am more and more
+impressed with what agents can do.</p>
+
+<p>I am also saddened by how developer-hostile Apple is. On Apple platform I must
+use their APIs for any in-app payments (from which they take their 30% cut).
+Getting this working took a lot longer than Stripe, with many manual steps
+involved and a testing solution that doesn&#39;t quite work. As much as I love using
+Apple products for their great user experience, the developer experience on the
+platform was always terrible and is not getting any better.</p>
+
+<h2>Release</h2>
+
+<p>The first version of Longhand will be out for MacOS in the next few days. I have
+a long backlog of stuff to add to it, but I have a very solid MVP.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2026/03/22/notes-on-markdown.html">DevLog 6: Extending Markdown</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+</body>
+</html>
