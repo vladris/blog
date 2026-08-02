@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>DevLog 9: Flow 2 &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/theme.css" type="text/css">
+<link rel="stylesheet" href="../../../static/tokyo.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<header><span>August 02, 2026</span></header>
+<article>
+<h1>DevLog 9: Flow 2</h1>
+
+<p>In the <a href="https://vladris.com/blog/2026/06/13/devlog-8-replat.html">previous post</a>
+I talked about replatforming my editors on a custom stack, including a custom
+incremental Markdown parser and a custom HTML editor, which I open sourced as
+<a href="https://github.com/saturn9studio/markoffset">markoffset</a> and
+<a href="https://github.com/saturn9studio/scribeframe">scribeframe</a>.</p>
+
+<p>Since then, I released <a href="https://saturn9.studio/flow/">Flow 2</a>, the next major
+release, which ditches Electron for Tauri and ProseMirror for scribeframe. Flow
+2 is now available on both the MacOS App Store and the Microsoft Store.</p>
+
+<p>The user experience stays mostly the same, except the whole editor should be
+snappier. I&#39;m very happy with the bundle size, going down from hundreds of MBs
+(Electron) to dozens of MBs with the much smaller Tauri bundle.</p>
+
+<p>I fully expect some bugs are still around and need to be squashed, but overall
+I&#39;m happy with where things are at.</p>
+
+<h2>New Stuff</h2>
+
+<p>I didn&#39;t want to release a v2 that is just smaller, so this newest version comes
+with added support for a few more Markdown features: tables and math - both
+inline math and math blocks.</p>
+
+<p>Here&#39;s a sample:</p>
+
+<p><img src="./flow-2.png" alt="Flow 2"></p>
+
+<p>These were easy to add on the new stack: both the parser and editor have strong
+support for plugins so adding new capabilities like this becomes trivial.</p>
+
+<p>Encouraged by the agentic rewrite, I decided to build a version of Flow for the
+terminal because why not? <a href="https://github.com/saturn9studio/flow-cli">Flow CLI</a>
+is a fully open-source, TUI version of the app. It includes the same editor
+modes and features, even an <q>image</q> widget that converts a given image into ANSI
+art.</p>
+
+<p><img src="./flow-cli.png" alt="Flow CLI"></p>
+
+<p>Flow CLI can be installed via Homebrew, Winget, or npm.</p>
+
+<h2>What&#39;s Next</h2>
+
+<p>Next, I&#39;m going back to <a href="https://saturn9.studio/longhand/">Longhand</a>, my long
+form writing app. From the start, I used Flow as a test bed. With the first
+release of Flow, I built up the core editor (then based on ProseMirror) and
+learned the lesson that Electron is not as great for what I&#39;m trying to do as I
+originally thought.</p>
+
+<p>For the first version of Longhand, I ditched Electron, kept the editor, and
+focused on multiple file management and tools.</p>
+
+<p>Now that I have a new editor stack, I want to port Longhand to it too -
+markoffset and scribeframe will replace the editor, while preserving the overall
+experience. I&#39;m expecting this shift to be less work. The editor stack is
+working end to end in Flow 2 and Longhand is already a Tauri app. A bunch of the
+heavy lifting of getting Flow 2 on Tauri doesn&#39;t apply here. The port is manly
+swapping out one editor for the other.</p>
+
+<p>Behind the scenes, I also did some refactoring to share more code. You might
+have noticed that Flow and Longhand have a very similar app shell: custom title
+bar, side rail, status bar etc. These were different implementations back when
+Flow was an Electron app but now that both apps share the same platform I
+extracted a lot of code into a shared package that provides everythign from
+window chrome to driving the OS menus and file IO. As things stabilize, I might
+open source more of the stack.</p>
+
+<p>I did spend a bunch of time on this replatform sidequest but I think it&#39;s for
+the best. My projects are converging towards a robust long term solution. That
+said, I&#39;m looking forward to wrap up the Longhand move to the new editor and
+resume working on what I really set out to do: a feature-rich editor for
+authors, with intelligent tools and beautiful UX. While I have an MVP out, there
+are plenty more things to build on it.</p>
+
+<h2>Agentic Coding</h2>
+
+<p>I&#39;m relying more and more on coding agents, so I&#39;ve been tending to include a
+section on my experience with most blog posts.</p>
+
+<p>Models are getting better and better. I&#39;ve been using GPT 5.6 Sol for most of
+the replatform work, and it has been doing a solid job overall. I still found
+multiple UX bugs and glitches in the typing experience which I had to
+workthrough. Not perfect, but if I would&#39;ve written markoffset and scribeframe
+by hand and ported Flow over it would&#39;ve taken me a lot more time than it took
+the agent.</p>
+
+<p>I&#39;m still gathering my thoughts, I&#39;ll probably write a dedicated post once I
+form a solid opinion but I do think software engineering itself is shifting. The
+<a href="https://openai.com/index/harness-engineering/">Harness engineering</a> article by
+OpenAI is illuminating. I&#39;ve been incorporating some of the practices into my
+editor project.</p>
+
+<p>Verification is a bottleneck. The model produces tests of dubious quality. One
+pattern I noticed as we were working through UX bugs what it adding various <q>CSS
+tests</q> which are completely useless. It also bloated CI with browser-driven
+automation for these which immediately blew through my GitHub credits for
+Actions.</p>
+
+<p>Autonomy is improving. For example, to debug, the agent can independently boot
+the UI in playwright, capture a screenshot, inspect it, and iterate. I also
+absolutely love <a href="https://github.com/microsoft/DebugMCP">DebugMCP</a>, which lets an
+agent drive a debugger.</p>
+
+<p>I&#39;ve been writing various skills to improve output quality.</p>
+
+<p>The technology is moving so fast that today&#39;s best practices quickly become
+obsolete.</p>
+
+<p>At some point I&#39;ll coalesce the above into a coherent post. Until then, upgrade
+to <a href="https://saturn9.studio/flow/">Flow 2</a>, give <a href="https://github.com/saturn9studio/flow-cli">Flow
+CLI</a> a try, and stay tuned for the
+release of Longhand 2.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2026/06/13/devlog-8-replat.html">DevLog 8: Replat</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+</body>
+</html>
