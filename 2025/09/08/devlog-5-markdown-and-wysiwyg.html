@@ -119,17 +119,17 @@ sentence</code>. The <code>&lt;span&gt;</code> will have whatever attributes we 
 <p>The document schema is just:</p>
 <div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">docSchema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Schema</span><span class="p">({</span>
 <span class="w">    </span><span class="nx">nodes</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nx">doc</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;block+&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nx">doc</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="s2">"block+"</span><span class="w"> </span><span class="p">},</span>
 <span class="w">        </span><span class="nx">paragraph</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="nx">group</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;block&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;inline*&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">group</span><span class="o">:</span><span class="w"> </span><span class="s2">"block"</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="s2">"inline*"</span><span class="p">,</span>
 <span class="w">            </span><span class="nx">attrs</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">default</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;paragraph&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">default</span><span class="o">:</span><span class="w"> </span><span class="s2">"paragraph"</span><span class="w"> </span><span class="p">},</span>
 <span class="w">                </span><span class="nx">widgetId</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">default</span><span class="o">:</span><span class="w"> </span><span class="kt">null</span><span class="w"> </span><span class="p">},</span>
 <span class="w">            </span><span class="p">},</span>
 <span class="w">            </span><span class="nx">toDOM</span><span class="p">(</span><span class="nx">node</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                    </span><span class="s2">&quot;p&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="s2">"p"</span><span class="p">,</span>
 <span class="w">                    </span><span class="p">{</span>
 <span class="w">                        </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">node</span><span class="p">.</span><span class="nx">attrs</span><span class="p">.</span><span class="kr">type</span><span class="p">,</span>
 <span class="w">                        </span><span class="nx">widgetId</span><span class="o">:</span><span class="w"> </span><span class="kt">node.attrs.widgetId</span><span class="p">,</span>
@@ -138,7 +138,7 @@ sentence</code>. The <code>&lt;span&gt;</code> will have whatever attributes we 
 <span class="w">                </span><span class="p">];</span>
 <span class="w">            </span><span class="p">},</span>
 <span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">group</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;inline&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">group</span><span class="o">:</span><span class="w"> </span><span class="s2">"inline"</span><span class="w"> </span><span class="p">},</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="p">});</span>
 </pre></div>

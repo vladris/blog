@@ -110,7 +110,7 @@ memory cell.</p>
 integer to a character. This is just to provide a convenient way for us
 to look at output like <q>Hello world!</q>.</p>
 <div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">out</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span>
 </pre></div>
 
 <h3>Memory</h3>
@@ -123,7 +123,7 @@ encoding to make it easier for us to peek at the code targeting our von
 Neumann machine.</p>
 <div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">memory</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
     <span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
         <span class="n">memory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 
@@ -216,7 +216,7 @@ integers, we will encode them as integers: <code>AT = 0</code>, <code>SET = 1</c
         <span class="k">case</span> <span class="mi">7</span><span class="p">:</span> <span class="c1"># OUT</span>
             <span class="n">out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]])</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span> 
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unknown instruction&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"Unknown instruction"</span><span class="p">)</span>
 </pre></div>
 
 <h3>Von Neumann VM</h3>
@@ -237,11 +237,11 @@ to be consumed by the <code>inp()</code> function:</p>
     <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">ord</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">out</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">memory</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
     <span class="n">memory</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10000</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
         <span class="n">memory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">memory</span>
 
@@ -277,7 +277,7 @@ to be consumed by the <code>inp()</code> function:</p>
             <span class="k">case</span> <span class="mi">7</span><span class="p">:</span> <span class="c1"># OUT</span>
                 <span class="n">out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">[</span><span class="n">m2</span><span class="p">]])</span>
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span> 
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unknown instruction&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"Unknown instruction"</span><span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
@@ -387,15 +387,15 @@ assembly file).</p>
 <div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Usage: asm.py &lt;input&gt; &lt;output&gt;&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Usage: asm.py &lt;input&gt; &lt;output&gt;"</span><span class="p">)</span>
     <span class="n">exit</span><span class="p">()</span>
 
 <span class="c1">## Read all lines into a list</span>
 <span class="n">lines</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
-<span class="c1">## Filter out blank lines and lines starting with &#39;#&#39;</span>
-<span class="n">lines</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
+<span class="c1">## Filter out blank lines and lines starting with '#'</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">'#'</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
 <span class="c1">## Join all lines and split into tokens</span>
-<span class="n">tokens</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<span class="n">tokens</span> <span class="o">=</span> <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
 </pre></div>
 
 <p>The labels themselves aren&#39;t part of the program, rather mark locations
@@ -405,7 +405,7 @@ list of tokens but retain the index they are referencing:</p>
 <span class="n">labels</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="p">{},</span> <span class="mi">0</span>
 <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
     <span class="c1"># If not a label, advance</span>
-    <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">':'</span><span class="p">:</span>
         <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">continue</span>
 
@@ -425,13 +425,13 @@ op code.</li>
 <code>ORD()</code> with its value.</li>
 </ul>
 <div class="highlight"><pre><span></span><span class="c1">## Op code list (constant)</span>
-<span class="n">OP_CODES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;at&#39;</span><span class="p">,</span> <span class="s1">&#39;set&#39;</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;eq&#39;</span><span class="p">,</span> <span class="s1">&#39;jz&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">,</span> <span class="s1">&#39;out&#39;</span><span class="p">]</span>
+<span class="n">OP_CODES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'at'</span><span class="p">,</span> <span class="s1">'set'</span><span class="p">,</span> <span class="s1">'add'</span><span class="p">,</span> <span class="s1">'not'</span><span class="p">,</span> <span class="s1">'eq'</span><span class="p">,</span> <span class="s1">'jz'</span><span class="p">,</span> <span class="s1">'inp'</span><span class="p">,</span> <span class="s1">'out'</span><span class="p">]</span>
 
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
     <span class="c1"># replace label references with actual position</span>
-    <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">&#39;+&#39;</span> <span class="ow">in</span> <span class="n">token</span><span class="p">:</span>
-            <span class="n">base</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">':'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'+'</span> <span class="ow">in</span> <span class="n">token</span><span class="p">:</span>
+            <span class="n">base</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'+'</span><span class="p">)</span>
             <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">base</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
@@ -441,34 +441,34 @@ op code.</li>
         <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">OP_CODES</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 
     <span class="c1"># replace ORD macro</span>
-    <span class="k">if</span> <span class="n">token</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ORD(&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">token</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'ORD('</span><span class="p">:</span>
         <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 </pre></div>
 
 <p>Finally, we write all tokens to the output file:</p>
-<div class="highlight"><pre><span></span><span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-    <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]))</span>
+<div class="highlight"><pre><span></span><span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">"w"</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+    <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]))</span>
 </pre></div>
 
 <p>Here is the full source code of our assembler (<code>asm.py</code>):</p>
 <div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Usage: asm.py &lt;input&gt; &lt;output&gt;&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Usage: asm.py &lt;input&gt; &lt;output&gt;"</span><span class="p">)</span>
     <span class="n">exit</span><span class="p">()</span>
 
 <span class="c1">## Read all lines into a list</span>
 <span class="n">lines</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
-<span class="c1">## Filter out blank lines and lines starting with &#39;#&#39;</span>
-<span class="n">lines</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
+<span class="c1">## Filter out blank lines and lines starting with '#'</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">'#'</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
 <span class="c1">## Join all lines and split into tokens</span>
-<span class="n">tokens</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<span class="n">tokens</span> <span class="o">=</span> <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
 
 <span class="c1">## pluck labels and remember position</span>
 <span class="n">labels</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="p">{},</span> <span class="mi">0</span>
 <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
     <span class="c1"># If not a label, advance</span>
-    <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">':'</span><span class="p">:</span>
         <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">continue</span>
 
@@ -477,13 +477,13 @@ op code.</li>
     <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
 
 <span class="c1">## Op code list (constant)</span>
-<span class="n">OP_CODES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;at&#39;</span><span class="p">,</span> <span class="s1">&#39;set&#39;</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;eq&#39;</span><span class="p">,</span> <span class="s1">&#39;jz&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">,</span> <span class="s1">&#39;out&#39;</span><span class="p">]</span>
+<span class="n">OP_CODES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'at'</span><span class="p">,</span> <span class="s1">'set'</span><span class="p">,</span> <span class="s1">'add'</span><span class="p">,</span> <span class="s1">'not'</span><span class="p">,</span> <span class="s1">'eq'</span><span class="p">,</span> <span class="s1">'jz'</span><span class="p">,</span> <span class="s1">'inp'</span><span class="p">,</span> <span class="s1">'out'</span><span class="p">]</span>
 
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
     <span class="c1"># replace label references with actual position</span>
-    <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">&#39;+&#39;</span> <span class="ow">in</span> <span class="n">token</span><span class="p">:</span>
-            <span class="n">base</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">':'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'+'</span> <span class="ow">in</span> <span class="n">token</span><span class="p">:</span>
+            <span class="n">base</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'+'</span><span class="p">)</span>
             <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">base</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
@@ -493,11 +493,11 @@ op code.</li>
         <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">OP_CODES</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 
     <span class="c1"># replace ORD macro</span>
-    <span class="k">if</span> <span class="n">token</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ORD(&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">token</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'ORD('</span><span class="p">:</span>
         <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
-<span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-    <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]))</span>
+<span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">"w"</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+    <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]))</span>
 </pre></div>
 
 <p>We can now save our assembly <q>Hello world!</q> (listed above) to a file,
@@ -558,7 +558,7 @@ out :DATA :I
 ## Decrement COUNTER, increment I
 add :COUNTER :CONST+2
 add :I :CONST+1
-## If COUNTER is 0, we&#39;re done
+## If COUNTER is 0, we're done
 jz :COUNTER 10000
 ## If not, jump to the start of the loop
 jz :CONST :LOOP
@@ -581,7 +581,7 @@ out :DATA :I
 ## Decrement COUNTER, increment I
 add :COUNTER :CONST+2
 add :I :CONST+1
-## If COUNTER is 0, we&#39;re done
+## If COUNTER is 0, we're done
 jz :COUNTER 10000
 ## If not, jump to the start of the loop
 jz :CONST :LOOP
@@ -686,7 +686,7 @@ at :TEMP :END
 add :END :CONST+1
 ## Check if the last integer we read was 10 (\n)
 eq :DONE_READING :TEMP
-## If it wasn&#39;t zero, jump to start and read another value
+## If it wasn't zero, jump to start and read another value
 jz :DONE_READING :START 
 
 ## Start running program
@@ -694,63 +694,63 @@ BF_RUN:
 at :TEMP :CODE_PTR
 add :CODE_PTR :CONST+1
 
-## Check if we&#39;re on a &gt; instruction
+## Check if we're on a &gt; instruction
 not :TEMP2 :CONST+1
 add :TEMP2 :BF
 eq :TEMP2 :TEMP
 not :TEMP2 :TEMP2
 jz :TEMP2 :RIGHT
 
-## Check if we&#39;re on a &lt; instruction
+## Check if we're on a &lt; instruction
 not :TEMP2 :CONST+1
 add :TEMP2 :BF+1
 eq :TEMP2 :TEMP
 not :TEMP2 :TEMP2
 jz :TEMP2 :LEFT
 
-## Check if we&#39;re on a + instruction
+## Check if we're on a + instruction
 not :TEMP2 :CONST+1
 add :TEMP2 :BF+2
 eq :TEMP2 :TEMP
 not :TEMP2 :TEMP2
 jz :TEMP2 :INC
 
-## Check if we&#39;re on a - instruction
+## Check if we're on a - instruction
 not :TEMP2 :CONST+1
 add :TEMP2 :BF+3
 eq :TEMP2 :TEMP
 not :TEMP2 :TEMP2
 jz :TEMP2 :DEC
 
-## Check if we&#39;re on a . instruction
+## Check if we're on a . instruction
 not :TEMP2 :CONST+1
 add :TEMP2 :BF+4
 eq :TEMP2 :TEMP
 not :TEMP2 :TEMP2
 jz :TEMP2 :OUT
 
-## Check if we&#39;re on a , instruction
+## Check if we're on a , instruction
 not :TEMP2 :CONST+1
 add :TEMP2 :BF+5
 eq :TEMP2 :TEMP
 not :TEMP2 :TEMP2
 jz :TEMP2 :IN
 
-## Check if we&#39;re on a [ instruction
+## Check if we're on a [ instruction
 not :TEMP2 :CONST+1
 add :TEMP2 :BF+6
 eq :TEMP2 :TEMP
 not :TEMP2 :TEMP2
 jz :TEMP2 :FORWARD
 
-## Check if we&#39;re on a ] instruction
+## Check if we're on a ] instruction
 not :TEMP2 :CONST+1
 add :TEMP2 :BF+7
 eq :TEMP2 :TEMP
 not :TEMP2 :TEMP2
 jz :TEMP2 :BACKWARD
 
-## No matching BF instruction so we&#39;re done
+## No matching BF instruction so we're done
 jz :CONST 10000
 
 RIGHT:
@@ -821,7 +821,7 @@ jz :CONST :SCAN_FORWARD
 ## Decrement counter when finding a ]
 FORWARD_RPAR:
 add :TEMP :CONST+2
-## If counter is 0, we&#39;re done
+## If counter is 0, we're done
 jz :TEMP :BF_RUN
 ## Else keep scanning
 add :CODE_PTR :CONST+1
@@ -856,7 +856,7 @@ jz :CONST :SCAN_BACKWARD
 ## Decrement counter when finding a [
 BACKWARD_LPAR:
 add :TEMP :CONST+2
-## If counter is 0, we&#39;re done
+## If counter is 0, we're done
 jz :TEMP :BF_RUN
 ## Else keep scanning
 add :CODE_PTR :CONST+2
@@ -877,7 +877,7 @@ DONE_READING: 0
 CODE_PTR: :PROG
 DATA_PTR: 5000
 
-## We&#39;ll load the BF program here
+## We'll load the BF program here
 PROG:
 </pre></div>
 

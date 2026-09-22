@@ -117,7 +117,7 @@ like this:</p>
 <span class="n">store</span><span class="p">.</span><span class="n">OnSave</span><span class="p">([](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Do stuff */</span><span class="w"> </span><span class="p">});</span>
 
 <span class="c1">// Raise an event</span>
-<span class="n">store</span><span class="p">.</span><span class="n">RaiseSave</span><span class="p">(</span><span class="s">&quot;Some file name&quot;</span><span class="p">);</span>
+<span class="n">store</span><span class="p">.</span><span class="n">RaiseSave</span><span class="p">(</span><span class="s">"Some file name"</span><span class="p">);</span>
 </pre></div>
 
 <p>Looking at <code>EventStore</code>, it&#39;s obvious that there is a lot of repetition
@@ -208,7 +208,7 @@ an enum:</p>
 <span class="n">store</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">EventType</span><span class="o">::</span><span class="n">SaveEvent</span><span class="o">&gt;</span><span class="p">([](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Do stuff */</span><span class="w"> </span><span class="p">});</span>
 
 <span class="c1">// Raise an event</span>
-<span class="n">store</span><span class="p">.</span><span class="n">Raise</span><span class="o">&lt;</span><span class="n">EventType</span><span class="o">::</span><span class="n">SaveEvent</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;Some file name&quot;</span><span class="p">);</span>
+<span class="n">store</span><span class="p">.</span><span class="n">Raise</span><span class="o">&lt;</span><span class="n">EventType</span><span class="o">::</span><span class="n">SaveEvent</span><span class="o">&gt;</span><span class="p">(</span><span class="s">"Some file name"</span><span class="p">);</span>
 </pre></div>
 
 <p>With this implementation, we preserve the ability to have polymorphic
@@ -324,7 +324,7 @@ is specified. The full implementation is:</p>
 <span class="n">store</span><span class="p">.</span><span class="n">Register</span><span class="o">&lt;</span><span class="n">SaveEvent</span><span class="o">&gt;</span><span class="p">([](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* Do stuff */</span><span class="w"> </span><span class="p">});</span>
 
 <span class="c1">// Raise an event</span>
-<span class="n">store</span><span class="p">.</span><span class="n">Raise</span><span class="o">&lt;</span><span class="n">SaveEvent</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;Some file name&quot;</span><span class="p">);</span>
+<span class="n">store</span><span class="p">.</span><span class="n">Raise</span><span class="o">&lt;</span><span class="n">SaveEvent</span><span class="o">&gt;</span><span class="p">(</span><span class="s">"Some file name"</span><span class="p">);</span>
 </pre></div>
 
 <p>In this case, adding a new event requires declaring a new struct and

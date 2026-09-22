@@ -205,13 +205,13 @@ heap object is also deleted.</p>
 than one single <code>unique_ptr</code> pointing to the same heap object:</p>
 <div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">ptrBar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">();</span>
 <span class="p">...</span>
-<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">;</span><span class="w"> </span><span class="c1">// Won&#39;t compile</span>
+<span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ptrBar</span><span class="p">;</span><span class="w"> </span><span class="c1">// Won't compile</span>
 </pre></div>
 
 <p>Of course, if we <em>really</em> want to, we can get the raw pointer out of
 <code>ptrBar</code> using <code>get()</code> and we can initialize a <code>unique_ptr</code> from a raw
 pointer -</p>
-<div class="highlight"><pre><span></span><span class="c1">// Please don&#39;t do this</span>
+<div class="highlight"><pre><span></span><span class="c1">// Please don't do this</span>
 <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Bar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ptrBar2</span><span class="p">(</span><span class="n">ptrBar</span><span class="p">.</span><span class="n">get</span><span class="p">())</span>
 </pre></div>
 

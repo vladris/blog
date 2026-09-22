@@ -195,7 +195,7 @@ way to group components and expose functionality. For example, here is a
 header/source file pair from my previous post:</p>
 <div class="highlight"><pre><span></span><span class="c1">// ICar.h</span>
 <span class="cp">##pragma once</span>
-<span class="cp">##include &quot;IEngine.h&quot;</span>
+<span class="cp">##include "IEngine.h"</span>
 
 <span class="k">struct</span><span class="w"> </span><span class="nc">ICar</span>
 <span class="p">{</span>
@@ -207,7 +207,7 @@ header/source file pair from my previous post:</p>
 <span class="n">Car</span><span class="p">.</span><span class="n">cpp</span><span class="o">:</span>
 
 <span class="c1">// Car.cpp</span>
-<span class="cp">##include &quot;ICar.h&quot;</span>
+<span class="cp">##include "ICar.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span>
 <span class="p">{</span>
@@ -326,7 +326,7 @@ might look like in the not too far future:</p>
 <span class="p">};</span>
 
 <span class="c1">// Explicit instantiation exported from this module so clients</span>
-<span class="c1">// won&#39;t have to re-instantiate the template for V8Engine type</span>
+<span class="c1">// won't have to re-instantiate the template for V8Engine type</span>
 <span class="k">export</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="o">&lt;</span><span class="n">V8Engine</span><span class="o">&gt;</span><span class="p">;</span>
 </pre></div>
 

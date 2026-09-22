@@ -189,10 +189,10 @@ can be used instead of a whole convoluted function:</p>
 <span class="w">    </span><span class="n">fixed_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">;</span>
 <span class="w">  </span><span class="p">}</span>
 
-<span class="w">  </span><span class="c1">// Finally, push panels to the left and the right so they don&#39;t overlap.</span>
+<span class="w">  </span><span class="c1">// Finally, push panels to the left and the right so they don't overlap.</span>
 <span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">boundary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">[</span><span class="n">fixed_index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">cur_panel_left</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kBarPadding</span><span class="p">;</span>
 <span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Panels</span><span class="o">::</span><span class="n">reverse_iterator</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span>
-<span class="w">       </span><span class="c1">// Start at the panel to the left of &#39;new_fixed_index&#39;.</span>
+<span class="w">       </span><span class="c1">// Start at the panel to the left of 'new_fixed_index'.</span>
 <span class="w">       </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">rbegin</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">new_fixed_index</span><span class="p">);</span>
 <span class="w">       </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">expanded_panels_</span><span class="p">.</span><span class="n">rend</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">Panel</span><span class="o">*</span><span class="w"> </span><span class="n">panel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">();</span>
@@ -430,11 +430,11 @@ the API like this:</p>
 two types:</p>
 <div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Foo</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo string&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"Foo string"</span><span class="p">;</span>
 <span class="p">}</span>
 <span class="k">else</span><span class="w"> </span><span class="nf">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Bar</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Bar string&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"Bar string"</span><span class="p">;</span>
 <span class="p">}</span>
 <span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">...</span>
 </pre></div>
@@ -444,8 +444,8 @@ statement) can usually be replaced with indexing into an array or
 looking up the corresponding value in a hash map:</p>
 <div class="highlight"><pre><span></span><span class="n">Dictionary</span><span class="o">&lt;</span><span class="n">IdType</span><span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">IdTypeToStringMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Dictionary</span><span class="o">&lt;</span><span class="n">IdType</span><span class="p">,</span><span class="w"> </span><span class="kt">string</span><span class="o">&gt;</span><span class="p">()</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Bar</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bar&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Foo</span><span class="p">,</span><span class="w"> </span><span class="s">"Foo"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">IdType</span><span class="p">.</span><span class="n">Bar</span><span class="p">,</span><span class="w"> </span><span class="s">"Bar"</span><span class="w"> </span><span class="p">},</span>
 <span class="w">    </span><span class="p">...</span>
 <span class="p">};</span>
 <span class="p">...</span>

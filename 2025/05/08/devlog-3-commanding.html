@@ -99,7 +99,7 @@ need a <code>CommandData</code> way to pass information:</p>
 <span class="w">    </span><span class="nx">accelerator?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
 <span class="w">    </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
 <span class="w">    </span><span class="nx">active?</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
-<span class="w">    </span><span class="kr">type</span><span class="o">?:</span><span class="w"> </span><span class="s2">&quot;normal&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;checkbox&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">?:</span><span class="w"> </span><span class="s2">"normal"</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">"checkbox"</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -120,7 +120,7 @@ something like <em>toggle bold</em>.</p>
 <span class="w">        </span><span class="nx">accelerator</span><span class="o">:</span><span class="w"> </span><span class="kt">command.accelerator</span><span class="p">,</span>
 <span class="w">        </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="kt">command.enabled</span><span class="p">(),</span>
 <span class="w">        </span><span class="nx">active</span><span class="o">:</span><span class="w"> </span><span class="kt">command.active</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">command</span><span class="p">.</span><span class="nx">active</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kc">undefined</span><span class="p">,</span>
-<span class="w">        </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">command</span><span class="p">.</span><span class="nx">active</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;checkbox&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;normal&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">command</span><span class="p">.</span><span class="nx">active</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">"checkbox"</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">"normal"</span><span class="p">,</span>
 <span class="w">    </span><span class="p">};</span>
 <span class="p">}</span>
 </pre></div>
@@ -188,9 +188,9 @@ the change.</p>
 <p>Let’s look at a concrete example. Here is how the <em>toggle bold</em> command is
 implemented:</p>
 <div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">boldCommand</span><span class="o">:</span><span class="w"> </span><span class="kt">Command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;bold&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Bold&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">accelerator</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;CmdOrCtrl+B&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">"bold"</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="s2">"Bold"</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">accelerator</span><span class="o">:</span><span class="w"> </span><span class="s2">"CmdOrCtrl+B"</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">view</span><span class="p">.</span><span class="nx">editable</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">active</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">isRangeAllBold</span><span class="p">(</span><span class="nx">view</span><span class="p">.</span><span class="nx">state</span><span class="p">),</span>
 <span class="w">    </span><span class="nx">execute</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">toggleBold</span><span class="p">(</span><span class="nx">view</span><span class="p">.</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">view</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">),</span>
@@ -333,12 +333,12 @@ performance impact of this approach.</p>
 <p>The editor&#39;s host can add its own commands to this registry. For example, Flow
 hooks up the mode change commands. Here&#39;s <code>focusMode</code>:</p>
 <div class="highlight"><pre><span></span><span class="nx">commandRegistry</span><span class="p">.</span><span class="nx">register</span><span class="p">({</span>
-<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;focusMode&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Focus Mode&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">"focusMode"</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">label</span><span class="o">:</span><span class="w"> </span><span class="s2">"Focus Mode"</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">active</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">modeRef</span><span class="p">.</span><span class="nx">current</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;FocusMode&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">active</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">modeRef</span><span class="p">.</span><span class="nx">current</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">"FocusMode"</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">execute</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nx">setMode</span><span class="p">(</span><span class="s2">&quot;FocusMode&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setMode</span><span class="p">(</span><span class="s2">"FocusMode"</span><span class="p">);</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="p">});</span>
 </pre></div>

@@ -67,7 +67,7 @@ logs to the console whether the request was successful:</p>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HttpClient</span><span class="p">();</span>
 <span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span>
-<span class="w">            </span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">).</span><span class="n">Result</span><span class="p">;</span>
+<span class="w">            </span><span class="s">"https://www.example.com"</span><span class="p">).</span><span class="n">Result</span><span class="p">;</span>
 
 <span class="w">        </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">IsSuccessStatusCode</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
@@ -104,7 +104,7 @@ working with <code>HttpClient</code> and <code>Console</code>:</p>
 <span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">Get</span><span class="p">()</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="kt">var</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span>
-<span class="w">            </span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">).</span><span class="n">Result</span><span class="p">;</span>
+<span class="w">            </span><span class="s">"https://www.example.com"</span><span class="p">).</span><span class="n">Result</span><span class="p">;</span>
 
 <span class="w">        </span><span class="n">output</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">IsSuccessStatusCode</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
@@ -140,7 +140,7 @@ componentized enough that we can actually test it:</p>
 and verify that the expected calls happen:</p>
 <div class="highlight"><pre><span></span><span class="kt">var</span><span class="w"> </span><span class="n">mockClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Mock</span><span class="o">&lt;</span><span class="n">IHttpClient</span><span class="o">&gt;</span><span class="p">();</span>
 <span class="n">mockClient</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span>
-<span class="w">    </span><span class="n">client</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="n">client</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="s">"https://www.example.com"</span><span class="p">))</span>
 <span class="w">    </span><span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">Task</span><span class="p">.</span><span class="n">FromResult</span><span class="p">(</span>
 <span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">HttpResponseMessage</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="n">StatusCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">OK</span>

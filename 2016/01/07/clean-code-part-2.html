@@ -74,7 +74,7 @@ consequences down the line.</p>
 
 <span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">Concat2</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str1</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">str2</span><span class="p">)</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">         </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">str2</span><span class="p">);</span><span class="w"> </span><span class="c1">// Won&#39;t compile - can&#39;t call append on str1</span>
+<span class="w">         </span><span class="k">return</span><span class="w"> </span><span class="n">str1</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">str2</span><span class="p">);</span><span class="w"> </span><span class="c1">// Won't compile - can't call append on str1</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">};</span>
 </pre></div>
@@ -95,7 +95,7 @@ each character of the given string, upcasing it in place:</p>
 </pre></div>
 
 <p>Calling it with</p>
-<div class="highlight"><pre><span></span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"Foo"</span><span class="p">;</span>
 <span class="p">...</span>
 <span class="n">UpCase</span><span class="p">(</span><span class="n">myString</span><span class="p">);</span>
 </pre></div>
@@ -107,9 +107,9 @@ read-only data segment of the binary. This cannot be modified.</p>
 
 <p>To catch this type of errors at compile-time, we again only need to mark
 the immutable data as such:</p>
-<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Foo&quot;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">myString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"Foo"</span><span class="p">;</span>
 <span class="p">...</span>
-<span class="n">UpCase</span><span class="p">(</span><span class="n">myString</span><span class="p">);</span><span class="w"> </span><span class="c1">// Won&#39;t compile - can&#39;t call UpCase on myString</span>
+<span class="n">UpCase</span><span class="p">(</span><span class="n">myString</span><span class="p">);</span><span class="w"> </span><span class="c1">// Won't compile - can't call UpCase on myString</span>
 </pre></div>
 
 <p>In contrast with the previous example, the argument to <code>UpCase</code> is

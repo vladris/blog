@@ -28,7 +28,7 @@ PowerShell Core shell, you can install Azure CLI using the following
 command:</p>
 <div class="highlight"><pre><span></span><span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="n">https</span><span class="p">://</span><span class="n">aka</span><span class="p">.</span><span class="n">ms</span><span class="p">/</span><span class="n">installazurecliwindows</span> <span class="p">`</span>
 <span class="n">-OutFile</span> <span class="p">.\</span><span class="n">AzureCLI</span><span class="p">.</span><span class="n">msi</span><span class="p">;</span> <span class="nb">Start-Process</span> <span class="n">msiexec</span><span class="p">.</span><span class="n">exe</span> <span class="p">`</span>
-<span class="n">-Wait</span> <span class="n">-ArgumentList</span>  <span class="s1">&#39;/I AzureCLI.msi /quiet&#39;</span><span class="p">;</span> <span class="nb">rm </span><span class="p">.\</span><span class="n">AzureCLI</span><span class="p">.</span><span class="n">msi</span>
+<span class="n">-Wait</span> <span class="n">-ArgumentList</span>  <span class="s1">'/I AzureCLI.msi /quiet'</span><span class="p">;</span> <span class="nb">rm </span><span class="p">.\</span><span class="n">AzureCLI</span><span class="p">.</span><span class="n">msi</span>
 </pre></div>
 
 <p>Once Azure CLI is installed, you can use <code>az</code> commands as we&#39;ll see
@@ -63,12 +63,12 @@ the new resource group. The following listing shows the steps:</p>
 <div class="highlight"><pre><span></span><span class="n">az</span> <span class="n">extension</span> <span class="n">add</span> <span class="n">-n</span> <span class="n">azure-cli-ml</span>
 
 <span class="n">az</span> <span class="nb">group </span><span class="n">create</span> <span class="p">`</span>
-<span class="p">-</span><span class="n">-location</span> <span class="s2">&quot;Central US&quot;</span> <span class="p">`</span>
+<span class="p">-</span><span class="n">-location</span> <span class="s2">"Central US"</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-name</span> <span class="n">aml-rg</span>  
 
 <span class="n">az</span> <span class="n">ml</span> <span class="n">workspace</span> <span class="n">create</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-workspace-name</span> <span class="n">aml</span> <span class="p">`</span>
-<span class="p">-</span><span class="n">-location</span> <span class="s2">&quot;Central US&quot;</span> <span class="p">`</span>
+<span class="p">-</span><span class="n">-location</span> <span class="s2">"Central US"</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-resource-group</span> <span class="n">aml-rg</span>
 </pre></div>
 
@@ -143,7 +143,7 @@ GiB memory), and name it <code>d1compute</code>. The following listing shows the
 corresponding Azure CLI command:</p>
 <div class="highlight"><pre><span></span><span class="n">az</span> <span class="n">ml</span> <span class="n">computetarget</span> <span class="n">create</span> <span class="n">amlcompute</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-max-nodes</span> <span class="n">1</span> <span class="p">`</span>
-<span class="p">-</span><span class="n">-name</span> <span class="s2">&quot;d1compute&quot;</span> <span class="p">`</span>
+<span class="p">-</span><span class="n">-name</span> <span class="s2">"d1compute"</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-vm-size</span> <span class="n">STANDARD_D1_V2</span> <span class="p">`</span>  
 <span class="p">-</span><span class="n">-workspace-name</span> <span class="n">aml</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-resource-group</span> <span class="n">aml-rg</span>
@@ -175,7 +175,7 @@ needs to be unique across Azure, since it becomes part of the URL used
 to address the storage account, so we can&#39;t hardcode the name in the
 example.</p>
 <div class="highlight"><pre><span></span><span class="n">az</span> <span class="nb">group </span><span class="n">create</span> <span class="p">`</span>
-<span class="p">-</span><span class="n">-location</span> <span class="s2">&quot;Central US&quot;</span> <span class="p">`</span>
+<span class="p">-</span><span class="n">-location</span> <span class="s2">"Central US"</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-name</span> <span class="n">adls-rg</span>
 
 <span class="n">az</span> <span class="n">storage</span> <span class="n">account</span> <span class="n">create</span> <span class="p">`</span>
@@ -199,7 +199,7 @@ our input file under the <code>models/highspenders/input.csv</code> path. The ne
 listing shows the commands.</p>
 <div class="highlight"><pre><span></span><span class="n">az</span> <span class="n">storage</span> <span class="n">fs</span> <span class="n">file</span> <span class="n">upload</span> <span class="p">`</span>
 <span class="p">-</span><span class="o">-file</span><span class="n">-system</span> <span class="n">fs1</span> <span class="p">`</span> 
-<span class="p">-</span><span class="n">-path</span> <span class="s2">&quot;models/highspenders/input.csv&quot;</span> <span class="p">`</span> 
+<span class="p">-</span><span class="n">-path</span> <span class="s2">"models/highspenders/input.csv"</span> <span class="p">`</span> 
 <span class="p">-</span><span class="n">-source</span> <span class="n">input</span><span class="p">.</span><span class="n">csv</span> <span class="p">`</span> 
 <span class="p">-</span><span class="n">-account-name</span> <span class="p">&lt;</span><span class="n">Your</span> <span class="n">ADLS</span> <span class="n">account</span><span class="p">&gt;</span>
 </pre></div>
@@ -227,7 +227,7 @@ steps.</p>
 <span class="p">-</span><span class="n">-name</span> <span class="p">&lt;</span><span class="n">Your</span> <span class="n">ADLS</span> <span class="n">account</span><span class="p">&gt;</span> <span class="p">|</span> <span class="nb">ConvertFrom-Json</span>
 
 <span class="n">az</span> <span class="n">role</span> <span class="n">assignment</span> <span class="n">create</span> <span class="p">`</span>
-<span class="p">-</span><span class="n">-role</span> <span class="s2">&quot;Storage Blob Data Contributor&quot;</span> <span class="p">`</span>
+<span class="p">-</span><span class="n">-role</span> <span class="s2">"Storage Blob Data Contributor"</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-assignee</span> <span class="nv">$sp</span><span class="p">.</span><span class="n">appId</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-scope</span> <span class="nv">$acc</span><span class="p">.</span><span class="n">id</span>
 </pre></div>
@@ -279,7 +279,7 @@ listing shows how to grant the rights.</p>
 <span class="p">|</span> <span class="nb">ConvertFrom-Json</span>  
 
 <span class="n">az</span> <span class="n">role</span> <span class="n">assignment</span> <span class="n">create</span> <span class="p">`</span>
-<span class="p">-</span><span class="n">-role</span> <span class="s2">&quot;Contributor&quot;</span> <span class="p">`</span> 
+<span class="p">-</span><span class="n">-role</span> <span class="s2">"Contributor"</span> <span class="p">`</span> 
 <span class="p">-</span><span class="n">-assignee</span> <span class="nv">$sp</span><span class="p">.</span><span class="n">appId</span> <span class="p">`</span>
 <span class="p">-</span><span class="n">-scope</span> <span class="nv">$aml</span><span class="p">.</span><span class="n">id</span>
 </pre></div>

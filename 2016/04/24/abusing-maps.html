@@ -152,18 +152,18 @@ vector, wraps a heap-allocated <code>char*</code> and constructing it requires h
 allocations. <code>const char*</code> to a string literal on the other hand is just
 a pointer to the <code>.rodata</code> segment. So this</p>
 <div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">"foo1"</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">"foo2"</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">"foo3"</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
 <span class="p">}};</span>
 </pre></div>
 
 <p>performs three heap allocations (for <code>&quot;foo1&quot;</code>, <code>&quot;foo2&quot;</code>, and <code>&quot;foo3&quot;</code>),
 while the (mostly) equivalent</p>
 <div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">Bar</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foo3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">"foo1"</span><span class="p">,</span><span class="w"> </span><span class="n">bar1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">"foo2"</span><span class="p">,</span><span class="w"> </span><span class="n">bar2</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="s">"foo3"</span><span class="p">,</span><span class="w"> </span><span class="n">bar3</span><span class="w"> </span><span class="p">}</span>
 <span class="p">}};</span>
 </pre></div>
 
@@ -232,7 +232,7 @@ etc.), the only interesting methods are <code>find()</code>, <code>at()</code>, 
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">);</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">it</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">end</span><span class="p">())</span>
-<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">out_of_range</span><span class="p">(</span><span class="s">&quot;...&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">out_of_range</span><span class="p">(</span><span class="s">"..."</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 

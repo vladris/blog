@@ -49,17 +49,17 @@ cloud, with all the required configuration. We&#39;ll call this
 <span class="kn">from</span><span class="w"> </span><span class="nn">azureml.pipeline.steps.python_script_step</span><span class="w"> </span><span class="kn">import</span> <span class="n">PythonScriptStep</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>  
 
-<span class="n">tenant_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your tenant ID&gt;&#39;</span>
-<span class="n">subscription_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your Azure subscription GUID&gt;&#39;</span>
-<span class="n">service_principal_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your service principal ID&gt;&#39;</span>
-<span class="n">resource_group</span>  <span class="o">=</span> <span class="s1">&#39;aml-rg&#39;</span>
-<span class="n">workspace_name</span>  <span class="o">=</span> <span class="s1">&#39;aml&#39;</span>
+<span class="n">tenant_id</span> <span class="o">=</span> <span class="s1">'&lt;your tenant ID&gt;'</span>
+<span class="n">subscription_id</span> <span class="o">=</span> <span class="s1">'&lt;your Azure subscription GUID&gt;'</span>
+<span class="n">service_principal_id</span> <span class="o">=</span> <span class="s1">'&lt;your service principal ID&gt;'</span>
+<span class="n">resource_group</span>  <span class="o">=</span> <span class="s1">'aml-rg'</span>
+<span class="n">workspace_name</span>  <span class="o">=</span> <span class="s1">'aml'</span>
 
 <span class="c1">## Auth </span>
 <span class="n">auth</span> <span class="o">=</span> <span class="n">ServicePrincipalAuthentication</span><span class="p">(</span>
     <span class="n">tenant_id</span><span class="p">,</span> 
     <span class="n">service_principal_id</span><span class="p">,</span> 
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;SP_PASSWORD&#39;</span><span class="p">))</span>  
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'SP_PASSWORD'</span><span class="p">))</span>  
 
 <span class="c1">## Workspace </span>
 <span class="n">workspace</span> <span class="o">=</span> <span class="n">Workspace</span><span class="p">(</span> 
@@ -69,25 +69,25 @@ cloud, with all the required configuration. We&#39;ll call this
     <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
 
 <span class="c1">## Datastore </span>
-<span class="n">datastore</span> <span class="o">=</span> <span class="n">Datastore</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">&#39;MLData&#39;</span><span class="p">)</span>
+<span class="n">datastore</span> <span class="o">=</span> <span class="n">Datastore</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">'MLData'</span><span class="p">)</span>
 
 <span class="c1">## Compute target </span>
-<span class="n">compute_target</span> <span class="o">=</span> <span class="n">AmlCompute</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">&#39;d1compute&#39;</span><span class="p">)</span>
+<span class="n">compute_target</span> <span class="o">=</span> <span class="n">AmlCompute</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">'d1compute'</span><span class="p">)</span>
 
 <span class="c1">## Input </span>
 <span class="n">model_input</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">from_files</span><span class="p">(</span> 
-    <span class="p">[(</span><span class="n">datastore</span><span class="p">,</span> <span class="s1">&#39;/models/highspenders/input.csv&#39;</span><span class="p">)])</span><span class="o">.</span><span class="n">as_mount</span><span class="p">()</span>
+    <span class="p">[(</span><span class="n">datastore</span><span class="p">,</span> <span class="s1">'/models/highspenders/input.csv'</span><span class="p">)])</span><span class="o">.</span><span class="n">as_mount</span><span class="p">()</span>
 
 <span class="c1">## Python package configuration  </span>
 <span class="n">conda_deps</span> <span class="o">=</span> <span class="n">CondaDependencies</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-    <span class="n">pip_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pandas&#39;</span><span class="p">,</span> <span class="s1">&#39;sklearn&#39;</span><span class="p">,</span> <span class="s1">&#39;azureml-core&#39;</span><span class="p">,</span> <span class="s1">&#39;azureml-dataprep&#39;</span><span class="p">])</span>
+    <span class="n">pip_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">'pandas'</span><span class="p">,</span> <span class="s1">'sklearn'</span><span class="p">,</span> <span class="s1">'azureml-core'</span><span class="p">,</span> <span class="s1">'azureml-dataprep'</span><span class="p">])</span>
 
 <span class="n">run_config</span> <span class="o">=</span> <span class="n">RunConfiguration</span><span class="p">(</span><span class="n">conda_dependencies</span><span class="o">=</span><span class="n">conda_deps</span><span class="p">)</span>
 
 <span class="c1">## Train step </span>
 <span class="n">trainStep</span> <span class="o">=</span> <span class="n">PythonScriptStep</span><span class="p">(</span> 
-    <span class="n">script_name</span><span class="o">=</span><span class="s1">&#39;highspenders.py&#39;</span><span class="p">,</span>
-    <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;--input&#39;</span><span class="p">,</span> <span class="n">model_input</span><span class="p">],</span>
+    <span class="n">script_name</span><span class="o">=</span><span class="s1">'highspenders.py'</span><span class="p">,</span>
+    <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s1">'--input'</span><span class="p">,</span> <span class="n">model_input</span><span class="p">],</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">model_input</span><span class="p">],</span>
     <span class="n">runconfig</span><span class="o">=</span><span class="n">run_config</span><span class="p">,</span>
     <span class="n">compute_target</span><span class="o">=</span><span class="n">compute_target</span><span class="p">)</span>  
@@ -96,11 +96,11 @@ cloud, with all the required configuration. We&#39;ll call this
 <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">workspace</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="p">[</span><span class="n">trainStep</span><span class="p">])</span>
 
 <span class="n">published_pipeline</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;HighSpenders&#39;</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;High spenders model&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'HighSpenders'</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">'High spenders model'</span><span class="p">,</span>
     <span class="n">continue_on_step_failure</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<span class="nb">open</span><span class="p">(</span><span class="s1">&#39;highspenders.id&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">published_pipeline</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="nb">open</span><span class="p">(</span><span class="s1">'highspenders.id'</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">published_pipeline</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 </pre></div>
 
 <p>We&#39;ll break down this script and discuss each part. First, we have the
@@ -114,11 +114,11 @@ required imports and the additional parameters we need.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">azureml.pipeline.steps.python_script_step</span><span class="w"> </span><span class="kn">import</span> <span class="n">PythonScriptStep</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>  
 
-<span class="n">tenant_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your tenant ID&gt;&#39;</span>
-<span class="n">subscription_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your Azure subscription GUID&gt;&#39;</span>
-<span class="n">service_principal_id</span> <span class="o">=</span> <span class="s1">&#39;&lt;your service principal ID&gt;&#39;</span>
-<span class="n">resource_group</span>  <span class="o">=</span> <span class="s1">&#39;aml-rg&#39;</span>
-<span class="n">workspace_name</span>  <span class="o">=</span> <span class="s1">&#39;aml&#39;</span>
+<span class="n">tenant_id</span> <span class="o">=</span> <span class="s1">'&lt;your tenant ID&gt;'</span>
+<span class="n">subscription_id</span> <span class="o">=</span> <span class="s1">'&lt;your Azure subscription GUID&gt;'</span>
+<span class="n">service_principal_id</span> <span class="o">=</span> <span class="s1">'&lt;your service principal ID&gt;'</span>
+<span class="n">resource_group</span>  <span class="o">=</span> <span class="s1">'aml-rg'</span>
+<span class="n">workspace_name</span>  <span class="o">=</span> <span class="s1">'aml'</span>
 </pre></div>
 
 <p>We import a set of packages from the <code>azureml-sdk</code>. We need the tenant
@@ -145,7 +145,7 @@ model. The following listing shows the steps.</p>
 <span class="n">auth</span> <span class="o">=</span> <span class="n">ServicePrincipalAuthentication</span><span class="p">(</span>
     <span class="n">tenant_id</span><span class="p">,</span> 
     <span class="n">service_principal_id</span><span class="p">,</span> 
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;SP_PASSWORD&#39;</span><span class="p">))</span>  
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'SP_PASSWORD'</span><span class="p">))</span>  
 
 <span class="c1">## Workspace </span>
 <span class="n">workspace</span> <span class="o">=</span> <span class="n">Workspace</span><span class="p">(</span> 
@@ -155,10 +155,10 @@ model. The following listing shows the steps.</p>
     <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
 
 <span class="c1">## Datastore </span>
-<span class="n">datastore</span> <span class="o">=</span> <span class="n">Datastore</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">&#39;MLData&#39;</span><span class="p">)</span>
+<span class="n">datastore</span> <span class="o">=</span> <span class="n">Datastore</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">'MLData'</span><span class="p">)</span>
 
 <span class="c1">## Compute target </span>
-<span class="n">compute_target</span> <span class="o">=</span> <span class="n">AmlCompute</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">&#39;d1compute&#39;</span><span class="p">)</span>
+<span class="n">compute_target</span> <span class="o">=</span> <span class="n">AmlCompute</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="s1">'d1compute'</span><span class="p">)</span>
 </pre></div>
 
 <p>Here we define a service principal authentication as <code>Auth</code> and use the
@@ -175,7 +175,7 @@ our input, while the compute target is where the model trains. The
 following listing shows how we can specify the model input.</p>
 <div class="highlight"><pre><span></span><span class="c1">## Input </span>
 <span class="n">model_input</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">from_files</span><span class="p">(</span> 
-    <span class="p">[(</span><span class="n">datastore</span><span class="p">,</span> <span class="s1">&#39;/models/highspenders/input.csv&#39;</span><span class="p">)])</span><span class="o">.</span><span class="n">as_mount</span><span class="p">()</span>
+    <span class="p">[(</span><span class="n">datastore</span><span class="p">,</span> <span class="s1">'/models/highspenders/input.csv'</span><span class="p">)])</span><span class="o">.</span><span class="n">as_mount</span><span class="p">()</span>
 </pre></div>
 
 <p>The <code>from_files()</code> method takes a list of files. Each element of the
@@ -196,7 +196,7 @@ and <code>azureml-dataprep</code> packages required by the runtime. The next
 listing shows how to create the run configuration.</p>
 <div class="highlight"><pre><span></span><span class="c1">## Python package configuration  </span>
 <span class="n">conda_deps</span> <span class="o">=</span> <span class="n">CondaDependencies</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-    <span class="n">pip_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pandas&#39;</span><span class="p">,</span> <span class="s1">&#39;sklearn&#39;</span><span class="p">,</span> <span class="s1">&#39;azureml-core&#39;</span><span class="p">,</span> <span class="s1">&#39;azureml-dataprep&#39;</span><span class="p">])</span>
+    <span class="n">pip_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">'pandas'</span><span class="p">,</span> <span class="s1">'sklearn'</span><span class="p">,</span> <span class="s1">'azureml-core'</span><span class="p">,</span> <span class="s1">'azureml-dataprep'</span><span class="p">])</span>
 
 <span class="n">run_config</span> <span class="o">=</span> <span class="n">RunConfiguration</span><span class="p">(</span><span class="n">conda_dependencies</span><span class="o">=</span><span class="n">conda_deps</span><span class="p">)</span>
 </pre></div>
@@ -214,8 +214,8 @@ arguments, the inputs, run configuration, and compute target. The
 following listing shows the details.</p>
 <div class="highlight"><pre><span></span><span class="c1">## Train step </span>
 <span class="n">trainStep</span> <span class="o">=</span> <span class="n">PythonScriptStep</span><span class="p">(</span> 
-    <span class="n">script_name</span><span class="o">=</span><span class="s1">&#39;highspenders.py&#39;</span><span class="p">,</span>
-    <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;--input&#39;</span><span class="p">,</span> <span class="n">model_input</span><span class="p">],</span>
+    <span class="n">script_name</span><span class="o">=</span><span class="s1">'highspenders.py'</span><span class="p">,</span>
+    <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s1">'--input'</span><span class="p">,</span> <span class="n">model_input</span><span class="p">],</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">model_input</span><span class="p">],</span>
     <span class="n">runconfig</span><span class="o">=</span><span class="n">run_config</span><span class="p">,</span>
     <span class="n">compute_target</span><span class="o">=</span><span class="n">compute_target</span><span class="p">)</span>
@@ -244,11 +244,11 @@ listing shows how we can create and submit a pipeline to our workspace.</p>
 <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">workspace</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="p">[</span><span class="n">trainStep</span><span class="p">])</span>
 
 <span class="n">published_pipeline</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;HighSpenders&#39;</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;High spenders model&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'HighSpenders'</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">'High spenders model'</span><span class="p">,</span>
     <span class="n">continue_on_step_failure</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<span class="nb">open</span><span class="p">(</span><span class="s1">&#39;highspenders.id&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">published_pipeline</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="nb">open</span><span class="p">(</span><span class="s1">'highspenders.id'</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">published_pipeline</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 </pre></div>
 
 <p>We create a pipeline with a single step, <code>trainStep</code> in our workspace.
@@ -274,7 +274,7 @@ part 1 (not to <code>pipeline.py</code>, which we just covered).</p>
 <span class="n">workspace</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">workspace</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
     <span class="n">workspace</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span>
-    <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;highspender&#39;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s1">'highspender'</span><span class="p">,</span>
     <span class="n">model_path</span><span class="o">=</span><span class="n">model_path</span><span class="p">)</span>
 </pre></div>
 

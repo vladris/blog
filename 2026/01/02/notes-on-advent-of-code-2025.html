@@ -121,7 +121,7 @@ the beam when we encounter a <code>^</code>:</p>
 <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
     <span class="n">new_beams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">beam</span> <span class="ow">in</span> <span class="n">beams</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;^&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"^"</span><span class="p">:</span>
             <span class="n">hits</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">new_beams</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">beam</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">new_beams</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">beam</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
@@ -132,12 +132,12 @@ the beam when we encounter a <code>^</code>:</p>
 
 <p>Part 2 is similar, the only addition being we need to keep a running tally of
 how many beams (from different timelines) are at a given position.</p>
-<div class="highlight"><pre><span></span><span class="n">beams</span> <span class="o">=</span> <span class="p">{</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+<div class="highlight"><pre><span></span><span class="n">beams</span> <span class="o">=</span> <span class="p">{</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"S"</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
 <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span> 
     <span class="n">new_beams</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">beam</span> <span class="ow">in</span> <span class="n">beams</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;^&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"^"</span><span class="p">:</span>
             <span class="n">new_beams</span><span class="p">[</span><span class="n">beam</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">beams</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span>
             <span class="n">new_beams</span><span class="p">[</span><span class="n">beam</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">beams</span><span class="p">[</span><span class="n">beam</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -310,14 +310,14 @@ node we increment a running total:</p>
 <span class="k">def</span><span class="w"> </span><span class="nf">traverse</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">total</span>
 
-    <span class="k">if</span> <span class="n">node</span> <span class="o">==</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">node</span> <span class="o">==</span> <span class="s2">"out"</span><span class="p">:</span>
         <span class="n">total</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span>
 
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
         <span class="n">traverse</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
 
-<span class="n">traverse</span><span class="p">(</span><span class="s2">&quot;you&quot;</span><span class="p">)</span>
+<span class="n">traverse</span><span class="p">(</span><span class="s2">"you"</span><span class="p">)</span>
 </pre></div>
 
 <p>The graph we need to traverse is much larger in part 2. Here, I used a 2-step
@@ -357,7 +357,7 @@ node with:</p>
 </pre></div>
 
 <p>The solution is:</p>
-<div class="highlight"><pre><span></span><span class="n">paths</span><span class="p">(</span><span class="s2">&quot;svr&quot;</span><span class="p">,</span> <span class="s2">&quot;fft&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">paths</span><span class="p">(</span><span class="s2">&quot;fft&quot;</span><span class="p">,</span> <span class="s2">&quot;dac&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">paths</span><span class="p">(</span><span class="s2">&quot;dac&quot;</span><span class="p">,</span> <span class="s2">&quot;out&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="n">paths</span><span class="p">(</span><span class="s2">"svr"</span><span class="p">,</span> <span class="s2">"fft"</span><span class="p">)</span> <span class="o">*</span> <span class="n">paths</span><span class="p">(</span><span class="s2">"fft"</span><span class="p">,</span> <span class="s2">"dac"</span><span class="p">)</span> <span class="o">*</span> <span class="n">paths</span><span class="p">(</span><span class="s2">"dac"</span><span class="p">,</span> <span class="s2">"out"</span><span class="p">)</span>
 </pre></div>
 
 <h2>Day 12: Christmas Tree Farm</h2>

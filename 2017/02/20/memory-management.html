@@ -186,7 +186,7 @@ reference cycle in Python:</p>
 <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(),</span> <span class="n">Foo</span><span class="p">()</span>
 <span class="n">a</span><span class="o">.</span><span class="n">other</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">other</span> <span class="o">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span>
 <span class="c1"># a.other holds a reference to b, b.other holds a reference to a</span>
-<span class="c1"># even when a and b go out of scope, the &quot;other&quot; attributes still hold references</span>
+<span class="c1"># even when a and b go out of scope, the "other" attributes still hold references</span>
 <span class="c1"># to the objects so their reference count would not drop to 0</span>
 </pre></div>
 
@@ -258,7 +258,7 @@ instead, the reference cycle is avoided:</p>
 <span class="n">foo2</span><span class="o">-&gt;</span><span class="n">other</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo1</span><span class="p">;</span>
 <span class="c1">// now the two Foo objects have only one strong reference to them through</span>
 <span class="c1">// the foo1 and foo2 variables The other pointers are weak references which</span>
-<span class="c1">// won&#39;t prevent the objects from being destroyed when foo1 and foo2 go out</span>
+<span class="c1">// won't prevent the objects from being destroyed when foo1 and foo2 go out</span>
 <span class="c1">// of scope</span>
 </pre></div>
 
@@ -342,8 +342,8 @@ does not compile in Rust:</p>
 <div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{</span>
 <span class="p">}</span>
 
-<span class="k">struct</span><span class="w"> </span><span class="nc">Bar</span><span class="o">&lt;&#39;</span><span class="na">a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">foo</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="o">&#39;</span><span class="na">a</span><span class="w"> </span><span class="nc">Foo</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Bar</span><span class="o">&lt;'</span><span class="na">a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">foo</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="o">'</span><span class="na">a</span><span class="w"> </span><span class="nc">Foo</span>
 <span class="p">}</span>
 
 <span class="o">..</span><span class="p">.</span>

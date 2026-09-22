@@ -260,7 +260,7 @@ list from that (if a bit is <code>1</code>, the corresponding cell is <em>on</em
 
 <p>Here is how we can use this to print the first 30 steps of Rule 22:</p>
 <div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">run</span><span class="p">(</span><span class="mi">22</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">(</span><span class="mi">61</span><span class="p">),</span> <span class="mi">30</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;#&#39;</span> <span class="k">if</span> <span class="n">e</span> <span class="k">else</span> <span class="s1">&#39; &#39;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">state</span><span class="p">]))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">'#'</span> <span class="k">if</span> <span class="n">e</span> <span class="k">else</span> <span class="s1">' '</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">state</span><span class="p">]))</span>
 </pre></div>
 
 <h2>Wolfram classification</h2>

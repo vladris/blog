@@ -33,7 +33,7 @@ invalid. This is invalid C++:</p>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">;</span>
 <span class="p">}</span>
 <span class="p">...</span>
-<span class="n">sqr</span><span class="p">(</span><span class="s">&quot;not an int&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// does not compile</span>
+<span class="n">sqr</span><span class="p">(</span><span class="s">"not an int"</span><span class="p">);</span><span class="w"> </span><span class="c1">// does not compile</span>
 </pre></div>
 
 <p>On the other hand, in a dynamically typed language, we do not perform
@@ -43,9 +43,9 @@ squares a number:</p>
 <div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">sqr</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span>
 <span class="o">...</span>
-<span class="n">sqr</span><span class="p">(</span><span class="s2">&quot;not an int&quot;</span><span class="p">)</span>
+<span class="n">sqr</span><span class="p">(</span><span class="s2">"not an int"</span><span class="p">)</span>
 <span class="c1">## runs but fails with TypeError: unsupported operand type(s)</span>
-<span class="c1">## for ** or pow(): &#39;str&#39; and &#39;int&#39;</span>
+<span class="c1">## for ** or pow(): 'str' and 'int'</span>
 </pre></div>
 
 <p>Some of the interesting features of dynamic languages are <em>duck typing</em>
@@ -55,13 +55,13 @@ as long as that object has such a member, regardless of the type of the
 object. In Python:</p>
 <div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"foo"</span><span class="p">)</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Bar</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"bar"</span><span class="p">)</span>
 
-<span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Foo</span><span class="p">(),</span> <span class="n">Bar</span><span class="p">()]]</span> <span class="c1"># prints &quot;foo&quot; and &quot;bar&quot;</span>
+<span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Foo</span><span class="p">(),</span> <span class="n">Bar</span><span class="p">()]]</span> <span class="c1"># prints "foo" and "bar"</span>
 </pre></div>
 
 <p>This can&#39;t work in a statically typed language where, at the bare
@@ -73,15 +73,15 @@ object at runtime. For example we can swap the <code>func</code> method from an
 instance of <code>foo</code> with another function like this:</p>
 <div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"foo"</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">func_bar</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"bar"</span><span class="p">)</span>
 
 <span class="n">obj</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
-<span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="c1"># prints &quot;foo&quot;</span>
+<span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="c1"># prints "foo"</span>
 <span class="n">obj</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func_bar</span>
-<span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="c1"># prints &quot;bar&quot;</span>
+<span class="n">obj</span><span class="o">.</span><span class="n">func</span><span class="p">()</span> <span class="c1"># prints "bar"</span>
 </pre></div>
 
 <p>These are useful capabilities, but the tradeoff is a whole class of type
@@ -108,15 +108,15 @@ in runtime errors or garbage data. In contrast, a strongly typed
 language will not accept code that attempts to do this.</p>
 
 <p>In Python, which is strongly typed, this doesn&#39;t work:</p>
-<div class="highlight"><pre><span></span><span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span> <span class="c1"># foo is &quot;foo&quot;</span>
-<span class="n">foo</span> <span class="o">=</span> <span class="n">foo</span> <span class="o">+</span> <span class="s2">&quot; bar&quot;</span> <span class="c1"># foo is &quot;foo bar&quot;</span>
-<span class="n">foo</span> <span class="o">=</span> <span class="n">foo</span> <span class="o">+</span> <span class="mi">5</span> <span class="c1"># TypeError: Can&#39;t convert &#39;int&#39; object to str implicitly</span>
+<div class="highlight"><pre><span></span><span class="n">foo</span> <span class="o">=</span> <span class="s2">"foo"</span> <span class="c1"># foo is "foo"</span>
+<span class="n">foo</span> <span class="o">=</span> <span class="n">foo</span> <span class="o">+</span> <span class="s2">" bar"</span> <span class="c1"># foo is "foo bar"</span>
+<span class="n">foo</span> <span class="o">=</span> <span class="n">foo</span> <span class="o">+</span> <span class="mi">5</span> <span class="c1"># TypeError: Can't convert 'int' object to str implicitly</span>
 </pre></div>
 
 <p>It works just fine in JavaScript though:</p>
-<div class="highlight"><pre><span></span><span class="kd">var</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;foo&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo&quot;</span>
-<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot; bar&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo bar&quot;</span>
-<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">5</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is &quot;foo bar5&quot;</span>
+<div class="highlight"><pre><span></span><span class="kd">var</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"foo"</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is "foo"</span>
+<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">" bar"</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is "foo bar"</span>
+<span class="nx">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">foo</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">5</span><span class="p">;</span><span class="w"> </span><span class="c1">// foo is "foo bar5"</span>
 </pre></div>
 
 <p>Note type strength is not an either/or - C++, while considered strongly
@@ -138,7 +138,7 @@ base type gets resolved to the actual function of the deriving type:</p>
 <span class="p">{</span>
 <span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="k">override</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"foo"</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">};</span>
 
@@ -146,7 +146,7 @@ base type gets resolved to the actual function of the deriving type:</p>
 <span class="p">{</span>
 <span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span><span class="w"> </span><span class="k">override</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"bar"</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">};</span>
 
@@ -155,8 +155,8 @@ base type gets resolved to the actual function of the deriving type:</p>
 <span class="w">    </span><span class="n">obj</span><span class="p">.</span><span class="n">func</span><span class="p">();</span>
 <span class="p">}</span>
 <span class="p">...</span>
-<span class="n">call_func</span><span class="p">(</span><span class="n">foo</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;foo&quot;</span>
-<span class="n">call_func</span><span class="p">(</span><span class="n">bar</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;bar&quot;</span>
+<span class="n">call_func</span><span class="p">(</span><span class="n">foo</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints "foo"</span>
+<span class="n">call_func</span><span class="p">(</span><span class="n">bar</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints "bar"</span>
 </pre></div>
 
 <p>In the above case, we effectively have a single function <code>call_func</code>
@@ -170,7 +170,7 @@ different between the inheriting types <code>foo</code> and <code>bar</code>.</p
 <span class="p">{</span>
 <span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;foo&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"foo"</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">};</span>
 
@@ -178,7 +178,7 @@ different between the inheriting types <code>foo</code> and <code>bar</code>.</p
 <span class="p">{</span>
 <span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">func</span><span class="p">()</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;bar&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"bar"</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">};</span>
 
@@ -187,8 +187,8 @@ different between the inheriting types <code>foo</code> and <code>bar</code>.</p
 <span class="w">    </span><span class="n">obj</span><span class="p">.</span><span class="n">func</span><span class="p">();</span>
 <span class="p">}</span>
 <span class="p">...</span>
-<span class="n">call_func</span><span class="p">(</span><span class="n">foo</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;foo&quot;</span>
-<span class="n">call_func</span><span class="p">(</span><span class="n">bar</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints &quot;bar&quot;</span>
+<span class="n">call_func</span><span class="p">(</span><span class="n">foo</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints "foo"</span>
+<span class="n">call_func</span><span class="p">(</span><span class="n">bar</span><span class="p">{});</span><span class="w"> </span><span class="c1">// prints "bar"</span>
 </pre></div>
 
 <p>In this case there is no relationship between <code>foo</code> and <code>bar</code> and no

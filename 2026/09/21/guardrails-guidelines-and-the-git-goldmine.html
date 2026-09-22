@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Guardrails, Guidelines, and the Git Goldmine &mdash; Blog</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../../static/theme.css" type="text/css">
+<link rel="stylesheet" href="../../../static/tokyo.css" type="text/css">
+<link rel="shortcut icon" href="../../../static/icon.ico" />
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<header><span>September 21, 2026</span></header>
+<article>
+<h1>Guardrails, Guidelines, and the Git Goldmine</h1>
+
+<p><em><q>Do you still look at the code?</q></em></p>
+
+<p>It depends. If it&#39;s a vibe-coded throwaway tool, no. But what if the code is
+mission critical? A better question is <em>how much time do</em> we <em>spend</em> looking at
+the code (and wrangling agents into doing <em>the right thing</em>).</p>
+
+<p>Five years ago, coding productivity was mostly about writing code faster. Today
+the bottleneck is guiding, evaluating, and correcting AI-generated code. How do
+we help agents mutate complex code more autonomously and reduce the amount of
+<q>hand holding</q> needed, especially while operating over an extremely complex
+piece of software? Guardrails, repo-specific guidance, and eval-driven iteration
+on these should significantly reduce human toil.</p>
+
+<h2>The One-Shot Illusion</h2>
+
+<p>Autonomous code mutations do not equate to a <q>one-shot</q> LLM call where given a
+prompt, the perfect result is produced in the first iteration. That might be the
+case for demos, prototypes, one-off tools and such, but we can&#39;t realistically
+expect the same when working inside a mature codebase. A mature code base is
+more than code. It comes with years of accumulated constraints, assumptions,
+decisions, and lessons learned. The problem is not generating code, it is
+generating code that respects all of these constraints.</p>
+
+<p>What we <em>can</em> do is set things up such that agents can iterate independently,
+understand and follow best practices, and minimize human-in-the-loop involvement
+while maintaining high-quality output.</p>
+
+<p>We can achieve this with guidelines and guardrails. More importantly, we can use
+AI to optimize them.</p>
+
+<h2>Guardrails</h2>
+
+<p>The more guardrails we have in place, the more confidence we have on
+AI-generated code. Guardrails are a MUST to maintain velocity and code
+correctness. And by <q>guardrails</q> I don&#39;t just mean tests. There&#39;s a mix of
+deterministic and non-deterministic checks we can run on any piece of code.</p>
+
+<p>Deterministic tests can measure correctness (unit tests, end-to-end tests,
+linters etc.), performance, etc. The more test coverage we can provide, the more
+we can prevent regressions and ensure new code works as intended. The good news
+is test generation can also be automated using coding agents, so there&#39;s a lot
+less toil to provide good coverage.</p>
+
+<p>We can also have AI agents review the code alongside humans. It&#39;s already common
+practice to have agents do adversarial review of code changes. We can evolve
+this to specialized agents targeting specific aspects of a proposed change: Is
+the architecture sound? Are all constraints taken into account? Are standard
+patterns being followed?</p>
+
+<p>Coding and review agents can run in a loop and converge to a good solution
+before human oversight is required.</p>
+
+<p>We can&#39;t expect a coding agent, even one using the latest model, to perform a
+non-trivial code mutation in one shot. Any piece of software with some history
+and large user base falls into this category. It takes a lot of care, knowledge,
+and expertise to refactor functionality while taking into account all the
+different subsystems and orthogonal concerns, and make sure things work just as
+the users want them to work. We can&#39;t expect a model to do this correctly in one
+go. But we can offer it guidelines and automate iterations.</p>
+
+<h2>Guidelines</h2>
+
+<p>We are still developing best practices on how to have coding agents work
+autonomously in a code base. This is a good reference article: Harness
+engineering: leveraging Codex in an agent-first world | OpenAI.</p>
+
+<p>For example: co-locating documentation with code is better than having it in a
+separate wiki. Agents are good at reading and following documentation, as long
+as it is discoverable. Architectural decisions should also live in git, next to
+the code. The more information we make available, the better an agent can
+perform. Make sure any knowledge that is not explicitly captured in code is
+easily discoverable.</p>
+
+<p>Beyond this, we can also author reusable instructions to focus agents. This
+applies both to the guardrails and to the coding agent.</p>
+
+<p>On one hand, we can provide a fine-tuned set of prompts for code review of
+various aspects. A subagent can do an architectural integrity review pass while
+another subagent can do a coding convention pass etc. Going back to the one-shot
+illusion - we can&#39;t expect a simple prompt like <q>review this code</q> will surface
+all possible issues in the various dimensions we care about. But we can achieve
+this with several fine-tuned prompts, each executed by a specialized subagent.</p>
+
+<p>On the other hand, we can provide fine-tuned instructions to the coding agent
+itself to ensure important aspects that one <em>should</em> keep in mind while making a
+code change in a particular area are loaded into the context. Again, we can&#39;t
+expect it to always and fully infer the different dimensions we care about, but
+we can explicitly tell it what these are and what it must consider while working
+on the code.</p>
+
+<h2>The Git Goldmine</h2>
+
+<p>We usually think of git history as something we consult when debugging.</p>
+
+<p>We should start thinking of it as training data.</p>
+
+<p>Large repos generate historical evidence that can be used to improve both
+guidance and agent behavior over time. We can treat this as a dataset in itself
+and use it to improve both guidelines and agent behavior.</p>
+
+<p>This is also true for pull requests: the comments, the back-and-forth, the
+changes triggered by these are all insights into what should be implemented, how
+it should be implemented, and what <em>shouldn&#39;t</em> be done.</p>
+
+<p>These are rich sources of data that already exist for any sizable project.</p>
+
+<h2>Code Mutations as a Data Science Problem</h2>
+
+<p>Code review agent prompts can be synthesized based on existing code review
+feedback in a repo&#39;s history. PR feedback can be aggregated and condensed by
+theme into the recurring concerns developers care about.</p>
+
+<p>We can also build evals for code mutations: based on git history, we can look
+at:</p>
+
+<ol>
+<li>The state of a piece of code before a change.</li>
+<li>The state of the same piece of code after a change (and subsequent bugfixes).</li>
+</ol>
+
+<p>Assuming the final state is a useful proxy for a good outcome (in settled code),
+we can run an eval by giving a coding agent the rewound git to before the change
+(1), ask it to implement the feature, and grade its result against the final
+state (2).</p>
+
+<p>Historical changes give us examples of what good outcomes look like, allowing us
+to iteratively refine guidance and prompts. With a setup like this, we can
+automate a hill climb that optimizes both the reviewer and the coding agent
+prompts until execution converges towards the ideal solution.</p>
+
+<p>Again, the size of the code base is important – the good news is the larger the
+repo, the richer the dataset. With enough code history to look at, we have
+enough data to avoid overfitting to specific cases and to validate against
+unseen examples.</p>
+
+<p>The future of coding is not just better models. It includes the systems we build
+around them: guardrails that help us verify outcomes, repo-specific guidance
+that helps agents achieve better outcomes, and feedback loops for convergence.
+The organizations with the richest engineering history may have the biggest
+advantage here.</p>
+
+</article>
+<nav>
+
+<div id="prev"><span>« <a href="../../../2026/08/02/devlog-9-flow-2.html">DevLog 9: Flow 2</a></span></div>
+
+
+</nav>
+<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+</body>
+</html>

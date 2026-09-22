@@ -359,7 +359,7 @@ the code we used in the previous post:</p>
 
     <span class="c1"># Repeat until the string is empty</span>
     <span class="k">while</span> <span class="n">string</span><span class="p">:</span>
-        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="n">productions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="n">productions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'1'</span> <span class="k">else</span> <span class="s1">''</span><span class="p">)</span>
 
         <span class="c1"># Update current production</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
@@ -370,9 +370,9 @@ the code we used in the previous post:</p>
 </pre></div>
 
 <p>We used the productions <code>11</code>, <code>01</code>, and <code>00</code> and the input <code>1</code>:</p>
-<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="s1">&#39;00&#39;</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'11'</span><span class="p">,</span> <span class="s1">'01'</span><span class="p">,</span> <span class="s1">'00'</span><span class="p">]</span>
 
-<span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">string</span> <span class="o">=</span> <span class="s1">'1'</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
@@ -441,7 +441,7 @@ example:</p>
             <span class="c1"># If head is True, concatenate head production. Pop head input either way.</span>
             <span class="n">concat</span><span class="p">(</span><span class="n">tail</span><span class="p">(</span><span class="nb">input</span><span class="p">),</span> <span class="n">head</span><span class="p">(</span><span class="n">productions</span><span class="p">))</span> <span class="k">if</span> <span class="n">head</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="k">else</span> <span class="n">tail</span><span class="p">(</span><span class="nb">input</span><span class="p">))</span>
 
-<span class="c1"># The input is equivalent to the string &#39;1&#39;</span>
+<span class="c1"># The input is equivalent to the string '1'</span>
 <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
 </pre></div>
 

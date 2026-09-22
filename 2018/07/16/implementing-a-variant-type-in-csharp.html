@@ -131,10 +131,10 @@ whether it got in there as a <code>T1</code> or as a <code>T2</code>.</p></li>
 <span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">variant</span><span class="p">.</span><span class="n">Get</span><span class="p">())</span>
 <span class="p">{</span>
 <span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="n">s</span><span class="p">:</span>
-<span class="w">      </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;It&#39;s a string: &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">);</span>
+<span class="w">      </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">"It's a string: "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">);</span>
 <span class="w">      </span><span class="k">break</span><span class="p">;</span>
 <span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">:</span>
-<span class="w">      </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;It&#39;s an int: &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
+<span class="w">      </span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">"It's an int: "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
 <span class="w">      </span><span class="k">break</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div></li>
@@ -660,12 +660,12 @@ emit the C# code for these:</p>
 <div class="highlight"><pre><span></span>&lt;#
 for (int types = 1; types &lt;= 8; types++)
 {
-    // Comma-delimited string of types (eg. &quot;T1, T2, T3&quot;)
-    var args = String.Join(&quot;, &quot;,
-        Enumerable.Range(1, types).Select(i =&gt; &quot;T&quot; + i));
+    // Comma-delimited string of types (eg. "T1, T2, T3")
+    var args = String.Join(", ",
+        Enumerable.Range(1, types).Select(i =&gt; "T" + i));
 
-    // Type we are generating code for (eg. &quot;Variant&lt;T1, T2, T3&gt;&quot;)
-    var type = $&quot;Variant&lt;{args}&gt;&quot;;
+    // Type we are generating code for (eg. "Variant&lt;T1, T2, T3&gt;")
+    var type = $"Variant&lt;{args}&gt;";
 ##&gt;
 
     public sealed class &lt;#= type #&gt; : VariantBase

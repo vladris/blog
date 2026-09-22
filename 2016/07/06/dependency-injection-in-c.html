@@ -35,7 +35,7 @@ like this:</p>
 </pre></div>
 
 <p><em>V8Engine.cpp</em>:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;V8Engine.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "V8Engine.h"</span>
 
 <span class="n">V8Engine</span><span class="o">::</span><span class="n">Start</span><span class="p">()</span>
 <span class="p">{</span>
@@ -50,7 +50,7 @@ like this:</p>
 
 <p><em>Car.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
-<span class="cp">##include &quot;V8Engine.h&quot;</span>
+<span class="cp">##include "V8Engine.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Car</span>
 <span class="p">{</span>
@@ -63,7 +63,7 @@ like this:</p>
 </pre></div>
 
 <p><em>Car.cpp</em>:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "Car.h"</span>
 
 <span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span>
 <span class="p">{</span>
@@ -97,7 +97,7 @@ work against that:</p>
 </pre></div>
 
 <p><em>V8Engine.cpp</em>:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;IEngine.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "IEngine.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">V8Engine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span>
 <span class="p">{</span>
@@ -113,7 +113,7 @@ work against that:</p>
 
 <p><em>Car.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
-<span class="cp">##include &quot;IEngine.h&quot;</span>
+<span class="cp">##include "IEngine.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Car</span>
 <span class="p">{</span>
@@ -130,7 +130,7 @@ work against that:</p>
 </pre></div>
 
 <p><em>Car.cpp</em>:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "Car.h"</span>
 
 <span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span>
 <span class="p">{</span>
@@ -221,7 +221,7 @@ shared pointer to make sure the object is kept alive long enough.</p>
 mock the engine:</p>
 
 <p><em>Test.cpp</em>:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "Car.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span>
 <span class="p">{</span>
@@ -243,7 +243,7 @@ following:</p>
 
 <p><em>ICar.h (publicly visible)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
-<span class="cp">##include &quot;IEngine.h&quot;</span>
+<span class="cp">##include "IEngine.h"</span>
 
 <span class="k">struct</span><span class="w"> </span><span class="nc">ICar</span>
 <span class="p">{</span>
@@ -255,7 +255,7 @@ following:</p>
 </pre></div>
 
 <p><em>Car.cpp</em>:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;ICar.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "ICar.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span>
 <span class="p">{</span>
@@ -283,7 +283,7 @@ following:</p>
 </pre></div>
 
 <p>Test would become:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;ICar.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "ICar.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">IEngine</span>
 <span class="p">{</span>
@@ -312,7 +312,7 @@ internal Car.h header:</p>
 
 <p><em>Car.h (internal)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
-<span class="cp">##include &quot;ICar.h&quot;</span>
+<span class="cp">##include "ICar.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span>
 <span class="p">{</span>
@@ -330,7 +330,7 @@ internal Car.h header:</p>
 </pre></div>
 
 <p><em>Car.cpp</em> becomes:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "Car.h"</span>
 
 <span class="kt">void</span><span class="w"> </span><span class="nf">Car::Drive</span><span class="p">()</span>
 <span class="p">{</span>
@@ -382,7 +382,7 @@ to be available when templates get instantiated:</p>
 </pre></div>
 
 <p><em>V8Engine.cpp</em>:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;V8Engine.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "V8Engine.h"</span>
 
 <span class="n">V8Engine</span><span class="o">::</span><span class="n">Start</span><span class="p">()</span>
 <span class="p">{</span>
@@ -417,8 +417,8 @@ to be available when templates get instantiated:</p>
 <p>Note <code>Car</code> is implemented in the header and <code>V8Engine</code> is also a
 publicly visible header. Now we can create an instance of <code>Car</code> like
 this:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;V8Engine.h&quot;</span>
-<span class="cp">##include &quot;Car.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "V8Engine.h"</span>
+<span class="cp">##include "Car.h"</span>
 
 <span class="p">...</span>
 
@@ -426,7 +426,7 @@ this:</p>
 </pre></div>
 
 <p>Mocking the engine in test code would look like this:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "Car.h"</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MockEngine</span>
 <span class="p">{</span>
@@ -477,7 +477,7 @@ to consumers. In that case we could have something like this:</p>
 
 <p><em>Car.h (internal)</em>:</p>
 <div class="highlight"><pre><span></span><span class="cp">##pragma once</span>
-<span class="cp">##include &quot;ICar.h&quot;</span>
+<span class="cp">##include "ICar.h"</span>
 
 <span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">TEngine</span><span class="o">&gt;</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Car</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">ICar</span>
@@ -496,9 +496,9 @@ to consumers. In that case we could have something like this:</p>
 </pre></div>
 
 <p><em>Car.cpp</em>:</p>
-<div class="highlight"><pre><span></span><span class="cp">##include &quot;Car.h&quot;</span>
-<span class="cp">##include &quot;V8Engine.h&quot;</span>
-<span class="cp">##include &quot;V6Engine.h&quot;</span>
+<div class="highlight"><pre><span></span><span class="cp">##include "Car.h"</span>
+<span class="cp">##include "V8Engine.h"</span>
+<span class="cp">##include "V6Engine.h"</span>
 
 <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">ICar</span><span class="o">&gt;</span><span class="w"> </span><span class="n">MakeV8Car</span><span class="p">()</span>
 <span class="p">{</span>

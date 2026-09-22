@@ -278,13 +278,13 @@ much sense. A non-OOP implementation would look like this:</p>
 <span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Connection</span><span class="o">&gt;</span><span class="w"> </span><span class="n">connections</span><span class="p">;</span>
 <span class="p">}</span>
 <span class="w"> </span>
-<span class="n">Connection</span><span class="o">&amp;</span><span class="w"> </span><span class="n">Make</span><span class="p">()</span>
+<span class="n">Connection</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">Make</span><span class="p">()</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="n">connections</span><span class="p">.</span><span class="n">emplace_back</span><span class="p">(</span><span class="n">Connection</span><span class="p">{});</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">connections</span><span class="p">.</span><span class="n">back</span><span class="p">();</span>
 <span class="p">}</span>
 <span class="w"> </span>
-<span class="kt">void</span><span class="w"> </span><span class="n">CloseAll</span><span class="p">()</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">CloseAll</span><span class="p">()</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">connection</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">connections</span><span class="p">)</span>
 <span class="w">    </span><span class="p">{</span>

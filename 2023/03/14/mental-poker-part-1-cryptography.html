@@ -156,7 +156,7 @@ the values we found at the previous step, updating <code>x</code> to be <code>y<
 <span class="w">    </span><span class="nx">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">((</span><span class="nx">a</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">m</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">m</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">m</span><span class="p">;</span>
 
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">a</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">m</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid input&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid input"</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 
 <span class="w">    </span><span class="c1">// Find GCD (and remember numbers at each step)</span>
@@ -168,7 +168,7 @@ the values we found at the previous step, updating <code>x</code> to be <code>y<
 <span class="w">    </span><span class="p">}</span>
 
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">a</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">1</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;No inverse&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"No inverse"</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 
 <span class="w">    </span><span class="c1">// Find the inverse</span>
@@ -375,7 +375,7 @@ generate an <code>SRAKeyPair</code>:</p>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="c1">// enc is our encryption key, now let&#39;s find dec as the mod inverse of enc</span>
+<span class="w">    </span><span class="c1">// enc is our encryption key, now let's find dec as the mod inverse of enc</span>
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">dec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">modInverse</span><span class="p">(</span><span class="nx">enc</span><span class="p">,</span><span class="w"> </span><span class="nx">phi</span><span class="p">);</span>
 
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
@@ -419,7 +419,7 @@ as a 256-base number where each digit is a character:</p>
 as part of the user experience. We can decode such a number back into a string
 using division and modulo:</p>
 <div class="highlight"><pre><span></span><span class="kd">function</span><span class="w"> </span><span class="nx">bigIntToString</span><span class="p">(</span><span class="nx">n</span><span class="o">:</span><span class="w"> </span><span class="kt">bigint</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">;</span>
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">BigInt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
 
 <span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nx">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -465,17 +465,17 @@ the commutative SRA algorithm.</p>
 <span class="kd">const</span><span class="w"> </span><span class="nx">aliceKP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">generateKeyPair</span><span class="p">(</span><span class="nx">sharedPrime</span><span class="p">);</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">bobKP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">generateKeyPair</span><span class="p">(</span><span class="nx">sharedPrime</span><span class="p">);</span>
 
-<span class="kd">const</span><span class="w"> </span><span class="nx">card</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Ace of spades&quot;</span><span class="p">;</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">card</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Ace of spades"</span><span class="p">;</span>
 
-<span class="c1">// Encrypt with Alice&#39;s key first, then Bob&#39;s</span>
+<span class="c1">// Encrypt with Alice's key first, then Bob's</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">aliceEncrypted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">encryptString</span><span class="p">(</span><span class="nx">card</span><span class="p">,</span><span class="w"> </span><span class="nx">aliceKP</span><span class="p">);</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">aliceAndBobEncrypted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">encryptString</span><span class="p">(</span><span class="nx">aliceEncrypted</span><span class="p">,</span><span class="w"> </span><span class="nx">bobKP</span><span class="p">);</span>
 
-<span class="c1">// Decrypt with Alice&#39;s key first, then Bob&#39;s</span>
+<span class="c1">// Decrypt with Alice's key first, then Bob's</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">bobEncrypted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">decryptString</span><span class="p">(</span><span class="nx">aliceAndBobEncrypted</span><span class="p">,</span><span class="w"> </span><span class="nx">aliceKP</span><span class="p">);</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">decrypted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">decryptString</span><span class="p">(</span><span class="nx">bobEncrypted</span><span class="p">,</span><span class="w"> </span><span class="nx">bobKP</span><span class="p">);</span>
 
-<span class="c1">// Prints &quot;Ace of spades&quot;</span>
+<span class="c1">// Prints "Ace of spades"</span>
 <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">decrypted</span><span class="p">);</span>
 </pre></div>
 

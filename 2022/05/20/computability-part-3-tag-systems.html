@@ -102,11 +102,11 @@ system halts when the string becomes empty.</p>
 
 <p>Using our <code>tag_system()</code> function implemented above:</p>
 <div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;aab&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+    <span class="s1">'a'</span><span class="p">:</span> <span class="s1">'aab'</span><span class="p">,</span>
+    <span class="s1">'b'</span><span class="p">:</span> <span class="s1">'H'</span><span class="p">,</span>
 <span class="p">}</span>
 
-<span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;aa&#39;</span>
+<span class="n">string</span> <span class="o">=</span> <span class="s1">'aa'</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">tag_system</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
@@ -158,7 +158,7 @@ around to the head (this inspired the <em>cyclic</em> name).</p>
 
     <span class="c1"># Repeat until the string is empty</span>
     <span class="k">while</span> <span class="n">string</span><span class="p">:</span>
-        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="n">productions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="n">productions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'1'</span> <span class="k">else</span> <span class="s1">''</span><span class="p">)</span>
 
         <span class="c1"># Update current production</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
@@ -173,21 +173,21 @@ initial string <code>1</code>, the steps are:</p>
 <div class="highlight"><pre><span></span>1               // Append production 11
  11             // Append production 01
   101           // Append production 00
-   0100         // Current production 11 (won&#39;t append since head is 0)
+   0100         // Current production 11 (won't append since head is 0)
     100         // Append production 01
-     0001       // Current production 00 (won&#39;t append since head is 0)
-      001       // Current production 11 (won&#39;t append since head is 0)
-       01       // Current production 01 (won&#39;t append since head is 0)
+     0001       // Current production 00 (won't append since head is 0)
+      001       // Current production 11 (won't append since head is 0)
+       01       // Current production 01 (won't append since head is 0)
         1       // Append production 00
-         00     // Current production 11 (won&#39;t append since head is 0)
-          0     // Current production 01 (won&#39;t append since head is 0)
+         00     // Current production 11 (won't append since head is 0)
+          0     // Current production 01 (won't append since head is 0)
                 // Halts
 </pre></div>
 
 <p>Using our Python implementation:</p>
-<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="s1">&#39;00&#39;</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'11'</span><span class="p">,</span> <span class="s1">'01'</span><span class="p">,</span> <span class="s1">'00'</span><span class="p">]</span>
 
-<span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">string</span> <span class="o">=</span> <span class="s1">'1'</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
@@ -281,9 +281,9 @@ exactly \(n\) production rules.</p>
 </pre></div>
 
 <p>Using our Python implementation:</p>
-<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;100100010&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'100100010'</span><span class="p">,</span> <span class="s1">'001'</span><span class="p">,</span> <span class="s1">'001'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">''</span><span class="p">]</span>
 
-<span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;100100&#39;</span>
+<span class="n">string</span> <span class="o">=</span> <span class="s1">'100100'</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
@@ -296,9 +296,9 @@ stop it by checking whether the first 3 symbols represent the encoding
 of <code>H</code>. We do this every sixth step, since we have a 2-tag system with 3
 symbols, which means we emulate 1 step of the tag system with 6 steps of
 the cyclic tag system.</p>
-<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;100100010&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'100100010'</span><span class="p">,</span> <span class="s1">'001'</span><span class="p">,</span> <span class="s1">'001'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">''</span><span class="p">]</span>
 
-<span class="n">i</span><span class="p">,</span> <span class="n">string</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;100100&#39;</span>
+<span class="n">i</span><span class="p">,</span> <span class="n">string</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">'100100'</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
@@ -307,31 +307,31 @@ the cyclic tag system.</p>
     <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">6</span>
 
     <span class="c1"># Break if halting symbol is at the head of the string</span>
-    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">string</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;001&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">string</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'001'</span><span class="p">:</span>
         <span class="k">break</span>
 </pre></div>
 
 <p>Or, an updated example that prints every sixth step and translates from
 the cyclic tag system encoding to the original symbols:</p>
-<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;100100010&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><span class="n">productions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'100100010'</span><span class="p">,</span> <span class="s1">'001'</span><span class="p">,</span> <span class="s1">'001'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">''</span><span class="p">]</span>
 
 <span class="n">symbols</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;100&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;010&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;001&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+    <span class="s1">'100'</span><span class="p">:</span> <span class="s1">'a'</span><span class="p">,</span>
+    <span class="s1">'010'</span><span class="p">:</span> <span class="s1">'b'</span><span class="p">,</span>
+    <span class="s1">'001'</span><span class="p">:</span> <span class="s1">'H'</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">translate</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">symbols</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="mi">3</span><span class="p">)])</span>
+    <span class="k">return</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">symbols</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="mi">3</span><span class="p">)])</span>
 
-<span class="n">i</span><span class="p">,</span> <span class="n">string</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;100100&#39;</span>
+<span class="n">i</span><span class="p">,</span> <span class="n">string</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">'100100'</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">translate</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">translate</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s1">)'</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">cyclic_tag_system</span><span class="p">(</span><span class="n">productions</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
     <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">6</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">translate</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">string</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;001&#39;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">translate</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s1">)'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">string</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'001'</span><span class="p">:</span>
             <span class="k">break</span>
 </pre></div>
 

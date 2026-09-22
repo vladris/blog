@@ -168,7 +168,7 @@ into a list:</p>
 <div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">lex</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s1">&#39;\(|\)|\w+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s1">'\(|\)|\w+'</span><span class="p">,</span> <span class="n">line</span><span class="p">)]</span>
 </pre></div>
 
 <p>We can now transform an input like <code>&#39;(add 1 (add 2 3))&#39;</code> into the list of tokens
@@ -188,7 +188,7 @@ create one from a token using an <code>atom()</code> function:</p>
 different than <code>)</code>, then pop the <code>)</code> token. We&#39;ll use this while parsing to
 iterate over the tokens after a <code>(</code> and until we find the matching <code>)</code>:</p>
 <div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">pop_rpar</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
-    <span class="k">while</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;)&#39;</span><span class="p">:</span>
+    <span class="k">while</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">')'</span><span class="p">:</span>
         <span class="k">yield</span>
     <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
@@ -203,10 +203,10 @@ the matching <code>)</code>.</li>
 </ul>
 <div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
     <span class="k">match</span> <span class="n">token</span> <span class="o">:=</span> <span class="n">tokens</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
-        <span class="k">case</span> <span class="s1">&#39;(&#39;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">'('</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">parse</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">pop_rpar</span><span class="p">(</span><span class="n">tokens</span><span class="p">)]</span>
-        <span class="k">case</span> <span class="s1">&#39;)&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unexpected )&#39;</span><span class="p">)</span>
+        <span class="k">case</span> <span class="s1">')'</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">'Unexpected )'</span><span class="p">)</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">atom</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </pre></div>
@@ -227,18 +227,18 @@ and processes it using the environment.</p>
 arithmetic operations and list operations:</p>
 <div class="highlight"><pre><span></span><span class="n">env</span> <span class="o">=</span> <span class="p">{</span>
     <span class="c1"># Equality</span>
-    <span class="s1">&#39;eq&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">==</span> <span class="n">arg2</span><span class="p">,</span>
+    <span class="s1">'eq'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">==</span> <span class="n">arg2</span><span class="p">,</span>
 
     <span class="c1"># Arithmetic</span>
-    <span class="s1">&#39;add&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">+</span> <span class="n">arg2</span><span class="p">,</span>
-    <span class="s1">&#39;sub&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">-</span> <span class="n">arg2</span><span class="p">,</span>
-    <span class="s1">&#39;mul&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">*</span> <span class="n">arg2</span><span class="p">,</span>
-    <span class="s1">&#39;div&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">/</span> <span class="n">arg2</span><span class="p">,</span>
+    <span class="s1">'add'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">+</span> <span class="n">arg2</span><span class="p">,</span>
+    <span class="s1">'sub'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">-</span> <span class="n">arg2</span><span class="p">,</span>
+    <span class="s1">'mul'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">*</span> <span class="n">arg2</span><span class="p">,</span>
+    <span class="s1">'div'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="n">arg1</span> <span class="o">/</span> <span class="n">arg2</span><span class="p">,</span>
 
     <span class="c1"># Lists</span>
-    <span class="s1">&#39;cons&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">car</span><span class="p">,</span> <span class="n">cdr</span><span class="p">:</span> <span class="p">[</span><span class="n">car</span><span class="p">]</span> <span class="o">+</span> <span class="n">cdr</span><span class="p">,</span>
-    <span class="s1">&#39;car&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="nb">list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-    <span class="s1">&#39;cdr&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="nb">list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+    <span class="s1">'cons'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">car</span><span class="p">,</span> <span class="n">cdr</span><span class="p">:</span> <span class="p">[</span><span class="n">car</span><span class="p">]</span> <span class="o">+</span> <span class="n">cdr</span><span class="p">,</span>
+    <span class="s1">'car'</span><span class="p">:</span> <span class="k">lambda</span> <span class="nb">list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="s1">'cdr'</span><span class="p">:</span> <span class="k">lambda</span> <span class="nb">list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -255,11 +255,11 @@ straightforward:</p>
         <span class="k">return</span> <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">]</span>
 
     <span class="k">match</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-        <span class="k">case</span> <span class="s1">&#39;def&#39;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">'def'</span><span class="p">:</span>
             <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-        <span class="k">case</span> <span class="s1">&#39;quote&#39;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">'quote'</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">case</span> <span class="s1">&#39;if&#39;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">'if'</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">else</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
         <span class="k">case</span> <span class="n">call</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">env</span><span class="p">[</span><span class="n">call</span><span class="p">](</span><span class="o">*</span><span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
@@ -290,11 +290,11 @@ truthy-ness (e.g. <code>0</code> or an empty list <code>[]</code> is non-truthy)
 enhance our implementation with Boolean support.</p>
 
 <p>We can now implement a simple read-eval-print loop (REPL):</p>
-<div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">line</span> <span class="o">:=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">&#39;&gt; &#39;</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">line</span> <span class="o">:=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">'&gt; '</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">parse</span><span class="p">(</span><span class="n">lex</span><span class="p">(</span><span class="n">line</span><span class="p">))))</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 
 <p>We can try a few simple commands (shown below with the corresponding output):</p>
@@ -365,13 +365,13 @@ arguments.</p>
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="k">match</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-        <span class="k">case</span> <span class="s1">&#39;def&#39;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">'def'</span><span class="p">:</span>
             <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s1">&#39;deffun&#39;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">'deffun'</span><span class="p">:</span>
             <span class="n">env</span><span class="p">[</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">make_function</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s1">&#39;quote&#39;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">'quote'</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">case</span> <span class="s1">&#39;if&#39;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">'if'</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span> <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span> <span class="k">else</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sexpr</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
         <span class="k">case</span> <span class="n">call</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">env</span><span class="p">[</span><span class="n">call</span><span class="p">](</span><span class="o">*</span><span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">sexpr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>

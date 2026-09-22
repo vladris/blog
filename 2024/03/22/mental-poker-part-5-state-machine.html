@@ -229,7 +229,7 @@ who&#39;s key it is.</p>
 are the <code>KeyExchangeAction</code> and <code>CryptoContext</code>:</p>
 <div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">KeyExchangeAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
-<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">;</span>
 <span class="w">    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">Key</span><span class="p">;</span>
 <span class="p">};</span>
 
@@ -268,7 +268,7 @@ here they are again for reference:</p>
 <span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                </span><span class="c1">// Post public key</span>
 <span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
-<span class="w">                    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">,</span>
 <span class="w">                    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
 <span class="w">                    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">context.me.publicKey</span><span class="p">,</span>
 <span class="w">                </span><span class="p">});</span>
@@ -278,19 +278,19 @@ here they are again for reference:</p>
 <span class="w">            </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span>
 <span class="w">                </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyExchangeAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                    </span><span class="c1">// This should be a KeyExchangeAction</span>
-<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
 <span class="w">                    </span><span class="p">}</span>
 
 <span class="w">                    </span><span class="c1">// Protocol expects clients to post an ID</span>
 <span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Expected client ID&quot;</span><span class="p">);</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Expected client ID"</span><span class="p">);</span>
 <span class="w">                    </span><span class="p">}</span>
 
 <span class="w">                    </span><span class="c1">// Protocol expects each client to only post once and to have a unique ID</span>
 <span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">keyStore</span><span class="p">.</span><span class="nx">has</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span>
-<span class="w">                            </span><span class="s2">&quot;Same client posted key multiple times&quot;</span>
+<span class="w">                            </span><span class="s2">"Same client posted key multiple times"</span>
 <span class="w">                        </span><span class="p">);</span>
 <span class="w">                    </span><span class="p">}</span>
 

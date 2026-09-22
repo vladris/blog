@@ -57,8 +57,8 @@ could potentially be the same operator).</p>
 <div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">product</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">argv</span>
 
-<span class="c1">## Transform arguments to numbers, replace &#39;A&#39; and &#39;a&#39; with [1, 11]</span>
-<span class="n">args</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="s1">&#39;aA&#39;</span> <span class="k">else</span>
+<span class="c1">## Transform arguments to numbers, replace 'A' and 'a' with [1, 11]</span>
+<span class="n">args</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="s1">'aA'</span> <span class="k">else</span>
     <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">arg</span><span class="p">)]</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[])</span>
 
 <span class="c1">## For every permutation of 4 arguments</span>
@@ -68,13 +68,13 @@ could potentially be the same operator).</p>
         <span class="k">continue</span>
 
     <span class="c1"># For every possible combination of 3 operators</span>
-    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s1">&#39;+-*/&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s1">'+-*/'</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
         <span class="c1"># For every possible grouping</span>
-        <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">))&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> ((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)'</span><span class="p">,</span>
+                    <span class="s1">'((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">'</span><span class="p">,</span>
+                    <span class="s1">'(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">'</span><span class="p">,</span>
+                    <span class="s1">'</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">))'</span><span class="p">,</span>
+                    <span class="s1">'</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> ((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)'</span><span class="p">]:</span>
 
             <span class="c1"># Place operands and operators in expression</span>
             <span class="n">exp</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
@@ -89,9 +89,9 @@ could potentially be the same operator).</p>
                 <span class="c1"># Ignore division by zero errors</span>
                 <span class="k">pass</span>
 
-<span class="c1">## If we get here we tried all combinations and couldn&#39;t</span>
+<span class="c1">## If we get here we tried all combinations and couldn't</span>
 <span class="c1">## find any solution</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No solution&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'No solution'</span><span class="p">)</span>
 </pre></div>
 
 <p>We have ten possible cards (ace and number cards), and taking
@@ -135,17 +135,17 @@ only need the groupings</p>
 <div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">product</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">argv</span>
 
-<span class="n">args</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="s1">&#39;aA&#39;</span> <span class="k">else</span>
+<span class="n">args</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="s1">'aA'</span> <span class="k">else</span>
     <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">arg</span><span class="p">)]</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[])</span>
 
 <span class="k">for</span> <span class="n">xs</span> <span class="ow">in</span> <span class="n">permutations</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">11</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span><span class="p">:</span>
         <span class="k">continue</span>
 
-    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s1">&#39;+-*/&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s1">'+-*/'</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)'</span><span class="p">,</span>
+                    <span class="s1">'((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">'</span><span class="p">,</span>
+                    <span class="s1">'(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">'</span><span class="p">]:</span>
 
             <span class="n">exp</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
                 <span class="n">ops</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">xs</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
@@ -157,7 +157,7 @@ only need the groupings</p>
             <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
                 <span class="k">pass</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No solution&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'No solution'</span><span class="p">)</span>
 </pre></div>
 
 <p>This means that for games without aces, we need to check 24 (\(4!\))
@@ -189,10 +189,10 @@ operators, and groupings as above:</p>
 <div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 
 <span class="n">operands</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="mi">4</span><span class="p">))</span> <span class="c1"># 24 of these</span>
-<span class="n">operators</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="s1">&#39;+-*/&#39;</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span> <span class="c1"># 64 of these</span>
-<span class="n">groupings</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="p">,</span>
-             <span class="s1">&#39;((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
-             <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="c1"># 3 of these</span>
+<span class="n">operators</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="s1">'+-*/'</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span> <span class="c1"># 64 of these</span>
+<span class="n">groupings</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)'</span><span class="p">,</span>
+             <span class="s1">'((</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">'</span><span class="p">,</span>
+             <span class="s1">'(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)) </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">'</span><span class="p">]</span> <span class="c1"># 3 of these</span>
 </pre></div>
 
 <p>Note that here we are looking at all possible games so operands are
@@ -214,9 +214,9 @@ possible expressions which evaluate to 24:</p>
                     <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inp</span><span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                             <span class="n">inp</span><span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">inp</span><span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
                             <span class="n">ops</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">inp</span><span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="mi">3</span><span class="p">]]))</span> <span class="o">==</span> <span class="mi">24</span><span class="p">:</span>
-                        <span class="k">yield</span> <span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                            <span class="sa">f</span><span class="s1">&#39;x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
-                            <span class="n">ops</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                        <span class="k">yield</span> <span class="n">exp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="sa">f</span><span class="s1">'x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="sa">f</span><span class="s1">'x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sa">f</span><span class="s1">'x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span>
+                            <span class="n">ops</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="sa">f</span><span class="s1">'x</span><span class="si">{</span><span class="n">xs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
                     <span class="k">pass</span>
 </pre></div>
@@ -240,12 +240,12 @@ particular values, rather the expression we are using.</p>
 </pre></div>
 
 <p>yields</p>
-<div class="highlight"><pre><span></span>[&#39;((x0 * x2) - x3) * x1&#39;, &#39;(x1 * x2) - (x3 / x0)&#39;,
- &#39;((x2 * x0) - x3) * x1&#39;, &#39;((x2 / x0) * x3) - x1&#39;,
- &#39;(x2 / (x0 / x3)) - x1&#39;, &#39;(x2 * x1) - (x3 / x0)&#39;,
- &#39;((x2 * x3) / x0) - x1&#39;, &#39;(x2 * (x3 / x0)) - x1&#39;,
- &#39;((x3 / x0) * x2) - x1&#39;, &#39;(x3 / (x0 / x2)) - x1&#39;,
- &#39;((x3 * x2) / x0) - x1&#39;, &#39;(x3 * (x2 / x0)) - x1&#39;]
+<div class="highlight"><pre><span></span>['((x0 * x2) - x3) * x1', '(x1 * x2) - (x3 / x0)',
+ '((x2 * x0) - x3) * x1', '((x2 / x0) * x3) - x1',
+ '(x2 / (x0 / x3)) - x1', '(x2 * x1) - (x3 / x0)',
+ '((x2 * x3) / x0) - x1', '(x2 * (x3 / x0)) - x1',
+ '((x3 / x0) * x2) - x1', '(x3 / (x0 / x2)) - x1',
+ '((x3 * x2) / x0) - x1', '(x3 * (x2 / x0)) - x1']
 </pre></div>
 
 <p>These are all possible expression which evaluate to 24 for the game
@@ -339,73 +339,73 @@ into a source file, together with the code to test input:</p>
 <div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="kn">import</span> <span class="n">argv</span>
 
 <span class="n">expressions</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;(x3 + x1) * (x2 - x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x3) - x0) / x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x3 + (x1 + x0)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 - x3) * (x1 - x2)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 * x0) + (x2 - x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x0) * x3) - x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x3 + (x1 + x2)) + x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 * x0) + (x3 - x1)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x0 / x1) * x2) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x3 - x2)) + x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x3 + x2) - x0) + x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * x1) * (x3 - x2)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 * x0) - (x2 + x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 / x1) * (x2 + x0)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 + x1) + x3) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 - x0) / (x1 / x2)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x3 + x1) * (x2 / x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * x3) + (x0 * x2)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x3 * x1) + x2) + x0&quot;</span><span class="p">,</span> <span class="s2">&quot;((x0 - x2) + x1) * x3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x3 / x0) + x2) * x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 + (x2 * x1)) - x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 * x3) - (x2 - x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x3 - x0)) - x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 + x1) * x3) / x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * x3) - (x1 + x2)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 + (x3 * x0)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * (x2 + x3)) - x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 * x3) - (x0 + x2)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 - (x2 / x1)) * x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x0 - (x1 / x2)) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 * x0) + (x2 - x1)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x3 / x0) + x1) + x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 + (x1 * x2)) + x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x0 + x2) * (x1 + x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * (x3 - x1)) + x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x0 + x3) * x1) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 * (x0 + x3)) / x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x2 - (x1 + x0)) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 * x2) - (x0 / x1)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x0 + x3) * x1) + x2&quot;</span><span class="p">,</span> <span class="s2">&quot;((x0 * x3) + x1) - x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x2 + (x3 - x1)) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 * (x0 + x1)) + x3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 + x3) * x0) + x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 - (x3 / x2)) * x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x0 + x2) - x3) * x1&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 / x2) + x0) * x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 / x0) + (x2 + x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 * x0) - x2) * x3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x0 + x1) + x2) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 * (x3 - x1)) - x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 * x1) - x0) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 - x1) * x2) + x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x3 / (x0 + x1)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 * x0) + x3) + x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x3 + x0) * (x2 - x1)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 - x0) * (x3 - x1)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x3 / x0) * x2) + x1&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x1) - x0) - x3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x0 + (x3 - x1)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * x2) / (x3 - x1)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x3 * x2) - x1) / x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 - (x0 / x3)) * x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x3 - x2) * (x0 + x1)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 * x2) - (x3 + x1)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 - x0) * x3) + x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x3 - x0)) + x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 * (x0 + x3)) - x2&quot;</span><span class="p">,</span> <span class="s2">&quot;((x0 + x1) * x3) + x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x1 - x2) + x3) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 - x1) * x2) * x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 + x1) - x3) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 + (x3 / x2)) * x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x2 / (x0 / x1)) + x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 / (x3 - x0)) * x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x3 * x1) - (x0 * x2)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 + x0) * x2) * x3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 - (x2 / x3)) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 + (x3 * x0)) + x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 * x3) + x1) / x0&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 - x0) * (x2 + x1)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 * x3) + (x2 - x0)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 * (x2 - x0)) - x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x0 + (x1 - x3)) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x3 - x2)) - x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x0 + (x2 * x3)) - x1&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 + x3) / (x0 / x1)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x0 * x3) / (x2 - x1)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x2 - (x3 / x0)) * x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x0 - (x1 - x2)) * x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 + x1) + (x2 * x0)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x3 - x1) - x0) * x2&quot;</span><span class="p">,</span> <span class="s2">&quot;(x1 * (x2 - x0)) - x3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x2 + x0) * (x3 - x1)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 - x1) * x2) / x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x1 * x3) - x2) * x0&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 + x3) * x0) - x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x3 - x2) + x0) * x1&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 * x0) - x3) * x1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x2 * (x1 + x0)) - x3&quot;</span><span class="p">,</span> <span class="s2">&quot;(x0 + (x1 / x2)) * x3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 - x1) * x3) + x0&quot;</span><span class="p">,</span> <span class="s2">&quot;((x2 / x1) + x3) * x0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 * x0) - (x2 / x3)&quot;</span><span class="p">,</span> <span class="s2">&quot;((x3 * x0) - x1) * x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;((x2 - x0) * x1) + x3&quot;</span><span class="p">,</span> <span class="s2">&quot;((x1 + x0) * x3) - x2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(x1 * x0) / (x3 - x2)&quot;</span><span class="p">,</span> <span class="s2">&quot;(x3 * (x1 - x0)) - x2&quot;</span>
+    <span class="s2">"(x3 + x1) * (x2 - x0)"</span><span class="p">,</span> <span class="s2">"((x2 * x3) - x0) / x1"</span><span class="p">,</span>
+    <span class="s2">"(x3 + (x1 + x0)) * x2"</span><span class="p">,</span> <span class="s2">"(x0 - x3) * (x1 - x2)"</span><span class="p">,</span>
+    <span class="s2">"(x1 * x0) + (x2 - x3)"</span><span class="p">,</span> <span class="s2">"((x2 * x0) * x3) - x1"</span><span class="p">,</span>
+    <span class="s2">"(x3 + (x1 + x2)) + x0"</span><span class="p">,</span> <span class="s2">"(x2 * x0) + (x3 - x1)"</span><span class="p">,</span>
+    <span class="s2">"((x0 / x1) * x2) * x3"</span><span class="p">,</span> <span class="s2">"(x1 * (x3 - x2)) + x0"</span><span class="p">,</span>
+    <span class="s2">"((x3 + x2) - x0) + x1"</span><span class="p">,</span> <span class="s2">"(x0 * x1) * (x3 - x2)"</span><span class="p">,</span>
+    <span class="s2">"(x1 * x0) - (x2 + x3)"</span><span class="p">,</span> <span class="s2">"(x3 / x1) * (x2 + x0)"</span><span class="p">,</span>
+    <span class="s2">"((x2 + x1) + x3) * x0"</span><span class="p">,</span> <span class="s2">"(x3 - x0) / (x1 / x2)"</span><span class="p">,</span>
+    <span class="s2">"(x3 + x1) * (x2 / x0)"</span><span class="p">,</span> <span class="s2">"(x1 * x3) + (x0 * x2)"</span><span class="p">,</span>
+    <span class="s2">"((x3 * x1) + x2) + x0"</span><span class="p">,</span> <span class="s2">"((x0 - x2) + x1) * x3"</span><span class="p">,</span>
+    <span class="s2">"((x3 / x0) + x2) * x1"</span><span class="p">,</span> <span class="s2">"(x3 + (x2 * x1)) - x0"</span><span class="p">,</span>
+    <span class="s2">"(x1 * x3) - (x2 - x0)"</span><span class="p">,</span> <span class="s2">"(x1 * (x3 - x0)) - x2"</span><span class="p">,</span>
+    <span class="s2">"((x2 + x1) * x3) / x0"</span><span class="p">,</span> <span class="s2">"(x0 * x3) - (x1 + x2)"</span><span class="p">,</span>
+    <span class="s2">"(x1 + (x3 * x0)) * x2"</span><span class="p">,</span> <span class="s2">"(x0 * (x2 + x3)) - x1"</span><span class="p">,</span>
+    <span class="s2">"(x1 * x3) - (x0 + x2)"</span><span class="p">,</span> <span class="s2">"(x3 - (x2 / x1)) * x0"</span><span class="p">,</span>
+    <span class="s2">"(x0 - (x1 / x2)) * x3"</span><span class="p">,</span> <span class="s2">"(x3 * x0) + (x2 - x1)"</span><span class="p">,</span>
+    <span class="s2">"((x3 / x0) + x1) + x2"</span><span class="p">,</span> <span class="s2">"(x3 + (x1 * x2)) + x0"</span><span class="p">,</span>
+    <span class="s2">"(x0 + x2) * (x1 + x3)"</span><span class="p">,</span> <span class="s2">"(x0 * (x3 - x1)) + x2"</span><span class="p">,</span>
+    <span class="s2">"((x0 + x3) * x1) * x2"</span><span class="p">,</span> <span class="s2">"(x2 * (x0 + x3)) / x1"</span><span class="p">,</span>
+    <span class="s2">"(x2 - (x1 + x0)) * x3"</span><span class="p">,</span> <span class="s2">"(x3 * x2) - (x0 / x1)"</span><span class="p">,</span>
+    <span class="s2">"((x0 + x3) * x1) + x2"</span><span class="p">,</span> <span class="s2">"((x0 * x3) + x1) - x2"</span><span class="p">,</span>
+    <span class="s2">"(x2 + (x3 - x1)) * x0"</span><span class="p">,</span> <span class="s2">"(x2 * (x0 + x1)) + x3"</span><span class="p">,</span>
+    <span class="s2">"((x2 + x3) * x0) + x1"</span><span class="p">,</span> <span class="s2">"(x0 - (x3 / x2)) * x1"</span><span class="p">,</span>
+    <span class="s2">"((x0 + x2) - x3) * x1"</span><span class="p">,</span> <span class="s2">"((x3 / x2) + x0) * x1"</span><span class="p">,</span>
+    <span class="s2">"(x1 / x0) + (x2 + x3)"</span><span class="p">,</span> <span class="s2">"((x1 * x0) - x2) * x3"</span><span class="p">,</span>
+    <span class="s2">"((x0 + x1) + x2) * x3"</span><span class="p">,</span> <span class="s2">"(x2 * (x3 - x1)) - x0"</span><span class="p">,</span>
+    <span class="s2">"((x2 * x1) - x0) * x3"</span><span class="p">,</span> <span class="s2">"((x3 - x1) * x2) + x0"</span><span class="p">,</span>
+    <span class="s2">"(x3 / (x0 + x1)) * x2"</span><span class="p">,</span> <span class="s2">"((x1 * x0) + x3) + x2"</span><span class="p">,</span>
+    <span class="s2">"(x3 + x0) * (x2 - x1)"</span><span class="p">,</span> <span class="s2">"(x2 - x0) * (x3 - x1)"</span><span class="p">,</span>
+    <span class="s2">"((x3 / x0) * x2) + x1"</span><span class="p">,</span> <span class="s2">"((x2 * x1) - x0) - x3"</span><span class="p">,</span>
+    <span class="s2">"(x0 + (x3 - x1)) * x2"</span><span class="p">,</span> <span class="s2">"(x0 * x2) / (x3 - x1)"</span><span class="p">,</span>
+    <span class="s2">"((x3 * x2) - x1) / x0"</span><span class="p">,</span> <span class="s2">"(x2 - (x0 / x3)) * x1"</span><span class="p">,</span>
+    <span class="s2">"(x3 - x2) * (x0 + x1)"</span><span class="p">,</span> <span class="s2">"(x0 * x2) - (x3 + x1)"</span><span class="p">,</span>
+    <span class="s2">"((x2 - x0) * x3) + x1"</span><span class="p">,</span> <span class="s2">"(x1 * (x3 - x0)) + x2"</span><span class="p">,</span>
+    <span class="s2">"(x1 * (x0 + x3)) - x2"</span><span class="p">,</span> <span class="s2">"((x0 + x1) * x3) + x2"</span><span class="p">,</span>
+    <span class="s2">"((x1 - x2) + x3) * x0"</span><span class="p">,</span> <span class="s2">"((x3 - x1) * x2) * x0"</span><span class="p">,</span>
+    <span class="s2">"((x2 + x1) - x3) * x0"</span><span class="p">,</span> <span class="s2">"(x1 + (x3 / x2)) * x0"</span><span class="p">,</span>
+    <span class="s2">"(x2 / (x0 / x1)) + x3"</span><span class="p">,</span> <span class="s2">"(x2 / (x3 - x0)) * x1"</span><span class="p">,</span>
+    <span class="s2">"(x3 * x1) - (x0 * x2)"</span><span class="p">,</span> <span class="s2">"((x1 + x0) * x2) * x3"</span><span class="p">,</span>
+    <span class="s2">"(x1 - (x2 / x3)) * x0"</span><span class="p">,</span> <span class="s2">"(x2 + (x3 * x0)) + x1"</span><span class="p">,</span>
+    <span class="s2">"((x2 * x3) + x1) / x0"</span><span class="p">,</span> <span class="s2">"(x3 - x0) * (x2 + x1)"</span><span class="p">,</span>
+    <span class="s2">"(x1 * x3) + (x2 - x0)"</span><span class="p">,</span> <span class="s2">"(x3 * (x2 - x0)) - x1"</span><span class="p">,</span>
+    <span class="s2">"(x0 + (x1 - x3)) * x2"</span><span class="p">,</span> <span class="s2">"(x1 * (x3 - x2)) - x0"</span><span class="p">,</span>
+    <span class="s2">"(x0 + (x2 * x3)) - x1"</span><span class="p">,</span> <span class="s2">"(x2 + x3) / (x0 / x1)"</span><span class="p">,</span>
+    <span class="s2">"(x0 * x3) / (x2 - x1)"</span><span class="p">,</span> <span class="s2">"(x2 - (x3 / x0)) * x1"</span><span class="p">,</span>
+    <span class="s2">"(x0 - (x1 - x2)) * x3"</span><span class="p">,</span> <span class="s2">"(x3 + x1) + (x2 * x0)"</span><span class="p">,</span>
+    <span class="s2">"((x3 - x1) - x0) * x2"</span><span class="p">,</span> <span class="s2">"(x1 * (x2 - x0)) - x3"</span><span class="p">,</span>
+    <span class="s2">"(x2 + x0) * (x3 - x1)"</span><span class="p">,</span> <span class="s2">"((x3 - x1) * x2) / x0"</span><span class="p">,</span>
+    <span class="s2">"((x1 * x3) - x2) * x0"</span><span class="p">,</span> <span class="s2">"((x1 + x3) * x0) - x2"</span><span class="p">,</span>
+    <span class="s2">"((x3 - x2) + x0) * x1"</span><span class="p">,</span> <span class="s2">"((x2 * x0) - x3) * x1"</span><span class="p">,</span>
+    <span class="s2">"(x2 * (x1 + x0)) - x3"</span><span class="p">,</span> <span class="s2">"(x0 + (x1 / x2)) * x3"</span><span class="p">,</span>
+    <span class="s2">"((x2 - x1) * x3) + x0"</span><span class="p">,</span> <span class="s2">"((x2 / x1) + x3) * x0"</span><span class="p">,</span>
+    <span class="s2">"(x1 * x0) - (x2 / x3)"</span><span class="p">,</span> <span class="s2">"((x3 * x0) - x1) * x2"</span><span class="p">,</span>
+    <span class="s2">"((x2 - x0) * x1) + x3"</span><span class="p">,</span> <span class="s2">"((x1 + x0) * x3) - x2"</span><span class="p">,</span>
+    <span class="s2">"(x1 * x0) / (x3 - x2)"</span><span class="p">,</span> <span class="s2">"(x3 * (x1 - x0)) - x2"</span>
 <span class="p">]</span>
 
 <span class="c1">## Since we no longer try all permutations of cards, we</span>
 <span class="c1">## need to split inputs containing aces by replacing aces</span>
 <span class="c1">## with both 1 and 11</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="k">if</span> <span class="s1">&#39;A&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s1">'A'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">args</span><span class="p">]</span>
 
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="p">)</span> <span class="o">+</span> <span class="n">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;11&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">'A'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">'1'</span><span class="p">]</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="p">)</span> <span class="o">+</span> <span class="n">get_input</span><span class="p">(</span><span class="n">args</span><span class="p">[:</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">'11'</span><span class="p">]</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
 
 <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">get_input</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]):</span>
     <span class="c1"># We also expect inputs to be in sorted order now</span>
@@ -414,7 +414,7 @@ into a source file, together with the code to test input:</p>
     <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">expressions</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
             <span class="c1"># Replace x0 ... x3 with args[0] ... args[3]</span>
-            <span class="n">exp</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;x&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'x'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">eval</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">24</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
@@ -422,7 +422,7 @@ into a source file, together with the code to test input:</p>
         <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
             <span class="k">pass</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No solution&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'No solution'</span><span class="p">)</span>
 </pre></div>
 
 <p>We can test this by ensuring that we still see 117 games without
@@ -500,37 +500,37 @@ them would cause a solvable game to appear as unsolvable:</p>
 
 <p>Turns out there are 62 expressions which (ignoring equivalences) provide
 unique solutions to games. They are:</p>
-<div class="highlight"><pre><span></span>{&#39;(x1 + x2) - (x0 - x3)&#39;, &#39;(x1 + x0) * (x2 * x3)&#39;,
- &#39;((x1 + x0) - x2) * x3&#39;, &#39;((x3 + x2) * x0) + x1&#39;,
- &#39;(x0 + x3) * (x2 - x1)&#39;, &#39;((x2 * x1) / x0) + x3&#39;,
- &#39;((x3 - x1) * x2) - x0&#39;, &#39;(x1 - (x3 / x2)) * x0&#39;,
- &#39;((x1 * x0) - x2) - x3&#39;, &#39;((x2 - x1) - x0) * x3&#39;,
- &#39;((x1 * x0) - x3) + x2&#39;, &#39;(x2 + (x1 / x0)) + x3&#39;,
- &#39;((x1 + x3) - x2) * x0&#39;, &#39;(x2 - (x3 - x0)) * x1&#39;,
- &#39;(x2 + (x1 + x3)) + x0&#39;, &#39;(x1 * x0) - (x2 / x3)&#39;,
- &#39;(x3 + (x2 * x1)) - x0&#39;, &#39;((x0 * x1) + x3) + x2&#39;,
- &#39;(x2 + (x1 - x3)) * x0&#39;, &#39;((x0 * x1) - x2) * x3&#39;,
- &#39;(x2 * x0) + (x1 + x3)&#39;, &#39;(x2 + (x3 * x0)) + x1&#39;,
- &#39;((x0 * x3) - x1) + x2&#39;, &#39;(x0 + (x2 - x1)) * x3&#39;,
- &#39;((x3 * x1) - x2) - x0&#39;, &#39;(x1 - x2) * (x0 - x3)&#39;,
- &#39;((x3 - x0) - x1) * x2&#39;, &#39;(x1 * (x2 - x0)) - x3&#39;,
- &#39;(x0 / (x3 - x2)) * x1&#39;, &#39;((x0 + x1) - x3) * x2&#39;,
- &#39;((x3 - x1) + x0) * x2&#39;, &#39;((x1 + x0) * x3) + x2&#39;,
- &#39;((x1 + x0) * x3) - x2&#39;, &#39;(x3 / x1) * (x2 + x0)&#39;,
- &#39;((x3 - x1) * x0) + x2&#39;, &#39;(x3 * (x2 - x0)) + x1&#39;,
- &#39;((x0 + x2) + x1) * x3&#39;, &#39;(x2 * (x0 + x1)) - x3&#39;,
- &#39;(x2 * x1) / (x3 - x0)&#39;, &#39;(x3 + x0) + (x1 * x2)&#39;,
- &#39;(x0 + (x3 * x2)) - x1&#39;, &#39;(x0 - x2) * (x1 - x3)&#39;,
- &#39;((x2 + x3) * x1) / x0&#39;, &#39;(x2 / x0) * (x3 + x1)&#39;,
- &#39;(x3 * (x1 - x0)) - x2&#39;, &#39;((x3 + x1) * x0) - x2&#39;,
- &#39;((x0 + x3) * x1) - x2&#39;, &#39;((x3 + x2) * x0) - x1&#39;,
- &#39;(x3 + x0) / (x1 / x2)&#39;, &#39;(x0 + x2) * (x3 - x1)&#39;,
- &#39;(x2 * (x3 - x1)) + x0&#39;, &#39;((x0 * x3) - x2) - x1&#39;,
- &#39;((x1 * x2) - x3) - x0&#39;, &#39;(x3 - (x1 - x2)) * x0&#39;,
- &#39;(x2 * x3) / (x1 + x0)&#39;, &#39;(x3 - x2) * (x0 + x1)&#39;,
- &#39;(x0 / (x3 - x1)) * x2&#39;, &#39;((x2 * x3) - x0) / x1&#39;,
- &#39;(x2 * (x3 - x0)) / x1&#39;, &#39;((x1 + x0) * x2) + x3&#39;,
- &#39;(x1 * (x2 - x0)) + x3&#39;, &#39;(x3 * (x2 - x1)) + x0&#39;}
+<div class="highlight"><pre><span></span>{'(x1 + x2) - (x0 - x3)', '(x1 + x0) * (x2 * x3)',
+ '((x1 + x0) - x2) * x3', '((x3 + x2) * x0) + x1',
+ '(x0 + x3) * (x2 - x1)', '((x2 * x1) / x0) + x3',
+ '((x3 - x1) * x2) - x0', '(x1 - (x3 / x2)) * x0',
+ '((x1 * x0) - x2) - x3', '((x2 - x1) - x0) * x3',
+ '((x1 * x0) - x3) + x2', '(x2 + (x1 / x0)) + x3',
+ '((x1 + x3) - x2) * x0', '(x2 - (x3 - x0)) * x1',
+ '(x2 + (x1 + x3)) + x0', '(x1 * x0) - (x2 / x3)',
+ '(x3 + (x2 * x1)) - x0', '((x0 * x1) + x3) + x2',
+ '(x2 + (x1 - x3)) * x0', '((x0 * x1) - x2) * x3',
+ '(x2 * x0) + (x1 + x3)', '(x2 + (x3 * x0)) + x1',
+ '((x0 * x3) - x1) + x2', '(x0 + (x2 - x1)) * x3',
+ '((x3 * x1) - x2) - x0', '(x1 - x2) * (x0 - x3)',
+ '((x3 - x0) - x1) * x2', '(x1 * (x2 - x0)) - x3',
+ '(x0 / (x3 - x2)) * x1', '((x0 + x1) - x3) * x2',
+ '((x3 - x1) + x0) * x2', '((x1 + x0) * x3) + x2',
+ '((x1 + x0) * x3) - x2', '(x3 / x1) * (x2 + x0)',
+ '((x3 - x1) * x0) + x2', '(x3 * (x2 - x0)) + x1',
+ '((x0 + x2) + x1) * x3', '(x2 * (x0 + x1)) - x3',
+ '(x2 * x1) / (x3 - x0)', '(x3 + x0) + (x1 * x2)',
+ '(x0 + (x3 * x2)) - x1', '(x0 - x2) * (x1 - x3)',
+ '((x2 + x3) * x1) / x0', '(x2 / x0) * (x3 + x1)',
+ '(x3 * (x1 - x0)) - x2', '((x3 + x1) * x0) - x2',
+ '((x0 + x3) * x1) - x2', '((x3 + x2) * x0) - x1',
+ '(x3 + x0) / (x1 / x2)', '(x0 + x2) * (x3 - x1)',
+ '(x2 * (x3 - x1)) + x0', '((x0 * x3) - x2) - x1',
+ '((x1 * x2) - x3) - x0', '(x3 - (x1 - x2)) * x0',
+ '(x2 * x3) / (x1 + x0)', '(x3 - x2) * (x0 + x1)',
+ '(x0 / (x3 - x1)) * x2', '((x2 * x3) - x0) / x1',
+ '(x2 * (x3 - x0)) / x1', '((x1 + x0) * x2) + x3',
+ '(x1 * (x2 - x0)) + x3', '(x3 * (x2 - x1)) + x0'}
 </pre></div>
 
 <p>This is a lower bound for our problem, since at the very least we need

@@ -52,14 +52,14 @@ For our local server, we need a stub user and an <code>AzureLocalConnectionConfi
 including an <code>InsecureTokenProvider</code> - this is all plumbing to connect to a
 local instance of the Fluid Relay service:</p>
 <div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;userId&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;userName&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">"userId"</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">"userName"</span><span class="p">,</span>
 <span class="p">};</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">localConnectionConfig</span><span class="o">:</span><span class="w"> </span><span class="kt">AzureLocalConnectionConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;local&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">tokenProvider</span><span class="o">:</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="nx">InsecureTokenProvider</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="p">),</span>
-<span class="w">    </span><span class="nx">endpoint</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:7070&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"local"</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">tokenProvider</span><span class="o">:</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="nx">InsecureTokenProvider</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="p">),</span>
+<span class="w">    </span><span class="nx">endpoint</span><span class="o">:</span><span class="w"> </span><span class="s2">"http://localhost:7070"</span><span class="p">,</span>
 <span class="p">};</span>
 </pre></div>
 
@@ -154,7 +154,7 @@ send over the wire and expect to receive. The context is an object we make
 available to the code we run whenever an action appears over the transport.</p>
 <div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">KeyExchangeAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">ClientId</span><span class="p">;</span>
-<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">;</span>
 <span class="w">    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">Key</span><span class="p">;</span>
 <span class="p">};</span>
 
@@ -193,7 +193,7 @@ public/private key pair.</p>
 <span class="w">                </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span>
 <span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
-<span class="w">                    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">,</span>
 <span class="w">                    </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
 <span class="w">                    </span><span class="nx">publicKey</span><span class="o">:</span><span class="w"> </span><span class="kt">context.me.publicKey</span><span class="p">,</span>
 <span class="w">                </span><span class="p">});</span>
@@ -202,17 +202,17 @@ public/private key pair.</p>
 <span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span>
 <span class="w">            </span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">(</span>
 <span class="w">                </span><span class="p">(</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">KeyExchangeAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">CryptoContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;KeyExchange&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"KeyExchange"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
 <span class="w">                    </span><span class="p">}</span>
 
 <span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Expected client ID&quot;</span><span class="p">);</span>
+<span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Expected client ID"</span><span class="p">);</span>
 <span class="w">                    </span><span class="p">}</span>
 
 <span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">keyStore</span><span class="p">.</span><span class="nx">has</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span>
-<span class="w">                            </span><span class="s2">&quot;Same client posted key multiple times&quot;</span>
+<span class="w">                            </span><span class="s2">"Same client posted key multiple times"</span>
 <span class="w">                        </span><span class="p">);</span>
 <span class="w">                    </span><span class="p">}</span>
 
@@ -350,17 +350,17 @@ the turn order.</p>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
 <span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">EstablishTurnOrderAction</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
-<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;EstablishTurnOrder&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"EstablishTurnOrder"</span><span class="p">,</span>
 <span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
 <span class="w">            </span><span class="p">});</span>
 <span class="w">        </span><span class="p">}),</span>
 <span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">((</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;EstablishTurnOrder&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"EstablishTurnOrder"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
 <span class="w">            </span><span class="p">}</span>
 
 <span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">find</span><span class="p">((</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Same client posted prime multiple times&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Same client posted prime multiple times"</span><span class="p">);</span>
 <span class="w">            </span><span class="p">}</span>
 
 <span class="w">            </span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">);</span><span class="w"> </span>
@@ -410,14 +410,14 @@ to serialize actions.</p>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">sm</span><span class="p">.</span><span class="nx">sequence</span><span class="p">([</span>
 <span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">local</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">actionQueue</span><span class="o">:</span><span class="w"> </span><span class="kt">IQueue</span><span class="o">&lt;</span><span class="nx">EstablishTurnOrderAction</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">actionQueue</span><span class="p">.</span><span class="nx">enqueue</span><span class="p">({</span>
-<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;EstablishTurnOrder&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"EstablishTurnOrder"</span><span class="p">,</span>
 <span class="w">                </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">context.clientId</span><span class="p">,</span>
 <span class="w">                </span><span class="nx">prime</span><span class="o">:</span><span class="w"> </span><span class="kt">BigIntUtils.bigIntToString</span><span class="p">(</span><span class="nx">BigIntUtils</span><span class="p">.</span><span class="nx">randPrime</span><span class="p">()),</span>
 <span class="w">            </span><span class="p">});</span>
 <span class="w">        </span><span class="p">}),</span>
 <span class="w">        </span><span class="nx">sm</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="nx">sm</span><span class="p">.</span><span class="nx">transition</span><span class="p">((</span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderAction</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">EstablishTurnOrderContext</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;EstablishTurnOrder&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Invalid action type&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"EstablishTurnOrder"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Invalid action type"</span><span class="p">);</span>
 <span class="w">            </span><span class="p">}</span>
 
 <span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -425,7 +425,7 @@ to serialize actions.</p>
 <span class="w">            </span><span class="p">}</span>
 
 <span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">find</span><span class="p">((</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Same client posted prime multiple times&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Same client posted prime multiple times"</span><span class="p">);</span>
 <span class="w">            </span><span class="p">}</span>
 
 <span class="w">            </span><span class="nx">context</span><span class="p">.</span><span class="nx">turnOrder</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">clientId</span><span class="p">);</span><span class="w"> </span>

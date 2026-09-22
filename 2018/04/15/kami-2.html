@@ -58,24 +58,24 @@ value is the color of the node, and edge as a list of pairs of ids. The
 level diagramed above would be represented as:</p>
 <div class="highlight"><pre><span></span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
-            <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
-            <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;Red&quot;</span><span class="p">,</span>
-            <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
-            <span class="mi">5</span><span class="p">:</span> <span class="s2">&quot;White&quot;</span><span class="p">,</span>
-            <span class="mi">6</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
-            <span class="mi">7</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
-            <span class="mi">8</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
-            <span class="mi">9</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
-            <span class="mi">10</span><span class="p">:</span> <span class="s2">&quot;Red&quot;</span><span class="p">,</span>
-            <span class="mi">11</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
-            <span class="mi">12</span><span class="p">:</span> <span class="s2">&quot;White&quot;</span><span class="p">,</span>
-            <span class="mi">13</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
-            <span class="mi">14</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
-            <span class="mi">15</span><span class="p">:</span> <span class="s2">&quot;White&quot;</span><span class="p">,</span>
-            <span class="mi">16</span><span class="p">:</span> <span class="s2">&quot;Yellow&quot;</span><span class="p">,</span>
-            <span class="mi">17</span><span class="p">:</span> <span class="s2">&quot;Red&quot;</span><span class="p">,</span>
-            <span class="mi">18</span><span class="p">:</span> <span class="s2">&quot;Purple&quot;</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s2">"Purple"</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s2">"Yellow"</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="s2">"Red"</span><span class="p">,</span>
+            <span class="mi">4</span><span class="p">:</span> <span class="s2">"Yellow"</span><span class="p">,</span>
+            <span class="mi">5</span><span class="p">:</span> <span class="s2">"White"</span><span class="p">,</span>
+            <span class="mi">6</span><span class="p">:</span> <span class="s2">"Purple"</span><span class="p">,</span>
+            <span class="mi">7</span><span class="p">:</span> <span class="s2">"Yellow"</span><span class="p">,</span>
+            <span class="mi">8</span><span class="p">:</span> <span class="s2">"Purple"</span><span class="p">,</span>
+            <span class="mi">9</span><span class="p">:</span> <span class="s2">"Yellow"</span><span class="p">,</span>
+            <span class="mi">10</span><span class="p">:</span> <span class="s2">"Red"</span><span class="p">,</span>
+            <span class="mi">11</span><span class="p">:</span> <span class="s2">"Purple"</span><span class="p">,</span>
+            <span class="mi">12</span><span class="p">:</span> <span class="s2">"White"</span><span class="p">,</span>
+            <span class="mi">13</span><span class="p">:</span> <span class="s2">"Purple"</span><span class="p">,</span>
+            <span class="mi">14</span><span class="p">:</span> <span class="s2">"Purple"</span><span class="p">,</span>
+            <span class="mi">15</span><span class="p">:</span> <span class="s2">"White"</span><span class="p">,</span>
+            <span class="mi">16</span><span class="p">:</span> <span class="s2">"Yellow"</span><span class="p">,</span>
+            <span class="mi">17</span><span class="p">:</span> <span class="s2">"Red"</span><span class="p">,</span>
+            <span class="mi">18</span><span class="p">:</span> <span class="s2">"Purple"</span><span class="p">,</span>
         <span class="p">},</span>
         <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
@@ -264,7 +264,7 @@ in the <code>nodes</code> dictionary. Updated <code>solve</code> looks like this
 <code>graph.colors &gt; n + 1</code>.</p>
 
 <p>Running this yields the following solution for the level:</p>
-<div class="highlight"><pre><span></span><span class="p">[(</span><span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;Purple&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;White&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;Yellow&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Purple&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Red&#39;</span><span class="p">)]</span>
+<div class="highlight"><pre><span></span><span class="p">[(</span><span class="mi">10</span><span class="p">,</span> <span class="s1">'Purple'</span><span class="p">),</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">'White'</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s1">'Yellow'</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">'Purple'</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'Red'</span><span class="p">)]</span>
 </pre></div>
 
 <p>So coloring node 10 with purple, then node 8 with white and so on solves

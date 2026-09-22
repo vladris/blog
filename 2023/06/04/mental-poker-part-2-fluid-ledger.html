@@ -96,14 +96,14 @@ represents data that can be serialized in the Fluid Framework data store:</p>
 <div class="highlight"><pre><span></span><span class="k">import</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nx">ISharedObject</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">ISharedObjectEvents</span>
-<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/shared-object-base&quot;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Serializable</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/datastore-definitions&quot;</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"@fluidframework/shared-object-base"</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Serializable</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"@fluidframework/datastore-definitions"</span><span class="p">;</span>
 </pre></div>
 
 <p>With these imports, we can define our <code>ILedgerEvents</code> as:</p>
 <div class="highlight"><pre><span></span><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">ILedgerEvents</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">ISharedObjectEvents</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
-<span class="w">    </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">values</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">[])</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">"append"</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="s2">"clear"</span><span class="p">,</span><span class="w"> </span><span class="nx">listener</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">values</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">[])</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -138,9 +138,9 @@ interface, and our yet-to-be-implemented <code>Ledger</code>:</p>
 <span class="w">    </span><span class="nx">IFluidDataStoreRuntime</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">IChannelServices</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">IChannelFactory</span>
-<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/datastore-definitions&quot;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Ledger</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./ledger&quot;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ILedger</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./interfaces&quot;</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"@fluidframework/datastore-definitions"</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Ledger</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"./ledger"</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ILedger</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"./interfaces"</span><span class="p">;</span>
 </pre></div>
 
 <p>We can now define the factory as implementing the <code>IChannelFactory</code> interface:</p>
@@ -152,12 +152,12 @@ interface, and our yet-to-be-implemented <code>Ledger</code>:</p>
 <p>We&#39;ll cover the implementation step-by-step. First, we need a couple of static
 properties defining the type of the data structure and properties of the
 <em>channel</em>:</p>
-<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">Type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;fluid-ledger-dds&quot;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">Type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"fluid-ledger-dds"</span><span class="p">;</span>
 
 <span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="nx">Attributes</span><span class="o">:</span><span class="w"> </span><span class="kt">IChannelAttributes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">snapshotFormatVersion</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0.1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">packageVersion</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0.0.1&quot;</span>
+<span class="w">    </span><span class="nx">snapshotFormatVersion</span><span class="o">:</span><span class="w"> </span><span class="s2">"0.1"</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">packageVersion</span><span class="o">:</span><span class="w"> </span><span class="s2">"0.0.1"</span>
 
 <span class="k">public</span><span class="w"> </span><span class="nx">get</span><span class="w"> </span><span class="kr">type</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="p">.</span><span class="nx">Type</span><span class="p">;</span>
@@ -271,23 +271,23 @@ encounter them in the code below, or won&#39;t discuss if they are boilerplate.<
 <div class="highlight"><pre><span></span><span class="k">import</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nx">ISequencedDocumentMessage</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">MessageType</span>
-<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/protocol-definitions&quot;</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"@fluidframework/protocol-definitions"</span><span class="p">;</span>
 <span class="k">import</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nx">IChannelAttributes</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">IFluidDataStoreRuntime</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">IChannelStorageService</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">IChannelFactory</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">Serializable</span>
-<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/datastore-definitions&quot;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ISummaryTreeWithStats</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/runtime-definitions&quot;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">readAndParse</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/driver-utils&quot;</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"@fluidframework/datastore-definitions"</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ISummaryTreeWithStats</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"@fluidframework/runtime-definitions"</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">readAndParse</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"@fluidframework/driver-utils"</span><span class="p">;</span>
 <span class="k">import</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nx">createSingleBlobSummary</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">IFluidSerializer</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">SharedObject</span>
-<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@fluidframework/shared-object-base&quot;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ILedger</span><span class="p">,</span><span class="w"> </span><span class="nx">ILedgerEvents</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./interfaces&quot;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./ledgerFactory&quot;</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"@fluidframework/shared-object-base"</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ILedger</span><span class="p">,</span><span class="w"> </span><span class="nx">ILedgerEvents</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"./interfaces"</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">LedgerFactory</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"./ledgerFactory"</span><span class="p">;</span>
 </pre></div>
 
 <p>Note the last two imports: we import our interfaces and our <code>LedgerFactory</code>.</p>
@@ -297,12 +297,12 @@ for an operation (op) we send to the (or get back from) Fluid Relay service.</p>
 <div class="highlight"><pre><span></span><span class="kr">type</span><span class="w"> </span><span class="nx">ILedgerOperation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">IAppendOperation</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">IClearOperation</span><span class="p">;</span>
 
 <span class="kd">interface</span><span class="w"> </span><span class="nx">IAppendOperation</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"append"</span><span class="p">;</span>
 <span class="w">    </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="kd">interface</span><span class="w"> </span><span class="nx">IClearOperation</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"clear"</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -317,7 +317,7 @@ at runtime which type we are dealing with.</p>
 documents as snapshots and ops. A lot of this is handled internally by the
 framework, but our data structure needs to tell the service how we want to name
 the snapshots, so we&#39;ll define a constant for this:</p>
-<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">snapshotFileName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;header&quot;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">snapshotFileName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"header"</span><span class="p">;</span>
 </pre></div>
 
 <p>With this, we can start the implementation of <code>Ledger</code>.</p>
@@ -340,7 +340,7 @@ constructor looks like this:</p>
 <span class="w">    </span><span class="nx">runtime</span><span class="o">:</span><span class="w"> </span><span class="kt">IFluidDataStoreRuntime</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">attributes</span><span class="o">:</span><span class="w"> </span><span class="kt">IChannelAttributes</span>
 <span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">super</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">runtime</span><span class="p">,</span><span class="w"> </span><span class="nx">attributes</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;fluid_ledger_&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">super</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">runtime</span><span class="p">,</span><span class="w"> </span><span class="nx">attributes</span><span class="p">,</span><span class="w"> </span><span class="s2">"fluid_ledger_"</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -422,19 +422,19 @@ nested data structure scenarios).</p>
 and <code>clear()</code>. Let&#39;s start with <code>append()</code>:</p>
 <div class="highlight"><pre><span></span><span class="k">private</span><span class="w"> </span><span class="nx">applyInnerOp</span><span class="p">(</span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="kt">ILedgerOperation</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">content</span><span class="p">.</span><span class="kr">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="o">:</span>
-<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span><span class="o">:</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">"append"</span><span class="o">:</span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="s2">"clear"</span><span class="o">:</span>
 <span class="w">            </span><span class="k">this</span><span class="p">.</span><span class="nx">submitLocalMessage</span><span class="p">(</span><span class="nx">content</span><span class="p">);</span>
 <span class="w">            </span><span class="k">break</span><span class="p">;</span>
 
 <span class="w">        </span><span class="nx">default</span><span class="o">:</span>
-<span class="w">            </span><span class="kt">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Unknown operation&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="kt">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Unknown operation"</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 
 <span class="k">private</span><span class="w"> </span><span class="nx">appendCore</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
-<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s2">&quot;append&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">);</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s2">"append"</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">);</span>
 <span class="p">}</span>
 
 <span class="k">public</span><span class="w"> </span><span class="nx">append</span><span class="p">(</span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">Serializable</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -442,7 +442,7 @@ and <code>clear()</code>. Let&#39;s start with <code>append()</code>:</p>
 
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isAttached</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">op</span><span class="o">:</span><span class="w"> </span><span class="kt">IAppendOperation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"append"</span><span class="p">,</span>
 <span class="w">            </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">opValue</span>
 <span class="w">        </span><span class="p">};</span>
 
@@ -476,13 +476,13 @@ since there is no service to send the op to and get it back sequenced.</p>
 
 <span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
 
-<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s2">&quot;clear&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">);</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s2">"clear"</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">);</span>
 <span class="p">}</span>
 
 <span class="k">public</span><span class="w"> </span><span class="nx">clear</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isAttached</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">op</span><span class="o">:</span><span class="w"> </span><span class="kt">IClearOperation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span>
+<span class="w">            </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s2">"clear"</span>
 <span class="w">        </span><span class="p">};</span>
 
 <span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="nx">applyInnerOp</span><span class="p">(</span><span class="nx">op</span><span class="p">);</span>
@@ -506,14 +506,14 @@ another function the runtime expects us to provide:</p>
 <span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">op</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">message</span><span class="p">.</span><span class="nx">contents</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">ILedgerOperation</span><span class="p">;</span>
 
 <span class="w">        </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">op</span><span class="p">.</span><span class="kr">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;append&quot;</span><span class="o">:</span>
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="s2">"append"</span><span class="o">:</span>
 <span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">appendCore</span><span class="p">(</span><span class="nx">op</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
 <span class="w">                </span><span class="k">break</span><span class="p">;</span>
-<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="s2">&quot;clear&quot;</span><span class="o">:</span>
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="s2">"clear"</span><span class="o">:</span>
 <span class="w">                </span><span class="k">this</span><span class="p">.</span><span class="nx">clearCore</span><span class="p">();</span>
 <span class="w">                </span><span class="k">break</span><span class="p">;</span>
 <span class="w">            </span><span class="nx">default</span><span class="o">:</span>
-<span class="w">                </span><span class="kt">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Unknown operation&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="kt">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Unknown operation"</span><span class="p">);</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
@@ -539,7 +539,7 @@ a client can keep making updates, which get <em>stashed</em>. We won&#39;t dig i
 since for Mental Poker we can&#39;t have a single client play offline - we simply
 throw an exception if this function ever gets called:</p>
 <div class="highlight"><pre><span></span><span class="k">protected</span><span class="w"> </span><span class="nx">applyStashedOp</span><span class="p">(</span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="kt">unknown</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Not supported&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">"Not supported"</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
 
