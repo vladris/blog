@@ -1,18 +1,32 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en-US" data-theme="day">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DevLog 6: Extending Markdown &mdash; Blog</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<meta name="theme-color" content="#f6f6f3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Literata:ital,opsz,wght@0,7..72,300..600;1,7..72,400&display=swap">
+<link rel="stylesheet" href="../../../static/tokens.css" type="text/css">
 <link rel="stylesheet" href="../../../static/theme.css" type="text/css">
-<link rel="stylesheet" href="../../../static/tokyo.css" type="text/css">
+<link rel="alternate" type="application/rss+xml" title="Vlad&#x27;s Tech Blog" href="../../../rss.xml">
 <link rel="shortcut icon" href="../../../static/icon.ico" />
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-<header><span>March 22, 2026</span></header>
-<article>
+<a class="skip-link" href="#post">Skip to content</a>
+<header class="site-header container">
+<a class="brand" href="https://vladris.com">Vlad Rișcuția</a>
+<nav aria-label="Main navigation">
+<a href="https://vladris.com/writings/index.html">Writings</a>
+<a href="../../../index.html" aria-current="page">Blog</a>
+<a href="https://www.linkedin.com/in/vladris">Resume</a>
+</nav>
+</header>
+<main class="container post" id="post">
+<p class="post-date"><time datetime="2026-03-22">March 22, 2026</time></p>
+<article class="prose">
 <h1>DevLog 6: Extending Markdown</h1>
 
 <p>Markdown is ubiquitous nowadays. LLMs speak Markdown. Text editors embrace
@@ -204,18 +218,32 @@ provide non-portable extensibility. I wish we had a better way of doing this
 and I&#39;m worried we&#39;re too far down the road by now to retrofit it in.</p>
 
 </article>
-<nav>
+</main>
+<nav class="container post-nav" aria-label="More posts">
+<ul class="ruled-list">
 
-<div id="prev"><span>« <a href="../../../2026/01/27/jazz-an-exploration.html">Jazz: An Exploration</a></span></div>
+<li><a href="../../../2026/01/27/jazz-an-exploration.html"><span><span class="dir">Previous</span>Jazz: An Exploration</span><span aria-hidden="true">&larr;</span></a></li>
 
 
-<div id="next"><span><a href="../../../2026/04/04/devlog-7-longhand.html">DevLog 7: Longhand</a> »</span></div>
+<li><a href="../../../2026/04/04/devlog-7-longhand.html"><span><span class="dir">Next</span>DevLog 7: Longhand</span><span aria-hidden="true">&rarr;</span></a></li>
 
+<li><a href="../../../index.html"><span>All posts</span><span aria-hidden="true">&rarr;</span></a></li>
+</ul>
 </nav>
-<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+<footer class="site-footer container">
+<span>By <a href="https://vladris.com">Vlad Rișcuția</a></span>
+<nav aria-label="Blog">
+<a href="../../../rss.xml">Subscribe</a>
+<a href="../../../index.html">Index</a>
+</nav>
+</footer>
 <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true });
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'neutral',
+        fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, monospace',
+    });
 </script>
 </body>
 </html>

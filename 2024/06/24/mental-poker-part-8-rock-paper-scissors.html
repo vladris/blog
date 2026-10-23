@@ -1,18 +1,32 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en-US" data-theme="day">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mental Poker Part 8: Rock-Paper-Scissors &mdash; Blog</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<meta name="theme-color" content="#f6f6f3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Literata:ital,opsz,wght@0,7..72,300..600;1,7..72,400&display=swap">
+<link rel="stylesheet" href="../../../static/tokens.css" type="text/css">
 <link rel="stylesheet" href="../../../static/theme.css" type="text/css">
-<link rel="stylesheet" href="../../../static/tokyo.css" type="text/css">
+<link rel="alternate" type="application/rss+xml" title="Vlad&#x27;s Tech Blog" href="../../../rss.xml">
 <link rel="shortcut icon" href="../../../static/icon.ico" />
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-<header><span>June 24, 2024</span></header>
-<article>
+<a class="skip-link" href="#post">Skip to content</a>
+<header class="site-header container">
+<a class="brand" href="https://vladris.com">Vlad Rișcuția</a>
+<nav aria-label="Main navigation">
+<a href="https://vladris.com/writings/index.html">Writings</a>
+<a href="../../../index.html" aria-current="page">Blog</a>
+<a href="https://www.linkedin.com/in/vladris">Resume</a>
+</nav>
+</header>
+<main class="container post" id="post">
+<p class="post-date"><time datetime="2024-06-24">June 24, 2024</time></p>
+<article class="prose">
 <h1>Mental Poker Part 8: Rock-Paper-Scissors</h1>
 
 <p>For an overview on Mental Poker, see <strong><a href="https://vladris.com/blog/2023/02/18/mental-poker-part-0-an-overview.html">Mental Poker Part 0: An
@@ -447,18 +461,32 @@ said, this was a very simple game. In the next post we’ll look at implementing
 card game.</p>
 
 </article>
-<nav>
+</main>
+<nav class="container post-nav" aria-label="More posts">
+<ul class="ruled-list">
 
-<div id="prev"><span>« <a href="../../../2024/06/12/mental-poker-part-7-primitives.html">Mental Poker Part 7: Primitives</a></span></div>
+<li><a href="../../../2024/06/12/mental-poker-part-7-primitives.html"><span><span class="dir">Previous</span>Mental Poker Part 7: Primitives</span><span aria-hidden="true">&larr;</span></a></li>
 
 
-<div id="next"><span><a href="../../../2024/07/18/mental-poker-part-9-discard-game.html">Mental Poker Part 9: Discard Game</a> »</span></div>
+<li><a href="../../../2024/07/18/mental-poker-part-9-discard-game.html"><span><span class="dir">Next</span>Mental Poker Part 9: Discard Game</span><span aria-hidden="true">&rarr;</span></a></li>
 
+<li><a href="../../../index.html"><span>All posts</span><span aria-hidden="true">&rarr;</span></a></li>
+</ul>
 </nav>
-<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+<footer class="site-footer container">
+<span>By <a href="https://vladris.com">Vlad Rișcuția</a></span>
+<nav aria-label="Blog">
+<a href="../../../rss.xml">Subscribe</a>
+<a href="../../../index.html">Index</a>
+</nav>
+</footer>
 <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true });
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'neutral',
+        fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, monospace',
+    });
 </script>
 </body>
 </html>

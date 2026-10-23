@@ -1,18 +1,32 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en-US" data-theme="day">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Implementing a Variant Type in C# &mdash; Blog</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<meta name="theme-color" content="#f6f6f3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Literata:ital,opsz,wght@0,7..72,300..600;1,7..72,400&display=swap">
+<link rel="stylesheet" href="../../../static/tokens.css" type="text/css">
 <link rel="stylesheet" href="../../../static/theme.css" type="text/css">
-<link rel="stylesheet" href="../../../static/tokyo.css" type="text/css">
+<link rel="alternate" type="application/rss+xml" title="Vlad&#x27;s Tech Blog" href="../../../rss.xml">
 <link rel="shortcut icon" href="../../../static/icon.ico" />
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-<header><span>July 16, 2018</span></header>
-<article>
+<a class="skip-link" href="#post">Skip to content</a>
+<header class="site-header container">
+<a class="brand" href="https://vladris.com">Vlad Rișcuția</a>
+<nav aria-label="Main navigation">
+<a href="https://vladris.com/writings/index.html">Writings</a>
+<a href="../../../index.html" aria-current="page">Blog</a>
+<a href="https://www.linkedin.com/in/vladris">Resume</a>
+</nav>
+</header>
+<main class="container post" id="post">
+<p class="post-date"><time datetime="2018-07-16">July 16, 2018</time></p>
+<article class="prose">
 <h1>Implementing a Variant Type in C&#35;</h1>
 
 <p>A variant, or discriminated union type<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup>, is a type that can hold a
@@ -739,18 +753,32 @@ Wikipedia</a>&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
 </div>
 
 </article>
-<nav>
+</main>
+<nav class="container post-nav" aria-label="More posts">
+<ul class="ruled-list">
 
-<div id="prev"><span>« <a href="../../../2018/06/23/ioc-containers.html">IoC Containers</a></span></div>
+<li><a href="../../../2018/06/23/ioc-containers.html"><span><span class="dir">Previous</span>IoC Containers</span><span aria-hidden="true">&larr;</span></a></li>
 
 
-<div id="next"><span><a href="../../../2018/09/09/clean-code-types.html">Clean Code: Types</a> »</span></div>
+<li><a href="../../../2018/09/09/clean-code-types.html"><span><span class="dir">Next</span>Clean Code: Types</span><span aria-hidden="true">&rarr;</span></a></li>
 
+<li><a href="../../../index.html"><span>All posts</span><span aria-hidden="true">&rarr;</span></a></li>
+</ul>
 </nav>
-<footer><span>By <a href="https://vladris.com">Vlad Rișcuția</a> | <a href="../../../rss.xml">Subscribe</a> | <a href="../../../index.html">Index</a></span></footer>
+<footer class="site-footer container">
+<span>By <a href="https://vladris.com">Vlad Rișcuția</a></span>
+<nav aria-label="Blog">
+<a href="../../../rss.xml">Subscribe</a>
+<a href="../../../index.html">Index</a>
+</nav>
+</footer>
 <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true });
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'neutral',
+        fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, monospace',
+    });
 </script>
 </body>
 </html>
